@@ -18,9 +18,9 @@ Milestone 1: not started. Project docs, skills and the reviewer agent were set u
   FROM `mcr.microsoft.com/playwright/dotnet:v<ver>-noble`, version read from Directory.Packages.props by
   `scripts/test-e2e.sh` so image and package cannot drift. htmx 2.0.11 vendored.
 - Risks: chiseled image has no shell/curl → no in-image HEALTHCHECK for the app (orchestrators probe HTTP).
-- Done: branch created.
+- Done: solution, web skeleton with /healthz + /readyz, 3 test projects (xUnit v3 on MTP via global.json), htmx vendored; build clean, dotnet test green (E2E skips on host).
 - Half-done: —
-- Next step: scaffold solution and projects.
+- Next step: Dockerfile, docker-compose.yml, docker-compose.e2e.yml, scripts/test-e2e.sh.
 - Last checkpoint: (this commit)
 
 

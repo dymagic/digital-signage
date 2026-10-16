@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Signage.Web</RootNamespace>
+    <UserSecretsId>signage-web-dev</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Signage.UnitTests" />
+    <InternalsVisibleTo Include="Signage.IntegrationTests" />
+  </ItemGroup>
+
+</Project>
