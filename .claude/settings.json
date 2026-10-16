@@ -50,9 +50,7 @@
       "Bash(apt-get *)",
       "Bash(snap *)",
       "Bash(dotnet tool install -g *)",
-      "Bash(dotnet tool install --global *)",
-      "Edit(docs/reviews/WP-*-review-*.md)",
-      "Edit(docs/reviews/MILESTONE-*.md)"
+      "Bash(dotnet tool install --global *)"
     ]
   }
 }

@@ -47,13 +47,13 @@ Postgres + a vanilla-JS browser player). You work autonomously through Milestone
 - Keep `docs/` truthful. If the code diverges from ARCHITECTURE or PLAYER_SPEC, update the doc in
   the same package.
 
-## Commands (verify they still match once WP-00 lands; keep this section current)
+## Commands (verified in WP-00; keep this section current)
 ```bash
 dotnet build                                   # must be warning-free
 dotnet test                                    # unit + integration (needs Docker for Testcontainers)
 docker compose up -d --build                   # app at http://localhost:8080
 docker compose down -v                         # stop and wipe DB
-scripts/test-e2e.sh                            # Playwright E2E inside Docker
+scripts/test-e2e.sh                            # Playwright E2E inside Docker (args → xUnit runner, e.g. -trait "Category=Smoke")
 dotnet ef migrations add <Name> -p src/Signage.Web   # via local tool manifest
 ```
 

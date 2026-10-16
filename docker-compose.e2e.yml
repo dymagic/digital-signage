@@ -1,0 +1,29 @@
+# Adds the Playwright test runner to the stack. Use scripts/test-e2e.sh rather than calling this
+# directly: it picks a separate project name, matches the image to the package version and cleans up.
+services:
+  app:
+    ports: !reset []
+    networks:
+      default:
+        # Chromium forces HTTPS for any host named "app" (.app is an HSTS-preloaded TLD),
+        # so the browser reaches the app under this alias instead.
+        aliases: [signage-web]
+
+  e2e:
+    build:
+      context: .
+      dockerfile: tests/Signage.E2E/Dockerfile
+      args:
+        PLAYWRIGHT_VERSION: ${PLAYWRIGHT_VERSION:?set by scripts/test-e2e.sh}
+    image: signage-e2e:local
+    user: "${E2E_UID:-1000}:${E2E_GID:-1000}"
+    ipc: host            # recommended by Playwright for Chromium
+    environment:
+      SIGNAGE_E2E_BASEURL: http://signage-web:8080
+      SIGNAGE_E2E_ARTIFACTS: /artifacts
+    volumes:
+      - ./artifacts/e2e:/artifacts
+    depends_on:
+      app:
+        condition: service_started
+    profiles: ["e2e"]

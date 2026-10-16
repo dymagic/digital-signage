@@ -1,0 +1,37 @@
+# Demo / development stack: the app plus PostgreSQL at http://localhost:8080.
+# The database password below is an obvious demo value. Change it (for example in a git-ignored
+# docker-compose.override.yml) before running this anywhere that matters.
+name: signage
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: signage
+      POSTGRES_USER: signage
+      POSTGRES_PASSWORD: signage-demo-password   # demo value, not a secret
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U signage -d signage"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    image: signage:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=signage;Username=signage;Password=signage-demo-password"
+    ports:
+      - "8080:8080"
+    # The runtime image is chiseled (no shell, no curl), so there is no container HEALTHCHECK.
+    # Probe http://<host>:8080/healthz (liveness) and /readyz (database reachable) from outside.
+    restart: unless-stopped
+
+volumes:
+  db-data:

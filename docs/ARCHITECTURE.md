@@ -14,7 +14,7 @@
 | Push | Server-Sent Events; cross-replica fan-out via Postgres `LISTEN/NOTIFY` |
 | Auth (admin) | Cookie auth; ASP.NET Core Identity *core* (`AddIdentityCore`) for hashing/lockout, own Razor pages |
 | Auth (screen) | Opaque bearer token (256-bit random, stored as SHA-256 hash), delivered to the player as an HttpOnly cookie |
-| Tests | xUnit, Testcontainers (PostgreSQL), `WebApplicationFactory`; Playwright for .NET **run inside the official Playwright Docker image** |
+| Tests | xUnit v3 (Microsoft.Testing.Platform, ADR-0002), Testcontainers (PostgreSQL), `WebApplicationFactory`; Playwright for .NET **run inside the official Playwright Docker image** |
 | Packaging | Multi-stage Dockerfile, chiseled/non-root runtime image, `docker buildx` for amd64+arm64 |
 
 **Tooling constraint:** only the .NET 10 SDK and Docker may be installed on the dev machine. No Node,
@@ -48,6 +48,9 @@ npm, Python packages or global tools. .NET *local* tools (`dotnet new tool-manif
 ├─ docker-compose.yml              app + postgres (dev/demo)
 ├─ docker-compose.e2e.yml          adds the playwright test runner
 ├─ Directory.Build.props           nullable, warnings-as-errors, analyzers, LangVersion
+├─ Directory.Packages.props        central package versions (incl. Playwright → E2E image tag)
+├─ global.json                     SDK roll-forward + Microsoft.Testing.Platform test runner
+├─ scripts/test-e2e.sh             E2E wrapper (Docker)
 └─ Signage.sln
 ```
 
@@ -138,7 +141,7 @@ is acceptable, since a manifest ETag stops redundant re-renders.
 | `SIGNAGE__BOOTSTRAP__ADMINEMAIL` / `__ADMINPASSWORD` | — | Only used if there are no users |
 | `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Trust `X-Forwarded-*` (behind ingress/load balancer) |
 | `SIGNAGE__FORWARDEDHEADERS__KNOWNNETWORKS` | — | CIDRs of the proxies |
-| `ASPNETCORE_URLS` | `http://+:8080` | |
+| `ASPNETCORE_HTTP_PORTS` | `8080` | Set by the .NET base image; the container listens on 8080 |
 
 Never commit real secrets. The compose file uses obvious demo values with a comment.
 
