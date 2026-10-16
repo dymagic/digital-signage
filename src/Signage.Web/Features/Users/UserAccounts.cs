@@ -41,7 +41,7 @@ public sealed partial class UserAccounts(
     public async Task<User?> VerifyCredentialsAsync(string email, string password, CancellationToken ct)
     {
         var normalized = NormalizeEmail(email);
-        var user = await db.Users.SingleOrDefaultAsync(u => u.NormalizedEmail == normalized, ct).ConfigureAwait(false);
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.NormalizedEmail == normalized, ct).ConfigureAwait(false);
         if (user is null || user.PasswordHash is null)
         {
             hasher.VerifyHashedPassword(new User { Email = "", NormalizedEmail = "", DisplayName = "" }, DummyHash.Value, password);
@@ -59,14 +59,20 @@ public sealed partial class UserAccounts(
         var verification = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (verification == PasswordVerificationResult.Failed)
         {
-            user.AccessFailedCount++;
-            if (user.AccessFailedCount >= MaxFailedAttempts)
+            // One atomic statement: parallel failed attempts must all count and must not trip over each other.
+            var lockoutEnd = now + LockoutDuration;
+            var lockedNow = await db.Database.SqlQuery<bool>(
+                $"""
+                UPDATE users SET
+                    access_failed_count = CASE WHEN access_failed_count + 1 >= {MaxFailedAttempts} THEN 0 ELSE access_failed_count + 1 END,
+                    lockout_end = CASE WHEN access_failed_count + 1 >= {MaxFailedAttempts} THEN {lockoutEnd} ELSE lockout_end END
+                WHERE id = {user.Id}
+                RETURNING COALESCE(lockout_end = {lockoutEnd}, FALSE) AS "Value"
+                """).ToListAsync(ct).ConfigureAwait(false);
+            if (lockedNow is [true])
             {
-                user.LockoutEnd = now + LockoutDuration;
-                user.AccessFailedCount = 0;
                 LogLockedOut(user.Email, MaxFailedAttempts);
             }
-            await db.SaveChangesAsync(ct).ConfigureAwait(false);
             LogSignInFailed(user.Email, "wrong password");
             return null;
         }
@@ -77,13 +83,11 @@ public sealed partial class UserAccounts(
             return null;
         }
 
-        user.AccessFailedCount = 0;
-        user.LockoutEnd = null;
-        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
-        {
-            user.PasswordHash = hasher.HashPassword(user, password);
-        }
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        var newHash = verification == PasswordVerificationResult.SuccessRehashNeeded ? hasher.HashPassword(user, password) : user.PasswordHash;
+        await db.Users.Where(u => u.Id == user.Id).ExecuteUpdateAsync(s => s
+            .SetProperty(u => u.AccessFailedCount, 0)
+            .SetProperty(u => u.LockoutEnd, (DateTimeOffset?)null)
+            .SetProperty(u => u.PasswordHash, newHash), ct).ConfigureAwait(false);
         LogSignedIn(user.Email);
         return user;
     }

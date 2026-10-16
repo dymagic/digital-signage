@@ -12,7 +12,7 @@
 | Player | Static HTML/CSS/vanilla JS (ES2020 modules) served from `wwwroot/screen/` |
 | Data | PostgreSQL 16+, EF Core 10 + Npgsql, code-first migrations |
 | Push | Server-Sent Events; cross-replica fan-out via Postgres `LISTEN/NOTIFY` |
-| Auth (admin) | Cookie auth; ASP.NET Core Identity *core* (`AddIdentityCore`) for hashing/lockout, own Razor pages |
+| Auth (admin) | Cookie auth; ASP.NET Core Identity's `PasswordHasher`, own lockout on `TimeProvider`, own Razor pages (ADR-0004) |
 | Auth (screen) | Opaque bearer token (256-bit random, stored as SHA-256 hash), delivered to the player as an HttpOnly cookie |
 | Tests | xUnit v3 (Microsoft.Testing.Platform, ADR-0002), Testcontainers (PostgreSQL), `WebApplicationFactory`; Playwright for .NET **run inside the official Playwright Docker image** |
 | Packaging | Multi-stage Dockerfile, chiseled/non-root runtime image, `docker buildx` for amd64+arm64 |
@@ -119,6 +119,11 @@ test it heavily. It is the heart of the system.
 `/admin/...` pages for Slides, Playlists, Screens, Groups, Users, Settings, Pair, Login/Logout,
 Setup (first run), Account (change password). htmx partials for reorder, toggle, identify and
 status refresh. Authorization policies: `RequireAdmin`, `RequireEditor` (Editor ⊂ Admin).
+Folder conventions in `AdminUi.cs`: all of `/Admin` needs Editor, `/Admin/Users` and `/Admin/Settings` need
+Admin, and login, setup and forbidden are anonymous. Each request re-validates the cookie against the user row
+(security stamp, active, role). A page filter keeps users who must change their password on that page.
+URLs are lowercase. Strings come from `Resources/SharedResource.resx` (`L["Key"]`), and a unit test
+checks key coverage.
 
 ### Player API (`/api/player/*`)
 | Method & path | Auth | Purpose |
@@ -153,7 +158,7 @@ is acceptable, since a manifest ETag stops redundant re-renders.
 |---|---|---|
 | `ConnectionStrings__Default` | — | Postgres connection string (required) |
 | `SIGNAGE__MIGRATEONSTARTUP` | `true` | |
-| `SIGNAGE__BOOTSTRAP__ADMINEMAIL` / `__ADMINPASSWORD` | — | Only used if there are no users |
+| `SIGNAGE__BOOTSTRAP__ADMINEMAIL` / `__ADMINPASSWORD` | — | Only used if there are no users. The admin must change the password at first sign-in. Invalid values stop start-up |
 | `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Trust `X-Forwarded-*` (behind ingress/load balancer) |
 | `SIGNAGE__FORWARDEDHEADERS__KNOWNNETWORKS` | — | CIDRs of the proxies |
 | `ASPNETCORE_HTTP_PORTS` | `8080` | Set by the .NET base image; the container listens on 8080 |

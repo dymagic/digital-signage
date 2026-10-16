@@ -11,6 +11,10 @@ services:
         # Chromium forces HTTPS for any host named "app" (.app is an HSTS-preloaded TLD),
         # so the browser reaches the app under this alias instead.
         aliases: [signage-web]
+    environment:
+      # Test-only values for the throwaway E2E database; never use them anywhere else.
+      SIGNAGE__BOOTSTRAP__ADMINEMAIL: e2e-admin@example.org
+      SIGNAGE__BOOTSTRAP__ADMINPASSWORD: e2e-bootstrap-password
 
   e2e:
     build:
@@ -24,6 +28,8 @@ services:
     environment:
       SIGNAGE_E2E_BASEURL: http://signage-web:8080
       SIGNAGE_E2E_ARTIFACTS: /artifacts
+      SIGNAGE_E2E_ADMIN_EMAIL: e2e-admin@example.org
+      SIGNAGE_E2E_ADMIN_BOOTSTRAP_PASSWORD: e2e-bootstrap-password
     volumes:
       - ./artifacts/e2e:/artifacts
     depends_on:

@@ -34,7 +34,8 @@ disabled, empty, repeated slide).
 ### WP-02 Authentication & users — `In progress`
 Cookie auth, login/logout, lockout, first-run setup page, bootstrap via env vars, forced password
 change, user management (admins only), role policies, antiforgery, the admin layout shell with
-navigation and the i18n plumbing (resx + localizers).
+navigation and the i18n plumbing (resx + localizers). Also the global Settings page (admin only; no other
+package owns it, ADR-0004).
 **Accept:** integration tests for every role/endpoint permission in the PROJECT_BRIEF §3 matrix;
 setup is unreachable once a user exists; a deactivated user can't log in and their existing cookie is
 invalidated (security stamp). R-50, R-51, R-52, R-53, R-64.
@@ -115,6 +116,8 @@ no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`
 it). R-60, R-61, R-62, R-65.
 *Follow-up from WP-01 review:* document that compose publishes Postgres on `127.0.0.1:55432` for the
 host dev loop and how to change it (`SIGNAGE_DB_PORT`) or remove it.
+*From WP-02 (ADR-0004):* the security note recommends HTTPS via a reverse proxy when the network isn't
+trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
 
 ### WP-13 Milestone hardening & acceptance — `Todo`
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute

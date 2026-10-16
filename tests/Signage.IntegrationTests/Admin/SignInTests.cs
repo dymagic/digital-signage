@@ -91,6 +91,23 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Parallel_failed_attempts_all_count_and_never_error()
+    {
+        var attempts = Enumerable.Range(0, UserAccounts.MaxFailedAttempts).Select(async _ =>
+        {
+            using var session = new AdminSession(_app.Factory);
+            using var response = await session.SignInAsync(AdminApp.AdminEmail, "wrong password!");
+            return response.StatusCode;
+        });
+
+        var statuses = await Task.WhenAll(attempts);
+
+        Assert.All(statuses, s => Assert.Equal(HttpStatusCode.OK, s));
+        using var locked = await new AdminSession(_app.Factory).SignInAsync(AdminApp.AdminEmail, AdminApp.Password);
+        Assert.Equal(HttpStatusCode.OK, locked.StatusCode);
+    }
+
+    [Fact]
     public async Task A_successful_sign_in_resets_the_failure_count()
     {
         using var session = new AdminSession(_app.Factory);
@@ -148,6 +165,17 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
         Assert.Equal("/admin/login", AdminSession.Location(logout));
         using var after = await session.GetAsync("/admin");
         Assert.Equal(HttpStatusCode.Redirect, after.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_sign_out_form_in_the_layout_carries_exactly_one_antiforgery_token()
+    {
+        using var session = await _app.SignedInAsync(AdminApp.AdminEmail);
+        var html = await session.GetHtmlAsync("/admin");
+
+        var form = System.Text.RegularExpressions.Regex.Match(html, """<form method="post" action="/admin/logout".*?</form>""", System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Count(form, "__RequestVerificationToken"));
     }
 
     [Fact]

@@ -29,8 +29,7 @@
         </nav>
         <div class="account">
             <a href="~/admin/account/password" title="@L["Nav.ChangePassword"]">@User.Identity?.Name</a>
-            <form method="post" action="~/admin/logout">
-                <input type="hidden" name="@tokens.FormFieldName" value="@tokens.RequestToken" />
+            <form method="post" action="~/admin/logout" asp-antiforgery="true">
                 <button type="submit" class="link">@L["Nav.Logout"]</button>
             </form>
         </div>
