@@ -7,7 +7,22 @@
 Milestone 1: not started. Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-00 Repository foundation._
+- Package: WP-00 Repository foundation — branch `wp-00-foundation` — status In progress
+- Plan: `Signage.sln` (classic sln format, as documented), `Directory.Build.props` + central package
+  management (`Directory.Packages.props`), `.editorconfig`; `src/Signage.Web` (Razor Pages skeleton,
+  `/healthz` liveness, `/readyz` Postgres check via `NpgsqlDataSource`); `tests/Signage.UnitTests`,
+  `tests/Signage.IntegrationTests` (WebApplicationFactory + Testcontainers postgres:16),
+  `tests/Signage.E2E` (Playwright .NET, skipped unless `SIGNAGE_E2E_BASEURL` is set); xUnit v3.
+  Dockerfile (sdk build on $BUILDPLATFORM, `-a $TARGETARCH`, runtime `aspnet:10.0-noble-chiseled-extra`
+  for ICU/tzdata, non-root). compose: app + postgres:16. `docker-compose.e2e.yml` + `tests/Signage.E2E/Dockerfile`
+  FROM `mcr.microsoft.com/playwright/dotnet:v<ver>-noble`, version read from Directory.Packages.props by
+  `scripts/test-e2e.sh` so image and package cannot drift. htmx 2.0.11 vendored.
+- Risks: chiseled image has no shell/curl → no in-image HEALTHCHECK for the app (orchestrators probe HTTP).
+- Done: branch created.
+- Half-done: —
+- Next step: scaffold solution and projects.
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
