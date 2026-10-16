@@ -18,9 +18,9 @@ Milestone 1: in progress (WP-00 done). Project docs, skills and the reviewer age
   Plus WP-00 follow-ups (a)-(f) from BACKLOG.
 - Risks: concurrent migrations across replicas (EF 9+ migration lock); dense positions without a unique
   index (swap updates would violate it).
-- Done: —
+- Done: packages + dotnet-ef manifest (`dotnet-tools.json` at repo root); domain entities; SequenceResolver, SlideSchedule, SlideDuration with 41 green unit tests.
 - Half-done: —
-- Next step: add packages + dotnet-ef tool manifest, write domain entities.
+- Next step: SignageDbContext + configurations, design-time factory, InitialCreate migration.
 - Last checkpoint: (this commit)
 
 
