@@ -1,7 +1,7 @@
 namespace Signage.Web.Domain;
 
 /// <summary>One item of content in the shared slide library (R-01).</summary>
-public class Slide
+public class Slide : IHasCreatedAt, IHasUpdatedAt
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public required string Title { get; set; }

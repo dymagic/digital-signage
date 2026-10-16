@@ -1,7 +1,7 @@
 namespace Signage.Web.Domain;
 
 /// <summary>A device asking to be paired with a screen (R-40). Flow details land in WP-06.</summary>
-public class PairingRequest
+public class PairingRequest : IHasCreatedAt
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public required string Code { get; set; }

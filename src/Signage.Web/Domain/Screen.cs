@@ -1,7 +1,7 @@
 namespace Signage.Web.Domain;
 
 /// <summary>A physical display running the player (R-10).</summary>
-public class Screen
+public class Screen : IHasCreatedAt
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public required string Name { get; set; }

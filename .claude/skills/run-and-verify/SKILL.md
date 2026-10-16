@@ -16,7 +16,7 @@ First run: open `http://localhost:8080/admin`, which shows the setup page, or se
 a local `docker-compose.override.yml`. That file is git-ignored: never commit credentials. Demo
 content: `SIGNAGE__SEEDDEMO=true`.
 
-For a fast inner loop you may run the app on the host instead (`dotnet watch --project src/Signage.Web`, Development settings point at 127.0.0.1:5432)
+For a fast inner loop you may run the app on the host instead (`dotnet watch --project src/Signage.Web`, Development settings point at 127.0.0.1:55432, the compose db)
 against the compose Postgres (`docker compose up -d db`).
 
 ## Tests

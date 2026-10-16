@@ -11,7 +11,11 @@ public static class DataServiceCollectionExtensions
     public static IServiceCollection AddSignageData(this IServiceCollection services, string connectionString)
     {
         services.AddNpgsqlDataSource(ApplyConnectionDefaults(connectionString));
-        services.AddDbContext<SignageDbContext>((sp, options) => ConfigureNpgsql(options, sp.GetRequiredService<NpgsqlDataSource>()));
+        services.AddDbContext<SignageDbContext>((sp, options) =>
+        {
+            ConfigureNpgsql(options, sp.GetRequiredService<NpgsqlDataSource>());
+            options.AddInterceptors(new TimestampInterceptor(sp.GetRequiredService<TimeProvider>()));
+        });
 
         // Keys live in the database so every replica can read every cookie and redeploys keep sessions (R-63).
         services.AddDataProtection()

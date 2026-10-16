@@ -427,6 +427,9 @@ namespace Signage.Web.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "slides");
+
+            // Added by hand: Npgsql does not generate the reverse of the collation created in Up (ADR-0003).
+            migrationBuilder.Sql("DROP COLLATION IF EXISTS case_insensitive;");
         }
     }
 }

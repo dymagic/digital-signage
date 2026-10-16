@@ -133,6 +133,61 @@ public sealed class ModelRulesTests(PostgresFixture postgres) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Deleting_a_screen_removes_its_links_and_releases_pairing_requests_but_keeps_shared_content()
+    {
+        var slide = new Slide { Title = "s", Type = SlideType.Html, Html = "x" };
+        var playlist = new Playlist { Name = "P" };
+        var group = new ScreenGroup { Name = "G" };
+        var screen = new Screen { Name = "S" };
+        screen.Slides.Add(new ScreenSlide { Slide = slide, Placement = SlidePlacement.Append, Position = 0 });
+        screen.Playlists.Add(new ScreenPlaylist { Playlist = playlist, Position = 0 });
+        screen.Groups.Add(new ScreenGroupMember { Group = group });
+        var pairing = new PairingRequest { Code = "ABC234", DeviceSecretHash = "h", ClaimedScreen = screen };
+        await _factory.WithDbAsync(async db =>
+        {
+            db.AddRange(screen, pairing);
+            await db.SaveChangesAsync();
+        });
+
+        await _factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screen.Id).ExecuteDeleteAsync());
+
+        await _factory.WithDbAsync(async db =>
+        {
+            Assert.Empty(await db.ScreenSlides.ToListAsync());
+            Assert.Empty(await db.ScreenPlaylists.ToListAsync());
+            Assert.Empty(await db.ScreenGroupMembers.ToListAsync());
+            Assert.Null((await db.PairingRequests.SingleAsync()).ClaimedScreenId);
+            Assert.Equal(1, await db.Slides.CountAsync());
+            Assert.Equal(1, await db.Playlists.CountAsync());
+            Assert.Equal(1, await db.ScreenGroups.CountAsync());
+        });
+    }
+
+    [Fact]
+    public async Task Deleting_a_group_removes_memberships_and_assignments_but_keeps_screens_and_playlists()
+    {
+        var playlist = new Playlist { Name = "P" };
+        var group = new ScreenGroup { Name = "G" };
+        group.Playlists.Add(new GroupPlaylist { Playlist = playlist, Position = 0 });
+        group.Members.Add(new ScreenGroupMember { Screen = new Screen { Name = "S" } });
+        await _factory.WithDbAsync(async db =>
+        {
+            db.Add(group);
+            await db.SaveChangesAsync();
+        });
+
+        await _factory.WithDbAsync(db => db.ScreenGroups.Where(g => g.Id == group.Id).ExecuteDeleteAsync());
+
+        await _factory.WithDbAsync(async db =>
+        {
+            Assert.Empty(await db.ScreenGroupMembers.ToListAsync());
+            Assert.Empty(await db.GroupPlaylists.ToListAsync());
+            Assert.Equal(1, await db.Screens.CountAsync());
+            Assert.Equal(1, await db.Playlists.CountAsync());
+        });
+    }
+
+    [Fact]
     public async Task Only_one_settings_row_can_exist()
     {
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => _factory.WithDbAsync(async db =>

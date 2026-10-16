@@ -1,7 +1,7 @@
 namespace Signage.Web.Domain;
 
 /// <summary>A named, ordered, reusable list of slides (R-08).</summary>
-public class Playlist
+public class Playlist : IHasCreatedAt, IHasUpdatedAt
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public required string Name { get; set; }

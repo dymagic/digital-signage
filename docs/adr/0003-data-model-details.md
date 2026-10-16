@@ -34,6 +34,11 @@ exists.
   17:00, and back-to-back windows never overlap. The player JS will mirror `SlideSchedule`.
 - Position columns are indexed, not unique (reorders rewrite them in one batch).
 - snake_case tables and columns.
+- `CreatedAt` / `UpdatedAt` are filled by `TimestampInterceptor` from the injected `TimeProvider`
+  (marker interfaces `IHasCreatedAt` / `IHasUpdatedAt`), so features can't forget them.
+- Npgsql doesn't generate the reverse of a collation in `Down`, so `InitialCreate.Down` drops it by
+  hand. Migrations that add collations or extensions must do the same. An integration test reverts
+  and re-applies the whole chain.
 - Optimistic concurrency uses `xmin` on every human-edited root: User, Slide, Playlist, Screen,
   ScreenGroup, SystemSettings.
 - Start-up: migrate (when enabled) and then `INSERT … ON CONFLICT DO NOTHING` the settings row.

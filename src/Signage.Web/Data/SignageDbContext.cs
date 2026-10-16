@@ -6,7 +6,7 @@ namespace Signage.Web.Data;
 
 public class SignageDbContext(DbContextOptions<SignageDbContext> options) : DbContext(options), IDataProtectionKeyContext
 {
-    /// <summary>ICU, case- and accent-sensitive but case-insensitive for equality and uniqueness.</summary>
+    /// <summary>ICU collation that ignores case (but not accents) for equality and uniqueness.</summary>
     public const string CaseInsensitiveCollation = "case_insensitive";
 
     public DbSet<User> Users => Set<User>();

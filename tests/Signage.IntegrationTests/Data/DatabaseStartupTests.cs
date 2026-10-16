@@ -99,7 +99,7 @@ public class DatabaseStartupTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Every_migration_can_be_reverted_to_an_empty_schema()
+    public async Task Every_migration_can_be_reverted_to_an_empty_schema_and_applied_again()
     {
         await using var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync());
 
@@ -111,6 +111,13 @@ public class DatabaseStartupTests(PostgresFixture postgres)
             var tables = await db.Database.SqlQuery<string>(
                 $"SELECT table_name AS \"Value\" FROM information_schema.tables WHERE table_schema = 'public' AND table_name <> '__EFMigrationsHistory'").ToListAsync();
             Assert.Empty(tables);
+            var collations = await db.Database.SqlQuery<string>(
+                $"SELECT collname AS \"Value\" FROM pg_collation WHERE collname = 'case_insensitive'").ToListAsync();
+            Assert.Empty(collations);
+
+            // And the schema can be built again from scratch.
+            await db.Database.MigrateAsync();
+            Assert.Empty(await db.Database.GetPendingMigrationsAsync());
         });
     }
 

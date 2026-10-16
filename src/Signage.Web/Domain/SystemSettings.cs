@@ -1,7 +1,7 @@
 namespace Signage.Web.Domain;
 
 /// <summary>Global settings; exactly one row with <see cref="SingletonId"/>.</summary>
-public class SystemSettings
+public class SystemSettings : IHasUpdatedAt
 {
     public const int SingletonId = 1;
     public const int DefaultSlideDuration = 10;

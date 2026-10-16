@@ -1,7 +1,7 @@
 namespace Signage.Web.Domain;
 
 /// <summary>An admin-site account (R-50). Password hashing and lockout use ASP.NET Core Identity's hasher.</summary>
-public class User
+public class User : IHasCreatedAt
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public required string Email { get; set; }

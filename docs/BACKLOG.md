@@ -112,6 +112,8 @@ no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`
 `docs/deploy/aws.md`, multi-arch build instructions, demo-data instructions, `LICENSE` check.
 **Accept:** following the quick start on a clean clone works (the reviewer verifies it by actually running
 it). R-60, R-61, R-62, R-65.
+*Follow-up from WP-01 review:* document that compose publishes Postgres on `127.0.0.1:55432` for the
+host dev loop and how to change it (`SIGNAGE_DB_PORT`) or remove it.
 
 ### WP-13 Milestone hardening & acceptance — `Todo`
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute
