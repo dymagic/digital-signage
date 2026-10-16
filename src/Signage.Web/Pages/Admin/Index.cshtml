@@ -1,0 +1,8 @@
+@page
+@model Signage.Web.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = L["Home.Title"];
+    ViewData["Section"] = "Home";
+}
+<h1>@L["Home.Title"]</h1>
+<p>@L["Home.Welcome", User.Identity?.Name ?? ""]</p>

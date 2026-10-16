@@ -1,0 +1,13 @@
+@page "/error"
+@model Signage.Web.Pages.ErrorModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = L["Error.Title"];
+}
+<h1>@L["Error.Title"]</h1>
+<p>@L["Error.Body"]</p>
+@if (Model.RequestId is not null)
+{
+    <p class="muted">@L["Error.RequestId"] <code>@Model.RequestId</code></p>
+}
+<p><a href="~/admin">@L["Error.Back"]</a></p>

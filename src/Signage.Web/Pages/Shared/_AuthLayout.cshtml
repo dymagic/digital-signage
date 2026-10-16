@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · @L["App.Name"]</title>
+    <link rel="stylesheet" href="~/admin/admin.css" asp-append-version="true" />
+</head>
+<body class="auth">
+    <main class="auth-card">
+        <p class="brand">@L["App.Name"]</p>
+        @RenderBody()
+    </main>
+</body>
+</html>

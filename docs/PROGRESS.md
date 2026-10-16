@@ -18,9 +18,9 @@ Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the revie
   admin.css, SharedResource.resx + IStringLocalizer<SharedResource> with keys + unit test that every
   L["key"] used exists. E2E compose bootstraps an admin; E2E login + forced-change smoke.
 - Risks: htmx antiforgery header later; Secure cookie flag vs plain-HTTP LAN deployments (ADR).
-- Done: —
+- Done: UserAccounts (lockout on TimeProvider, first admin w/ advisory lock, create/reset/update with last-admin + self guards), cookie auth with per-request DB validation, policies, must-change filter, bootstrap, SettingsService, pages (login, logout, setup, forbidden, home, password, users list/create/edit, settings, error), layout + admin.css, SharedResource.resx (80 keys). Builds clean.
 - Half-done: —
-- Next step: localization plumbing + layout + UserAccounts service with unit/integration tests.
+- Next step: look at it in the browser, then integration tests for the role matrix, setup, lockout, stamp invalidation, bootstrap, settings; resx key-coverage unit test; E2E login smoke; ADR-0004.
 - Last checkpoint: (this commit)
 
 

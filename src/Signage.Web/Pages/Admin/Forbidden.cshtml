@@ -1,0 +1,9 @@
+@page
+@model Signage.Web.Pages.Admin.ForbiddenModel
+@{
+    ViewData["Title"] = L["Forbidden.Title"];
+    if (User.Identity?.IsAuthenticated != true) { Layout = "_AuthLayout"; }
+}
+<h1>@L["Forbidden.Title"]</h1>
+<p>@L["Forbidden.Body"]</p>
+<p><a href="~/admin">@L["Error.Back"]</a></p>

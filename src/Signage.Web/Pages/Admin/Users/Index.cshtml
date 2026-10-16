@@ -1,0 +1,46 @@
+@page
+@model Signage.Web.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = L["Users.Title"];
+    ViewData["Section"] = "Users";
+}
+<div class="page-head">
+    <h1>@L["Users.Title"]</h1>
+    <a class="button primary" asp-page="Create">@L["Users.Create"]</a>
+</div>
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">@L["Users.Field.DisplayName"]</th>
+            <th scope="col">@L["Users.Field.Email"]</th>
+            <th scope="col">@L["Users.Field.Role"]</th>
+            <th scope="col">@L["Users.Field.Status"]</th>
+            <th scope="col"><span class="visually-hidden">@L["Common.Actions"]</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <td>@user.DisplayName</td>
+                <td>@user.Email</td>
+                <td>@L[$"Users.Role.{user.Role}"]</td>
+                <td>
+                    @if (!user.IsActive)
+                    {
+                        <span class="badge badge-muted">@L["Users.Status.Inactive"]</span>
+                    }
+                    else if (user.MustChangePassword)
+                    {
+                        <span class="badge">@L["Users.Status.MustChange"]</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-ok">@L["Users.Status.Active"]</span>
+                    }
+                </td>
+                <td class="actions"><a asp-page="Edit" asp-route-id="@user.Id">@L["Common.Edit"]</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

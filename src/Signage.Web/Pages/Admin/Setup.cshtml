@@ -1,0 +1,25 @@
+@page
+@model Signage.Web.Pages.Admin.SetupModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = L["Setup.Title"];
+}
+<h1>@L["Setup.Title"]</h1>
+<p>@L["Setup.Intro"]</p>
+<form method="post">
+    <partial name="_ValidationSummary" />
+    <label asp-for="Input.Email"></label>
+    <input asp-for="Input.Email" type="email" autocomplete="username" autofocus />
+    <span asp-validation-for="Input.Email" class="field-error"></span>
+    <label asp-for="Input.DisplayName"></label>
+    <input asp-for="Input.DisplayName" autocomplete="name" />
+    <span asp-validation-for="Input.DisplayName" class="field-error"></span>
+    <label asp-for="Input.Password"></label>
+    <input asp-for="Input.Password" autocomplete="new-password" />
+    <span class="hint">@L["Users.PasswordHint", Signage.Web.Features.Users.PasswordPolicy.MinLength]</span>
+    <span asp-validation-for="Input.Password" class="field-error"></span>
+    <label asp-for="Input.ConfirmPassword"></label>
+    <input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+    <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+    <button type="submit" class="primary">@L["Setup.Submit"]</button>
+</form>
