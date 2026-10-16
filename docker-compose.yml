@@ -10,6 +10,10 @@ services:
       POSTGRES_DB: signage
       POSTGRES_USER: signage
       POSTGRES_PASSWORD: signage-demo-password   # demo value, not a secret
+    ports:
+      # Loopback only, on an uncommon port so it doesn't clash with a local PostgreSQL. It lets
+      # `dotnet watch` on the host reach the database. Change it with SIGNAGE_DB_PORT.
+      - "127.0.0.1:${SIGNAGE_DB_PORT:-55432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:

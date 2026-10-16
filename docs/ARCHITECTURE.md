@@ -57,45 +57,60 @@ npm, Python packages or global tools. .NET *local* tools (`dotnet new tool-manif
 Keep it as **one web project**. Don't split into Core/Infrastructure/Application projects unless an
 ADR justifies it. Vertical feature folders are enough at this size.
 
-## 3. Domain model (initial)
+## 3. Domain model
+
+As built in WP-01 (ADR-0003). `Id`s are client-generated UUIDv7. `Version` is PostgreSQL `xmin`
+(optimistic concurrency). Tables and columns are snake_case. Names marked *ci* are unique
+case-insensitively (ICU nondeterministic collation).
 
 ```
-User            Id, Email(unique, normalized), DisplayName, PasswordHash, Role{Admin,Editor},
-                IsActive, MustChangePassword, LockoutEnd, AccessFailedCount, SecurityStamp, CreatedAt
+User            Id, Email, NormalizedEmail(unique), DisplayName, PasswordHash, Role{Admin,Editor},
+                IsActive, MustChangePassword, LockoutEnd, AccessFailedCount, SecurityStamp, CreatedAt, Version
 
 Slide           Id, Title, Type{Image,Video,WebPage,Html}, Url?, Html?, DurationSeconds?,
                 PlayAudio, ActiveFromUtc?, ActiveUntilUtc?, IsEnabled, CreatedAt, UpdatedAt, Version
-Playlist        Id, Name(unique), Description?, CreatedAt, UpdatedAt
-PlaylistSlide   PlaylistId, SlideId, Position                          (same slide may repeat)
+Playlist        Id, Name(unique ci), Description?, CreatedAt, UpdatedAt, Version
+PlaylistSlide   Id, PlaylistId, SlideId, Position                      (same slide may repeat)
 
-Screen          Id, Name(unique), Location?, Mode{Carousel,SingleVideo}, SingleVideoUrl?,
-                TokenHash?, PairedAt?, LastSeenAt?, LastIp?, PlayerVersion?, UserAgent?, CreatedAt
-ScreenSlide     ScreenId, SlideId, Placement{Prepend,Append}, Position
+Screen          Id, Name(unique ci), Location?, Mode{Carousel,SingleVideo}, SingleVideoUrl?,
+                TokenHash?, PairedAt?, LastSeenAt?, LastIp?, PlayerVersion?, UserAgent?, CreatedAt, Version
+                (TokenHash unique when set)
+ScreenSlide     Id, ScreenId, SlideId, Placement{Prepend,Append}, Position
 ScreenPlaylist  ScreenId, PlaylistId, Position
 
-ScreenGroup     Id, Name(unique), Description?, SortOrder
+ScreenGroup     Id, Name(unique ci), Description?, SortOrder, Version
 ScreenGroupMember  ScreenId, GroupId
 GroupPlaylist   GroupId, PlaylistId, Position
 
-PairingRequest  Id, Code(unique while active), DeviceSecretHash, CreatedAt, ExpiresAt,
+PairingRequest  Id, Code(indexed; uniqueness among active codes enforced in WP-06), DeviceSecretHash, CreatedAt, ExpiresAt,
                 ClaimedScreenId?, ClaimedAt?, TokenDeliveredAt?
 SystemSettings  (single row) DefaultSlideDurationSeconds=10, ShowInfoOverlay=false,
-                TimeZoneId="UTC" (IANA), UpdatedAt
+                TimeZoneId="UTC" (IANA), UpdatedAt, Version; row created at start-up
 DataProtectionKey  (EF Core data-protection key store, for multi-replica cookies)
 ```
 
 Rules:
-- Positions are dense integers, rewritten on reorder. Use optimistic concurrency (`xmin` /
+- Positions are dense integers, rewritten on reorder. Position columns are indexed but deliberately not unique
+  (a swap would violate a unique index mid-update). Use optimistic concurrency (`xmin` /
   row version) on aggregate roots edited by humans.
 - Deleting a slide that is in use asks for confirmation and removes its links. Deleting a playlist
   likewise.
 - A `Url` must be absolute `http(s)`. Video URLs should end in `.mp4` or be served as `video/mp4`.
   Only a warning: don't block, because CDNs vary.
+- `CreatedAt`/`UpdatedAt` are set automatically on save (`TimestampInterceptor`, using `TimeProvider`).
+- Link rows (playlist slides, screen slides, assignments, memberships) cascade-delete with either side.
+  A pairing request's claimed screen is set to null when the screen is deleted.
+- Schedules are half-open: a slide is active from `ActiveFromUtc` (inclusive) until `ActiveUntilUtc`
+  (exclusive) (`SlideSchedule`).
+- Start-up (`DatabaseInitializer`) applies migrations when `SIGNAGE__MIGRATEONSTARTUP` is on, or
+  refuses to start if it is off and migrations are pending. It then creates the settings row. An
+  unreachable database fails start-up, and the orchestrator restarts the container.
 
 ### Sequence resolver
 `SequenceResolver.Resolve(screen, nowUtc)` is a **pure function** over a loaded graph. It returns
 an ordered `IReadOnlyList<ResolvedSlide>` with `Source` info (prepend / group:X / playlist:Y /
-append), following R-12 exactly: playlist de-duplication, enabled filter and schedule filter. Unit
+append), following R-12 exactly: playlist de-duplication, enabled filter and schedule filter. Groups with equal
+sort order are ordered by name, ignoring case. Unit
 test it heavily. It is the heart of the system.
 
 ## 4. HTTP surface

@@ -7,7 +7,23 @@
 Milestone 1: in progress (WP-00 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-01 Data model & settings._
+- Package: WP-01 Data model & settings — branch `wp-01-data-model` — status In review (round 2 requested)
+- Plan: entities in `Domain/` (Guid v7 ids, enums as strings, DateTimeOffset UTC, xmin concurrency on
+  human-edited roots, case-insensitive ICU collation on unique names, NormalizedEmail);
+  `Data/SignageDbContext` + `Configurations/`, design-time factory, `InitialCreate` migration;
+  `Data/DatabaseInitializer` (migrate if `Signage:MigrateOnStartup`, ensure SystemSettings row via
+  ON CONFLICT); data-protection keys in DB; `TimeProvider.System` singleton. Pure `SequenceResolver`
+  + `SlideSchedule` (half-open [from, until)) + `SlideDuration` with exhaustive unit tests;
+  `ScreenGraphLoader` + integration test (resolve from real DB). Integration: per-test databases.
+  Plus WP-00 follow-ups (a)-(f) from BACKLOG.
+- Risks: concurrent migrations across replicas (EF 9+ migration lock); dense positions without a unique
+  index (swap updates would violate it).
+- Done: packages + dotnet-ef manifest (`dotnet-tools.json` at repo root); domain entities; resolver/schedule/duration (41 unit tests); DbContext (snake_case, ICU case-insensitive names, xmin), InitialCreate migration, DatabaseInitializer (fail-fast if migrations off and schema stale), DP keys in DB, TimeProvider; 22 integration tests green (per-test DBs).
+- Half-done: —
+- Round 1: CHANGES_REQUIRED (1 MAJOR collation Down, 1 MINOR port, 4 NIT); all fixed in 59f0520.
+- Next step: handle review round 2 verdict (docs/reviews/WP-01-review-2.md).
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)

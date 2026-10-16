@@ -1,6 +1,9 @@
 # Adds the Playwright test runner to the stack. Use scripts/test-e2e.sh rather than calling this
 # directly: it picks a separate project name, matches the image to the package version and cleans up.
 services:
+  db:
+    ports: !reset []
+
   app:
     ports: !reset []
     networks:

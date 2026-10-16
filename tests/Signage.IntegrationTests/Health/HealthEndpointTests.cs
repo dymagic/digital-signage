@@ -1,4 +1,5 @@
 using System.Net;
+using Npgsql;
 using Signage.IntegrationTests.Infrastructure;
 
 namespace Signage.IntegrationTests.Health;
@@ -8,7 +9,7 @@ public class HealthEndpointTests(PostgresFixture postgres)
     [Fact]
     public async Task Healthz_returns_200()
     {
-        await using var factory = new SignageWebFactory(postgres.ConnectionString);
+        await using var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync());
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/healthz", UriKind.Relative), TestContext.Current.CancellationToken);
@@ -20,7 +21,7 @@ public class HealthEndpointTests(PostgresFixture postgres)
     [Fact]
     public async Task Readyz_returns_200_when_database_is_reachable()
     {
-        await using var factory = new SignageWebFactory(postgres.ConnectionString);
+        await using var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync());
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/readyz", UriKind.Relative), TestContext.Current.CancellationToken);
@@ -29,11 +30,13 @@ public class HealthEndpointTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Readyz_returns_503_but_healthz_stays_200_when_database_is_unreachable()
+    public async Task Readyz_returns_503_but_healthz_stays_200_when_the_database_goes_away()
     {
-        await using var factory = new SignageWebFactory("Host=127.0.0.1;Port=1;Username=x;Password=x;Timeout=2");
+        var connectionString = await postgres.CreateDatabaseAsync();
+        await using var factory = new SignageWebFactory(connectionString);
         using var client = factory.CreateClient();
         var ct = TestContext.Current.CancellationToken;
+        await DropDatabaseAsync(connectionString);
 
         var ready = await client.GetAsync(new Uri("/readyz", UriKind.Relative), ct);
         var live = await client.GetAsync(new Uri("/healthz", UriKind.Relative), ct);
@@ -50,5 +53,15 @@ public class HealthEndpointTests(PostgresFixture postgres)
         var ex = Assert.Throws<InvalidOperationException>(() => factory.CreateClient());
 
         Assert.Contains("ConnectionStrings__Default", ex.Message, StringComparison.Ordinal);
+    }
+
+    private async Task DropDatabaseAsync(string connectionString)
+    {
+        var name = new NpgsqlConnectionStringBuilder(connectionString).Database;
+        NpgsqlConnection.ClearAllPools();
+        await using var connection = new NpgsqlConnection(postgres.ConnectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand($"DROP DATABASE \"{name}\" WITH (FORCE)", connection);
+        await command.ExecuteNonQueryAsync();
     }
 }
