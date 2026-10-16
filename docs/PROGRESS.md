@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In progress
+- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In review (round 1 requested)
 - Plan: `Features/Users` (UserAccounts service: create/verify+lockout/change/reset/role/active with
   last-admin guard; PasswordHasher<User> + own lockout on TimeProvider — ADR-0004 deviates from
   AddIdentityCore), cookie auth (`signage.auth`, HttpOnly, SameSite=Lax, Secure=SameAsRequest),
@@ -21,7 +21,8 @@ Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the revie
 - Done: UserAccounts (lockout on TimeProvider, first admin w/ advisory lock, create/reset/update with last-admin + self guards), cookie auth with per-request DB validation, policies, must-change filter, bootstrap, SettingsService, pages (login, logout, setup, forbidden, home, password, users list/create/edit, settings, error), layout + admin.css, SharedResource.resx (80 keys). Builds clean.
 - Half-done: —
 - Done (2): 70+ integration tests for role matrix, sign-in/lockout/cookie flags, setup (+ concurrent), session invalidation, user admin, bootstrap, settings — all green.
-- Next step: resx key-coverage unit test, PasswordPolicy tests, E2E login smoke (compose bootstrap admin), screenshots, ADR-0004, docs.
+- Done (3): resx coverage + password policy unit tests; E2E admin (bootstrap + forced change, shared storage state); fixed atomic lockout + duplicate antiforgery token; ADR-0004. Self-check: build clean, 153 tests green, E2E 3x green.
+- Next step: handle review round 1 verdict (docs/reviews/WP-02-review-1.md).
 - Last checkpoint: (this commit)
 
 
