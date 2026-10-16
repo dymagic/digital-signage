@@ -23,7 +23,7 @@ Every package's Definition of Done (on top of its own acceptance criteria):
 **Accept:** `dotnet build` clean; `dotnet test` runs (Testcontainers) green; `docker compose up`
 serves `/healthz` 200; `scripts/test-e2e.sh` passes. Covers R-60 (partly), R-61 (partly).
 
-### WP-01 Data model & settings — `In review`
+### WP-01 Data model & settings — `Done`
 EF Core model per ARCHITECTURE §3, the initial migration, auto-migrate on start-up (switchable),
 `SystemSettings` seeding, the data-protection key store in the DB, `TimeProvider` registration. Includes
 the pure `SequenceResolver` with exhaustive unit tests (ordering, de-dup, schedule boundaries,
@@ -46,6 +46,7 @@ play-audio flag with a help text, the WebPage framing note, a thumbnail/preview 
 image thumbnail, a video poster via `#t=0.1`, iframe/HTML as a small scaled iframe), and a search
 filter.
 **Accept:** integration tests for validation and TZ conversion; Editor and Admin both allowed. R-01–R-07.
+*Follow-ups from WP-01 review:* note in ARCHITECTURE that bulk `ExecuteUpdate` bypasses `TimestampInterceptor` (set `UpdatedAt` explicitly there); test that updates always overwrite `UpdatedAt` while inserts keep an explicit one.
 
 ### WP-04 Playlists — `Todo`
 Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
