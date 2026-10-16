@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+TestResults/
+
+# Local overrides & secrets
+docker-compose.override.yml
+appsettings.*.local.json
+.env
+*.pfx
+
+# Test / build artefacts
+artifacts/
+
+# Claude local settings
+.claude/settings.local.json

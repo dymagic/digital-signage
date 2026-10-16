@@ -1,0 +1,119 @@
+# Backlog — Milestone 1
+
+Work strictly top to bottom unless a package says it can run earlier. Status values: `Todo`,
+`In progress`, `In review`, `Done`, `Blocked (reason)`. Update the status in the same commit that
+changes it. Each package lists the requirement IDs it satisfies (see `PROJECT_BRIEF.md`).
+
+Every package's Definition of Done (on top of its own acceptance criteria):
+- builds with zero warnings; `dotnet test` green; E2E green for affected areas
+- tests added for the new behaviour (unit for logic, integration for endpoints/pages/DB, E2E for player)
+- docs updated (ARCHITECTURE, README, ADRs) where reality changed
+- principal-reviewer verdict `APPROVE` saved to `docs/reviews/WP-xx-review-N.md`
+- merged to `main` with `--no-ff`, branch deleted, `docs/PROGRESS.md` updated
+
+---
+
+### WP-00 Repository foundation — `Todo`
+`git` hygiene, `.gitignore`, `.editorconfig`, `Directory.Build.props`, `Signage.sln`, the
+`Signage.Web` skeleton with `/healthz` + `/readyz`, three test projects, a multi-stage `Dockerfile`
+(non-root, arm64+amd64 buildable), `docker-compose.yml` (app + postgres:16 with healthcheck),
+`docker-compose.e2e.yml` with a Playwright .NET runner image whose version **matches** the
+`Microsoft.Playwright` package, and one smoke E2E test that loads `/healthz`. A
+`scripts/test-e2e.sh` wrapper. Vendor htmx into `wwwroot/lib`.
+**Accept:** `dotnet build` clean; `dotnet test` runs (Testcontainers) green; `docker compose up`
+serves `/healthz` 200; `scripts/test-e2e.sh` passes. Covers R-60 (partly), R-61 (partly).
+
+### WP-01 Data model & settings — `Todo`
+EF Core model per ARCHITECTURE §3, the initial migration, auto-migrate on start-up (switchable),
+`SystemSettings` seeding, the data-protection key store in the DB, `TimeProvider` registration. Includes
+the pure `SequenceResolver` with exhaustive unit tests (ordering, de-dup, schedule boundaries,
+disabled, empty, repeated slide).
+**Accept:** resolver tests cover every R-12 rule; the migration applies on an empty DB in integration tests. R-02, R-03, R-04, R-12.
+
+### WP-02 Authentication & users — `Todo`
+Cookie auth, login/logout, lockout, first-run setup page, bootstrap via env vars, forced password
+change, user management (admins only), role policies, antiforgery, the admin layout shell with
+navigation and the i18n plumbing (resx + localizers).
+**Accept:** integration tests for every role/endpoint permission in the PROJECT_BRIEF §3 matrix;
+setup is unreachable once a user exists; a deactivated user can't log in and their existing cookie is
+invalidated (security stamp). R-50, R-51, R-52, R-53, R-64.
+
+### WP-03 Slide library — `Todo`
+Slide CRUD for all 4 types, validation (absolute http/https URLs, required fields per type),
+the duration override, the schedule (entered in the system TZ, stored UTC), enable/disable, the
+play-audio flag with a help text, the WebPage framing note, a thumbnail/preview in the list (an
+image thumbnail, a video poster via `#t=0.1`, iframe/HTML as a small scaled iframe), and a search
+filter.
+**Accept:** integration tests for validation and TZ conversion; Editor and Admin both allowed. R-01–R-07.
+
+### WP-04 Playlists — `Todo`
+Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
+duplicate slides allowed, "used by" info (screens/groups).
+**Accept:** reorder persists densely; concurrent edit gets a friendly conflict message. R-08.
+
+### WP-05 Screens, groups & composition — `Todo`
+Screen CRUD (admin), mode + single video URL (admin), group CRUD + membership + sort order
+(admin), assigning playlists to groups and screens and managing prepended/appended slides (editor+).
+The screen detail page shows the resolved sequence with its sources (R-13; the preview link
+comes in WP-08). Domain events emitted through `IScreenNotifier` (a no-op implementation for now).
+**Accept:** the role split matches the brief; the resolved sequence on the page equals the resolver's output
+(integration test). R-10, R-11, R-12, R-13 (partly), R-14 (config).
+
+### WP-06 Pairing & screen tokens — `Todo`
+Pairing request API, the pairing screen in the player, the admin "Pair screen" page (enter code → new
+or existing unpaired screen), token issuing as an HttpOnly cookie, one-time delivery, the
+pre-configured URL + `/api/player/session` exchange, revoke/re-pair, rate limiting on pairing
+endpoints.
+**Accept:** E2E — a device shows a code, the admin claims it, and the device lands in the player; a revoked
+device returns to pairing. Integration tests for expiry, reuse and rate limits. R-40, R-41, R-42.
+
+### WP-07 Spike: video lifecycle & memory — `Todo` *(may run any time after WP-00)*
+Build a throwaway harness page (`tests/Signage.E2E/spikes/`) that cycles videos and images with the
+planned transition and measures memory/decoder behaviour over 200+ transitions under different
+strategies (PLAYER_SPEC §4). Use short, openly licensed sample MP4s served from a local container
+(e.g. nginx with test media generated by `ffmpeg` in a container). Don't commit large binaries.
+**Output:** `docs/adr/000X-video-lifecycle.md` with the data, the recommendation and the decision;
+harness code kept but not shipped. The reviewer checks the method, not polish.
+
+### WP-08 Player core — `Todo`
+Manifest endpoint with ETag, the player shell, carousel engine, transition per PLAYER_SPEC §2,
+progress bar, Image/WebPage/Html slides, preloading, the 3-layer cap, empty state, localStorage
+manifest cache and offline cycling, schedule re-check on the client, admin preview mode
+(`/screen?preview=`), test hooks (`data-state`, `timeScale`). A demo seed (a sample playlist with public
+domain images + an HTML clock slide), applied only in Development or with `SIGNAGE__SEEDDEMO=true`.
+**Accept:** E2E — order follows the resolved sequence; the outgoing slide's transform stays
+`translateX(0)` while the incoming one animates; the progress bar fills over the duration; at most 3 layers;
+it keeps cycling when the server is stopped. R-20, R-21, R-23, R-24, R-13.
+
+### WP-09 Video & single video mode — `Todo`
+Video slide per PLAYER_SPEC §4 plus the WP-07 ADR decision; single video mode per §6; error/stall
+skip.
+**Accept:** E2E — the video doesn't play until fully in view (`currentTime` stays 0 during the transition);
+the next slide starts on `ended`; a broken URL is skipped; single video mode loops with no progress bar;
+the mode switch applies live. R-07 (player side), R-14, R-22.
+
+### WP-10 Live updates, heartbeat & status — `Todo`
+SSE endpoint, Postgres LISTEN/NOTIFY notifier + listener background service, affected-screen
+calculation in each feature, the 60 s poll fallback, heartbeat endpoint, online/offline status in the admin
+list (htmx refresh), `appVersion` self-reload, forwarded-headers configuration.
+**Accept:** E2E — an edit in the admin reaches the screen within 5 s; integration test — two app
+instances sharing one DB both deliver an event (R-63); the status flips to offline after 90 s (fake time).
+R-25, R-26, R-33, R-63.
+
+### WP-11 Identification — `Todo`
+Identify one (red border + name, 30 s), identify all, the global info overlay toggle with
+server-observed IP.
+**Accept:** E2E for each, including timer restart and the overlay appearing live. R-30, R-31, R-32.
+
+### WP-12 Open-source packaging & deployment docs — `Todo`
+README (screenshots taken with Playwright, quick start, configuration table, security/firewall note,
+no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`,
+`docs/deploy/aws.md`, multi-arch build instructions, demo-data instructions, `LICENSE` check.
+**Accept:** following the quick start on a clean clone works (the reviewer verifies it by actually running
+it). R-60, R-61, R-62, R-65.
+
+### WP-13 Milestone hardening & acceptance — `Todo`
+Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute
+soak of the player in E2E (memory stable), and request the **milestone-level** review (the reviewer reviews
+the whole repo, not a diff).
+**Accept:** PROJECT_BRIEF §8 is fully satisfied.
