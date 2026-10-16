@@ -65,7 +65,8 @@ case-insensitively (ICU nondeterministic collation).
 
 ```
 User            Id, Email, NormalizedEmail(unique), DisplayName, PasswordHash, Role{Admin,Editor},
-                IsActive, MustChangePassword, LockoutEnd, AccessFailedCount, SecurityStamp, CreatedAt, Version
+                IsActive, MustChangePassword, SecurityStamp, CreatedAt, Version
+UserLockout     UserId (PK, FK), AccessFailedCount, LockoutEnd?          (sign-in bookkeeping, ADR-0004)
 
 Slide           Id, Title, Type{Image,Video,WebPage,Html}, Url?, Html?, DurationSeconds?,
                 PlayAudio, ActiveFromUtc?, ActiveUntilUtc?, IsEnabled, CreatedAt, UpdatedAt, Version

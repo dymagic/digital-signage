@@ -18,6 +18,9 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
 
     public ValueTask DisposeAsync() => _app.DisposeAsync();
 
+    private Task<Signage.Web.Domain.UserLockout?> LockoutAsync() => _app.Factory.WithDbAsync(db =>
+        db.UserLockouts.AsNoTracking().SingleOrDefaultAsync(l => db.Users.Any(u => u.Id == l.UserId && u.Email == AdminApp.AdminEmail)));
+
     [Fact]
     public async Task Correct_credentials_sign_in_and_return_to_the_requested_page()
     {
@@ -85,9 +88,7 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
         _app.Time.Advance(TimeSpan.FromSeconds(1));
         using var unlocked = await session.SignInAsync(AdminApp.AdminEmail, AdminApp.Password);
         Assert.Equal(HttpStatusCode.Redirect, unlocked.StatusCode);
-        var user = await _app.Factory.WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.Email == AdminApp.AdminEmail));
-        Assert.Equal(0, user.AccessFailedCount);
-        Assert.Null(user.LockoutEnd);
+        Assert.Null(await LockoutAsync());
     }
 
     [Fact]
@@ -105,9 +106,10 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
         Assert.All(statuses, s => Assert.Equal(HttpStatusCode.OK, s));
         // Every checked password claims one try first; once the lockout is set no further claim succeeds,
         // so the counter proves exactly MaxFailedAttempts passwords were checked.
-        var user = await _app.Factory.WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.Email == AdminApp.AdminEmail));
-        Assert.Equal(UserAccounts.MaxFailedAttempts, user.AccessFailedCount);
-        Assert.Equal(_app.Time.GetUtcNow() + UserAccounts.LockoutDuration, user.LockoutEnd);
+        var lockout = await LockoutAsync();
+        Assert.NotNull(lockout);
+        Assert.Equal(UserAccounts.MaxFailedAttempts, lockout.AccessFailedCount);
+        Assert.Equal(_app.Time.GetUtcNow() + UserAccounts.LockoutDuration, lockout.LockoutEnd);
         using var correct = await new AdminSession(_app.Factory).SignInAsync(AdminApp.AdminEmail, AdminApp.Password);
         Assert.Equal(HttpStatusCode.OK, correct.StatusCode);
     }
@@ -125,9 +127,10 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
         (await session.SignInAsync(AdminApp.AdminEmail, "wrong password!")).Dispose();
 
         // One failure after expiry must not lock again; the correct password still works.
-        var user = await _app.Factory.WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.Email == AdminApp.AdminEmail));
-        Assert.Equal(1, user.AccessFailedCount);
-        Assert.True(user.LockoutEnd is null || user.LockoutEnd <= _app.Time.GetUtcNow());
+        var lockout = await LockoutAsync();
+        Assert.NotNull(lockout);
+        Assert.Equal(1, lockout.AccessFailedCount);
+        Assert.Null(lockout.LockoutEnd);
         await session.SignInSuccessfullyAsync(AdminApp.AdminEmail, AdminApp.Password);
     }
 

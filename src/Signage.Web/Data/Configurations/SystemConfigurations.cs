@@ -34,3 +34,12 @@ internal sealed class SystemSettingsConfiguration : IEntityTypeConfiguration<Sys
         });
     }
 }
+
+internal sealed class UserLockoutConfiguration : IEntityTypeConfiguration<UserLockout>
+{
+    public void Configure(EntityTypeBuilder<UserLockout> builder)
+    {
+        builder.HasKey(l => l.UserId);
+        builder.HasOne<User>().WithOne().HasForeignKey<UserLockout>(l => l.UserId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

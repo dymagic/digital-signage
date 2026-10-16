@@ -1,6 +1,6 @@
 using System.Net;
-using Signage.IntegrationTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Signage.IntegrationTests.Infrastructure;
 using Signage.Web.Domain;
 
 namespace Signage.IntegrationTests.Admin;

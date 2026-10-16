@@ -14,8 +14,6 @@ public class User : IHasCreatedAt
     public UserRole Role { get; set; } = UserRole.Editor;
     public bool IsActive { get; set; } = true;
     public bool MustChangePassword { get; set; }
-    public DateTimeOffset? LockoutEnd { get; set; }
-    public int AccessFailedCount { get; set; }
 
     /// <summary>Changes on password reset, role change or deactivation, invalidating existing cookies.</summary>
     public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");

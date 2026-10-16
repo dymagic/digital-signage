@@ -173,14 +173,16 @@ public sealed partial class UserAccounts(
         var lockoutEnd = now + LockoutDuration;
         var claimed = await db.Database.SqlQuery<int>(
             $"""
-            UPDATE users SET
-                access_failed_count = CASE WHEN lockout_end <= {now} THEN 1 ELSE access_failed_count + 1 END,
+            INSERT INTO user_lockouts AS l (user_id, access_failed_count, lockout_end)
+            VALUES ({user.Id}, 1, NULL)
+            ON CONFLICT (user_id) DO UPDATE SET
+                access_failed_count = CASE WHEN l.lockout_end <= {now} THEN 1 ELSE l.access_failed_count + 1 END,
                 lockout_end = CASE
-                    WHEN (CASE WHEN lockout_end <= {now} THEN 1 ELSE access_failed_count + 1 END) >= {MaxFailedAttempts} THEN {lockoutEnd}
-                    WHEN lockout_end <= {now} THEN NULL
-                    ELSE lockout_end
+                    WHEN (CASE WHEN l.lockout_end <= {now} THEN 1 ELSE l.access_failed_count + 1 END) >= {MaxFailedAttempts} THEN {lockoutEnd}
+                    WHEN l.lockout_end <= {now} THEN NULL
+                    ELSE l.lockout_end
                 END
-            WHERE id = {user.Id} AND (lockout_end IS NULL OR lockout_end <= {now})
+            WHERE l.lockout_end IS NULL OR l.lockout_end <= {now}
             RETURNING access_failed_count AS "Value"
             """).ToListAsync(ct).ConfigureAwait(false);
 
@@ -200,11 +202,17 @@ public sealed partial class UserAccounts(
             return PasswordCheck.Fail("wrong password");
         }
 
-        var hash = result == PasswordVerificationResult.SuccessRehashNeeded ? hasher.HashPassword(user, password) : user.PasswordHash;
-        await db.Users.Where(u => u.Id == user.Id).ExecuteUpdateAsync(s => s
-            .SetProperty(u => u.AccessFailedCount, 0)
-            .SetProperty(u => u.LockoutEnd, (DateTimeOffset?)null)
-            .SetProperty(u => u.PasswordHash, hash), ct).ConfigureAwait(false);
+        // Success clears the failures (the user proved they know the password).
+        await db.UserLockouts.Where(l => l.UserId == user.Id).ExecuteDeleteAsync(ct).ConfigureAwait(false);
+
+        // Rehash only if the hash is still the one we verified, so a concurrent password change or reset is never undone.
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            var verifiedHash = user.PasswordHash;
+            var upgraded = hasher.HashPassword(user, password);
+            await db.Users.Where(u => u.Id == user.Id && u.PasswordHash == verifiedHash)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.PasswordHash, upgraded), ct).ConfigureAwait(false);
+        }
         return PasswordCheck.Ok;
     }
 
@@ -221,19 +229,27 @@ public sealed partial class UserAccounts(
     /// <summary>An admin resets a user's password to a temporary one (R-52). Ends the user's sessions.</summary>
     public async Task<(OperationResult Result, string? TemporaryPassword)> ResetPasswordAsync(Guid userId, CancellationToken ct)
     {
-        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct).ConfigureAwait(false);
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId, ct).ConfigureAwait(false);
         if (user is null)
         {
             return (OperationResult.Fail(CommonErrors.NotFound), null);
         }
 
+        // Unconditional (no version check): a reset must win against anything happening to the account,
+        // including an attacker signing in with a leaked password at the same moment.
         var temporary = PasswordPolicy.GenerateTemporary();
-        user.PasswordHash = hasher.HashPassword(user, temporary);
-        user.MustChangePassword = true;
-        user.AccessFailedCount = 0;
-        user.LockoutEnd = null;
-        user.SecurityStamp = NewStamp();
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        var hash = hasher.HashPassword(user, temporary);
+        var stamp = NewStamp();
+        var updated = await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(s => s
+            .SetProperty(u => u.PasswordHash, hash)
+            .SetProperty(u => u.MustChangePassword, true)
+            .SetProperty(u => u.SecurityStamp, stamp), ct).ConfigureAwait(false);
+        if (updated == 0)
+        {
+            return (OperationResult.Fail(CommonErrors.NotFound), null);
+        }
+
+        await db.UserLockouts.Where(l => l.UserId == userId).ExecuteDeleteAsync(ct).ConfigureAwait(false);
         LogPasswordReset(user.Email);
         return (OperationResult.Ok, temporary);
     }

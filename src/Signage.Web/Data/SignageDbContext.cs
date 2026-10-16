@@ -10,6 +10,7 @@ public class SignageDbContext(DbContextOptions<SignageDbContext> options) : DbCo
     public const string CaseInsensitiveCollation = "case_insensitive";
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserLockout> UserLockouts => Set<UserLockout>();
     public DbSet<Slide> Slides => Set<Slide>();
     public DbSet<Playlist> Playlists => Set<Playlist>();
     public DbSet<PlaylistSlide> PlaylistSlides => Set<PlaylistSlide>();

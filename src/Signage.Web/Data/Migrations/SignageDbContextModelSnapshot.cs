@@ -512,10 +512,6 @@ namespace Signage.Web.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("access_failed_count");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -535,10 +531,6 @@ namespace Signage.Web.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("lockout_end");
 
                     b.Property<bool>("MustChangePassword")
                         .HasColumnType("boolean")
@@ -581,6 +573,26 @@ namespace Signage.Web.Data.Migrations
                         .HasDatabaseName("ix_users_normalized_email");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Signage.Web.Domain.UserLockout", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("access_failed_count");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lockout_end");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_lockouts");
+
+                    b.ToTable("user_lockouts", (string)null);
                 });
 
             modelBuilder.Entity("Signage.Web.Domain.GroupPlaylist", b =>
@@ -697,6 +709,16 @@ namespace Signage.Web.Data.Migrations
                     b.Navigation("Screen");
 
                     b.Navigation("Slide");
+                });
+
+            modelBuilder.Entity("Signage.Web.Domain.UserLockout", b =>
+                {
+                    b.HasOne("Signage.Web.Domain.User", null)
+                        .WithOne()
+                        .HasForeignKey("Signage.Web.Domain.UserLockout", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_lockouts_users_user_id");
                 });
 
             modelBuilder.Entity("Signage.Web.Domain.Playlist", b =>

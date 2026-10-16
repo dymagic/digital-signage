@@ -30,8 +30,15 @@ For revocation: validate the security stamp periodically (Identity's default is 
   locked for 15 minutes. Every password check first *claims* a try in one atomic `UPDATE … WHERE not
   locked`, which also sets the lockout on the 5th claim. PostgreSQL row locks serialise the claims, so
   at most 5 passwords are checked per lockout window, however many requests arrive in parallel. A
-  correct password gives its try back. Wrong current passwords on the change-password page go
-  through the same check. Every sign-in failure (unknown email, wrong password, locked, deactivated)
+  correct password clears the counter. Because a claim counts until its password is verified, when 5 or
+  more sign-ins for the *same* account are in flight at once, the extra ones are refused as locked until one
+  of them succeeds. That is accepted: it only happens under a guessing burst. Wrong current passwords
+  on the change-password page go through the same check.
+- The counter and lockout live in their own table, `user_lockouts`, not on `users`. Sign-ins therefore
+  never change the user row: they can't bump its concurrency token (`xmin`), which would let someone
+  holding a leaked password make an admin's deactivation fail as a conflict, and they never write the
+  password hash back. A rehash after a hasher upgrade is conditional on the hash being unchanged. An
+  admin's password reset is unconditional (no version check), so it always wins. Every sign-in failure (unknown email, wrong password, locked, deactivated)
   shows the same message, and unknown and locked accounts still pay for a (dummy) hash, so neither the
   response nor its timing reveals whether an account exists or is locked.
 - Passwords need 10–128 characters and have no composition rules (NIST 800-63B style). Temporary

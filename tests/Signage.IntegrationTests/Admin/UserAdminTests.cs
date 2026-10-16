@@ -133,8 +133,11 @@ public sealed partial class UserAdminTests(PostgresFixture postgres) : IAsyncLif
     public async Task Resetting_a_password_also_clears_a_lockout()
     {
         var editorId = await _app.CreateUserAsync();
-        await _app.Factory.WithDbAsync(db => db.Users.Where(u => u.Id == editorId)
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.LockoutEnd, _app.Time.GetUtcNow().AddMinutes(10))));
+        await _app.Factory.WithDbAsync(async db =>
+        {
+            db.UserLockouts.Add(new UserLockout { UserId = editorId, AccessFailedCount = 5, LockoutEnd = _app.Time.GetUtcNow().AddMinutes(10) });
+            await db.SaveChangesAsync();
+        });
 
         using var reset = await _admin.PostFormAsync($"/admin/users/{editorId}", new Dictionary<string, string>(), action: $"/admin/users/{editorId}?handler=ResetPassword");
         var temporary = WebUtility.HtmlDecode(TemporaryPasswordRegex().Match(await reset.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).Groups[1].Value);
