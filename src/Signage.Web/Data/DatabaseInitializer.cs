@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Options;
 using Signage.Web.Domain;
 
@@ -8,6 +10,7 @@ namespace Signage.Web.Data;
 /// Runs at start-up: applies pending migrations (unless switched off, R-60) and makes sure the single
 /// <see cref="SystemSettings"/> row exists. Both steps are safe when several replicas start at once:
 /// EF Core serialises migrations with a database lock, and the settings insert is ON CONFLICT DO NOTHING.
+/// If the database is unreachable, start-up fails and the orchestrator restarts the container.
 /// </summary>
 internal sealed partial class DatabaseInitializer(
     SignageDbContext db,
@@ -19,23 +22,25 @@ internal sealed partial class DatabaseInitializer(
     {
         if (options.Value.MigrateOnStartup)
         {
-            var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken).ConfigureAwait(false)).ToList();
+            // Creating the history table up front stops EF from logging a "relation does not exist" error
+            // when it probes a brand-new database.
+            await db.GetService<IHistoryRepository>().CreateIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        var pending = await GetPendingMigrationsAsync(cancellationToken).ConfigureAwait(false);
+        if (options.Value.MigrateOnStartup)
+        {
             if (pending.Count > 0)
             {
                 LogApplyingMigrations(pending.Count, pending);
+                await db.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
             }
-            await db.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
         }
-        else
+        else if (pending.Count > 0)
         {
-            LogMigrationsDisabled();
-            var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken).ConfigureAwait(false)).ToList();
-            if (pending.Count > 0)
-            {
-                throw new InvalidOperationException(
-                    $"The database schema is out of date ({pending.Count} pending migration(s)) and Signage:MigrateOnStartup is false. " +
-                    "Apply the migrations first, or enable SIGNAGE__MIGRATEONSTARTUP.");
-            }
+            throw new InvalidOperationException(
+                $"The database schema is out of date ({pending.Count} pending migration(s)) and Signage:MigrateOnStartup is false. " +
+                "Apply the migrations first, or enable SIGNAGE__MIGRATEONSTARTUP.");
         }
 
         await db.Database.ExecuteSqlAsync(
@@ -47,11 +52,27 @@ internal sealed partial class DatabaseInitializer(
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Like <c>GetPendingMigrationsAsync</c>, but checks for the history table first so a brand-new
+    /// database doesn't produce a logged "relation does not exist" error.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> GetPendingMigrationsAsync(CancellationToken cancellationToken)
+    {
+        var all = db.Database.GetMigrations().ToList();
+        var history = db.GetService<IHistoryRepository>();
+        if (!await history.ExistsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return all;
+        }
+
+        var applied = (await history.GetAppliedMigrationsAsync(cancellationToken).ConfigureAwait(false))
+            .Select(m => m.MigrationId)
+            .ToHashSet(StringComparer.Ordinal);
+        return all.Where(m => !applied.Contains(m)).ToList();
+    }
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Applying {Count} database migration(s): {Migrations}")]
     private partial void LogApplyingMigrations(int count, IReadOnlyList<string> migrations);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Automatic migrations are disabled (Signage:MigrateOnStartup=false); the schema must already be up to date.")]
-    private partial void LogMigrationsDisabled();
 }
 
 internal static class DatabaseInitializerExtensions

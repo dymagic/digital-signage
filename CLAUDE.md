@@ -54,7 +54,7 @@ dotnet test                                    # unit + integration (needs Docke
 docker compose up -d --build                   # app at http://localhost:8080
 docker compose down -v                         # stop and wipe DB
 scripts/test-e2e.sh                            # Playwright E2E inside Docker (args → xUnit runner, e.g. -trait "Category=Smoke")
-dotnet ef migrations add <Name> -p src/Signage.Web   # via local tool manifest
+dotnet tool restore && dotnet ef migrations add <Name> -p src/Signage.Web -o Data/Migrations   # local tool (dotnet-tools.json)
 ```
 
 ## Context hygiene

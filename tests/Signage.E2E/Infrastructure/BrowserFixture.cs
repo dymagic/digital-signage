@@ -39,7 +39,7 @@ public sealed class BrowserFixture : IAsyncLifetime
     private static async Task WaitForAppAsync(Uri baseUrl)
     {
         using var http = new HttpClient { BaseAddress = baseUrl, Timeout = TimeSpan.FromSeconds(2) };
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(90);
+        var waited = System.Diagnostics.Stopwatch.StartNew();
         while (true)
         {
             try
@@ -55,7 +55,7 @@ public sealed class BrowserFixture : IAsyncLifetime
                 // Not up yet.
             }
 
-            if (DateTimeOffset.UtcNow > deadline)
+            if (waited.Elapsed > TimeSpan.FromSeconds(90))
             {
                 throw new TimeoutException($"App at {baseUrl} did not become healthy within 90 s.");
             }

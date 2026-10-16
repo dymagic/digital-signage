@@ -7,7 +7,7 @@ ARG TARGETARCH
 WORKDIR /src
 
 # Restore first, from project files only, so the layer is cached until dependencies change.
-COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY src/Signage.Web/Signage.Web.csproj src/Signage.Web/
 RUN dotnet restore src/Signage.Web/Signage.Web.csproj -a $TARGETARCH
 
