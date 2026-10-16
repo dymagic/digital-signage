@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In review (round 2 requested)
+- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In review (round 3 requested)
 - Plan: `Features/Users` (UserAccounts service: create/verify+lockout/change/reset/role/active with
   last-admin guard; PasswordHasher<User> + own lockout on TimeProvider — ADR-0004 deviates from
   AddIdentityCore), cookie auth (`signage.auth`, HttpOnly, SameSite=Lax, Secure=SameAsRequest),
@@ -23,7 +23,8 @@ Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the revie
 - Done (2): 70+ integration tests for role matrix, sign-in/lockout/cookie flags, setup (+ concurrent), session invalidation, user admin, bootstrap, settings — all green.
 - Done (3): resx coverage + password policy unit tests; E2E admin (bootstrap + forced change, shared storage state); fixed atomic lockout + duplicate antiforgery token; ADR-0004. Self-check: build clean, 153 tests green, E2E 3x green.
 - Round 1: CHANGES_REQUIRED (2 MAJOR lockout race + editor POST tests, 4 MINOR, 2 NIT); all fixed in 1a13703 (NIT 8 noted under WP-04).
-- Next step: handle review round 2 verdict (docs/reviews/WP-02-review-2.md).
+- Round 2: CHANGES_REQUIRED (2 BLOCKER: stale hash write-back, xmin bumps by sign-ins; 1 MINOR; 1 NIT); fixed in 10dfd46. Round 3 is the last before escalation.
+- Next step: handle review round 3 verdict (docs/reviews/WP-02-review-3.md).
 - Last checkpoint: (this commit)
 
 
