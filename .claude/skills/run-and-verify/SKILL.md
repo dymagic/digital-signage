@@ -22,9 +22,10 @@ against the compose Postgres (`docker compose up -d db`).
 ## Tests
 ```bash
 dotnet test                                     # unit + integration (Testcontainers needs Docker)
-dotnet test --filter "FullyQualifiedName~Resolver"
+dotnet test --filter-class "*Resolver*"         # MTP/xUnit v3 filters (--filter-class/-method/-trait);
+                                                # exit code 8 just means some assemblies matched no tests
 scripts/test-e2e.sh                             # all E2E in the Playwright container
-scripts/test-e2e.sh --filter "Category=Player"  # subset (keep the script supporting pass-through args)
+scripts/test-e2e.sh -trait "Category=Player"    # subset: args go to the xUnit v3 runner (see "-?")
 ```
 E2E artefacts (traces, screenshots, videos on failure) go to `artifacts/e2e/`, which is git-ignored. Open
 the PNGs with the Read tool to inspect them.
