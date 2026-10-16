@@ -20,7 +20,8 @@ Milestone 1: not started. Project docs, skills and the reviewer agent were set u
 - Risks: chiseled image has no shell/curl → no in-image HEALTHCHECK for the app (orchestrators probe HTTP).
 - Done: everything in the plan. build clean; dotnet test green (5 passed, E2E skipped on host); scripts/test-e2e.sh green; compose serves /healthz + /readyz; arm64 buildx build verified (no emulation).
 - Half-done: —
-- Next step: handle review round 1 verdict (docs/reviews/WP-00-review-1.md).
+- Review round 1 ran: reviewer reported APPROVE (0 BLOCKER, 0 MAJOR, 2 MINOR, 4 NIT) but could NOT write docs/reviews/WP-00-review-1.md: .claude/settings.json denies writes there for every agent, the reviewer included. Asked the product owner how to fix it. Not merged yet.
+- Next step: once the permission question is settled, get the review file into docs/reviews/ (reviewer re-run or the PO's chosen route), commit it, merge, and defer the MINORs/NITs (dev DB port/password mismatch, CLAUDE.md ef line, Stopwatch in BrowserFixture, skill compose-ps comment, E2E page disposal/artefacts) to WP-01.
 - Last checkpoint: (this commit)
 
 
