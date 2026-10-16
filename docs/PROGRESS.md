@@ -7,7 +7,22 @@
 Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-02 Authentication & users._
+- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In progress
+- Plan: `Features/Users` (UserAccounts service: create/verify+lockout/change/reset/role/active with
+  last-admin guard; PasswordHasher<User> + own lockout on TimeProvider — ADR-0004 deviates from
+  AddIdentityCore), cookie auth (`signage.auth`, HttpOnly, SameSite=Lax, Secure=SameAsRequest),
+  per-request principal validation against DB (security stamp, active, role, must-change),
+  policies RequireAdmin/RequireEditor, must-change page filter, first-run Setup (advisory lock),
+  bootstrap env vars in DatabaseInitializer path, Settings page (admin; default duration, overlay,
+  time zone) because no other package owns it. Razor Pages under /admin, lowercase URLs, layout shell,
+  admin.css, SharedResource.resx + IStringLocalizer<SharedResource> with keys + unit test that every
+  L["key"] used exists. E2E compose bootstraps an admin; E2E login + forced-change smoke.
+- Risks: htmx antiforgery header later; Secure cookie flag vs plain-HTTP LAN deployments (ADR).
+- Done: —
+- Half-done: —
+- Next step: localization plumbing + layout + UserAccounts service with unit/integration tests.
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)

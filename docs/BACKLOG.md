@@ -31,7 +31,7 @@ disabled, empty, repeated slide).
 **Accept:** resolver tests cover every R-12 rule; the migration applies on an empty DB in integration tests. R-02, R-03, R-04, R-12.
 *Follow-ups from WP-00 review:* (a) make the host dev loop work: publish db 5432 on 127.0.0.1 and align the dev password with compose, or document an override; (b) add the dotnet-ef local tool manifest and re-verify the CLAUDE.md command line; (c) E2E: dispose pages via `await using` contexts, capture trace/screenshot to `artifacts/e2e/` on failure; (d) use a Stopwatch instead of `DateTimeOffset.UtcNow` in `BrowserFixture`; (e) make Npgsql GSS opt-out detection less fragile (parse the connection string); (f) fix the run-and-verify comment "app and db healthy?" (the app has no HEALTHCHECK).
 
-### WP-02 Authentication & users — `Todo`
+### WP-02 Authentication & users — `In progress`
 Cookie auth, login/logout, lockout, first-run setup page, bootstrap via env vars, forced password
 change, user management (admins only), role policies, antiforgery, the admin layout shell with
 navigation and the i18n plumbing (resx + localizers).
