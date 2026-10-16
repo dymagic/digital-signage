@@ -27,10 +27,13 @@ For revocation: validate the security stamp periodically (Identity's default is 
 
 ## Decision
 - Option 2. Passwords are hashed with `PasswordHasher<User>`. After 5 failed attempts the account is
-  locked for 15 minutes. The failure counter is updated in one atomic SQL statement, so parallel
-  attempts all count and never conflict. Every sign-in failure (unknown email, wrong password, locked,
-  deactivated) shows the same message, and unknown emails still go through a dummy hash, so neither
-  the response nor its timing reveals whether an account exists.
+  locked for 15 minutes. Every password check first *claims* a try in one atomic `UPDATE … WHERE not
+  locked`, which also sets the lockout on the 5th claim. PostgreSQL row locks serialise the claims, so
+  at most 5 passwords are checked per lockout window, however many requests arrive in parallel. A
+  correct password gives its try back. Wrong current passwords on the change-password page go
+  through the same check. Every sign-in failure (unknown email, wrong password, locked, deactivated)
+  shows the same message, and unknown and locked accounts still pay for a (dummy) hash, so neither the
+  response nor its timing reveals whether an account exists or is locked.
 - Passwords need 10–128 characters and have no composition rules (NIST 800-63B style). Temporary
   passwords are 16 random characters from an alphabet without look-alike characters.
 - The cookie `signage.auth` is `HttpOnly` and `SameSite=Lax`, with `Secure` set when the request is

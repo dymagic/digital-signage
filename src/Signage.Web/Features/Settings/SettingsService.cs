@@ -29,7 +29,8 @@ public sealed class SettingsService(SignageDbContext db)
             return OperationResult.Fail(SettingsErrors.Duration);
         }
 
-        if (!TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _))
+        // Only the IANA ids the page offers: the browser player's Intl APIs don't know Windows ids or odd aliases.
+        if (!TimeZoneIds.Contains(timeZoneId, StringComparer.Ordinal))
         {
             return OperationResult.Fail(SettingsErrors.TimeZone);
         }

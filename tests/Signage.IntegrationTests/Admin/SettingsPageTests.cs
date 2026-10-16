@@ -70,6 +70,8 @@ public sealed class SettingsPageTests(PostgresFixture postgres) : IAsyncLifetime
     [InlineData("3601", "UTC")]
     [InlineData("abc", "UTC")]
     [InlineData("10", "Mars/Olympus_Mons")]
+    [InlineData("10", "Romance Standard Time")]
+    [InlineData("10", "EST5EDT")]
     public async Task Invalid_values_are_rejected(string duration, string timeZone)
     {
         using var response = await SaveAsync(duration, timeZone, overlay: true);

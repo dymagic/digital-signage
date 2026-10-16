@@ -91,9 +91,9 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Parallel_failed_attempts_all_count_and_never_error()
+    public async Task A_burst_of_parallel_guesses_gets_at_most_the_allowed_number_of_password_checks()
     {
-        var attempts = Enumerable.Range(0, UserAccounts.MaxFailedAttempts).Select(async _ =>
+        var attempts = Enumerable.Range(0, 20).Select(async _ =>
         {
             using var session = new AdminSession(_app.Factory);
             using var response = await session.SignInAsync(AdminApp.AdminEmail, "wrong password!");
@@ -103,8 +103,32 @@ public sealed class SignInTests(PostgresFixture postgres) : IAsyncLifetime
         var statuses = await Task.WhenAll(attempts);
 
         Assert.All(statuses, s => Assert.Equal(HttpStatusCode.OK, s));
-        using var locked = await new AdminSession(_app.Factory).SignInAsync(AdminApp.AdminEmail, AdminApp.Password);
-        Assert.Equal(HttpStatusCode.OK, locked.StatusCode);
+        // Every checked password claims one try first; once the lockout is set no further claim succeeds,
+        // so the counter proves exactly MaxFailedAttempts passwords were checked.
+        var user = await _app.Factory.WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.Email == AdminApp.AdminEmail));
+        Assert.Equal(UserAccounts.MaxFailedAttempts, user.AccessFailedCount);
+        Assert.Equal(_app.Time.GetUtcNow() + UserAccounts.LockoutDuration, user.LockoutEnd);
+        using var correct = await new AdminSession(_app.Factory).SignInAsync(AdminApp.AdminEmail, AdminApp.Password);
+        Assert.Equal(HttpStatusCode.OK, correct.StatusCode);
+    }
+
+    [Fact]
+    public async Task After_a_lockout_expires_the_count_starts_again()
+    {
+        using var session = new AdminSession(_app.Factory);
+        for (var i = 0; i < UserAccounts.MaxFailedAttempts; i++)
+        {
+            (await session.SignInAsync(AdminApp.AdminEmail, "wrong password!")).Dispose();
+        }
+
+        _app.Time.Advance(UserAccounts.LockoutDuration);
+        (await session.SignInAsync(AdminApp.AdminEmail, "wrong password!")).Dispose();
+
+        // One failure after expiry must not lock again; the correct password still works.
+        var user = await _app.Factory.WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.Email == AdminApp.AdminEmail));
+        Assert.Equal(1, user.AccessFailedCount);
+        Assert.True(user.LockoutEnd is null || user.LockoutEnd <= _app.Time.GetUtcNow());
+        await session.SignInSuccessfullyAsync(AdminApp.AdminEmail, AdminApp.Password);
     }
 
     [Fact]

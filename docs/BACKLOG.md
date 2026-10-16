@@ -53,6 +53,9 @@ filter.
 Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
 duplicate slides allowed, "used by" info (screens/groups).
 **Accept:** reorder persists densely; concurrent edit gets a friendly conflict message. R-08.
+*From WP-02 review:* `MustChangePasswordFilter` is a Razor *page* filter. Admin endpoints mapped outside Razor
+Pages (e.g. minimal-API htmx endpoints) must enforce the forced password change too, so move the check into
+an authorization requirement or middleware when the first such endpoint appears.
 
 ### WP-05 Screens, groups & composition — `Todo`
 Screen CRUD (admin), mode + single video URL (admin), group CRUD + membership + sort order

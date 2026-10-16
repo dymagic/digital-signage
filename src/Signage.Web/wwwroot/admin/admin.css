@@ -70,7 +70,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 }
 
 /* Forms */
-.form, .auth-card form { display: flex; flex-direction: column; gap: .35rem; max-width: 560px; }
+.form, .auth-panel form { display: flex; flex-direction: column; gap: .35rem; max-width: 560px; }
 label { font-weight: 600; margin-top: .6rem; }
 label.checkbox { display: flex; gap: .5rem; align-items: center; font-weight: 400; }
 input[type="text"], input[type="email"], input[type="password"], input[type="number"], input:not([type]), select, textarea {
@@ -128,7 +128,7 @@ code.secret { font-size: 1.25rem; padding: .25rem .5rem; background: var(--surfa
 
 /* Sign-in and setup */
 body.auth { display: grid; place-items: center; min-height: 100vh; padding: 1rem; }
-.auth-card {
+.auth-panel {
     width: 100%;
     max-width: 420px;
     background: var(--surface);
@@ -137,8 +137,8 @@ body.auth { display: grid; place-items: center; min-height: 100vh; padding: 1rem
     padding: 2rem;
     box-shadow: 0 10px 30px rgba(20, 30, 50, .06);
 }
-.auth-card .brand { margin-bottom: 1rem; color: var(--muted); }
-.auth-card button.primary { margin-top: 1rem; }
+.auth-panel .brand { margin-bottom: 1rem; color: var(--muted); }
+.auth-panel button.primary { margin-top: 1rem; }
 
 @media (max-width: 640px) {
     .content { padding: 1rem; }

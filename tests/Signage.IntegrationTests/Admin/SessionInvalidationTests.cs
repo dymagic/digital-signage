@@ -99,6 +99,34 @@ public sealed class SessionInvalidationTests(PostgresFixture postgres) : IAsyncL
     }
 
     [Fact]
+    public async Task Wrong_current_passwords_on_the_change_page_count_towards_lockout()
+    {
+        using var session = await _app.SignedInAsync(AdminApp.EditorEmail);
+
+        for (var i = 0; i < Signage.Web.Features.Users.UserAccounts.MaxFailedAttempts; i++)
+        {
+            using var wrong = await session.PostFormAsync("/admin/account/password", new Dictionary<string, string>
+            {
+                ["Input.CurrentPassword"] = $"guess number {i}",
+                ["Input.NewPassword"] = "a brand new passphrase",
+                ["Input.ConfirmPassword"] = "a brand new passphrase",
+            });
+            Assert.Equal(HttpStatusCode.OK, wrong.StatusCode);
+        }
+
+        // Now even the right current password is refused, and signing in is blocked too.
+        using var right = await session.PostFormAsync("/admin/account/password", new Dictionary<string, string>
+        {
+            ["Input.CurrentPassword"] = AdminApp.Password,
+            ["Input.NewPassword"] = "a brand new passphrase",
+            ["Input.ConfirmPassword"] = "a brand new passphrase",
+        });
+        Assert.Equal(HttpStatusCode.OK, right.StatusCode);
+        using var signIn = await new AdminSession(_app.Factory).SignInAsync(AdminApp.EditorEmail, AdminApp.Password);
+        Assert.Equal(HttpStatusCode.OK, signIn.StatusCode);
+    }
+
+    [Fact]
     public async Task Changing_your_own_password_ends_your_other_sessions_but_keeps_this_one()
     {
         using var laptop = await _app.SignedInAsync(AdminApp.EditorEmail);

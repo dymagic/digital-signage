@@ -5,8 +5,6 @@ using Npgsql;
 using Signage.Web.Data;
 using Signage.Web.Domain;
 
-using Signage.Web.Features;
-
 namespace Signage.Web.Features.Users;
 
 /// <summary>
@@ -44,36 +42,15 @@ public sealed partial class UserAccounts(
         var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.NormalizedEmail == normalized, ct).ConfigureAwait(false);
         if (user is null || user.PasswordHash is null)
         {
-            hasher.VerifyHashedPassword(new User { Email = "", NormalizedEmail = "", DisplayName = "" }, DummyHash.Value, password);
+            VerifyDummy(password);
             LogSignInFailed(normalized, "unknown user");
             return null;
         }
 
-        var now = time.GetUtcNow();
-        if (user.LockoutEnd is { } end && end > now)
+        var check = await CheckPasswordWithLockoutAsync(user, password, ct).ConfigureAwait(false);
+        if (!check.Succeeded)
         {
-            LogSignInFailed(user.Email, "locked out");
-            return null;
-        }
-
-        var verification = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        if (verification == PasswordVerificationResult.Failed)
-        {
-            // One atomic statement: parallel failed attempts must all count and must not trip over each other.
-            var lockoutEnd = now + LockoutDuration;
-            var lockedNow = await db.Database.SqlQuery<bool>(
-                $"""
-                UPDATE users SET
-                    access_failed_count = CASE WHEN access_failed_count + 1 >= {MaxFailedAttempts} THEN 0 ELSE access_failed_count + 1 END,
-                    lockout_end = CASE WHEN access_failed_count + 1 >= {MaxFailedAttempts} THEN {lockoutEnd} ELSE lockout_end END
-                WHERE id = {user.Id}
-                RETURNING COALESCE(lockout_end = {lockoutEnd}, FALSE) AS "Value"
-                """).ToListAsync(ct).ConfigureAwait(false);
-            if (lockedNow is [true])
-            {
-                LogLockedOut(user.Email, MaxFailedAttempts);
-            }
-            LogSignInFailed(user.Email, "wrong password");
+            LogSignInFailed(user.Email, check.Reason);
             return null;
         }
 
@@ -83,11 +60,6 @@ public sealed partial class UserAccounts(
             return null;
         }
 
-        var newHash = verification == PasswordVerificationResult.SuccessRehashNeeded ? hasher.HashPassword(user, password) : user.PasswordHash;
-        await db.Users.Where(u => u.Id == user.Id).ExecuteUpdateAsync(s => s
-            .SetProperty(u => u.AccessFailedCount, 0)
-            .SetProperty(u => u.LockoutEnd, (DateTimeOffset?)null)
-            .SetProperty(u => u.PasswordHash, newHash), ct).ConfigureAwait(false);
         LogSignedIn(user.Email);
         return user;
     }
@@ -152,15 +124,10 @@ public sealed partial class UserAccounts(
     /// <summary>The user changes their own password. Rotates the security stamp (other sessions end).</summary>
     public async Task<OperationResult> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct)
     {
-        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct).ConfigureAwait(false);
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId, ct).ConfigureAwait(false);
         if (user?.PasswordHash is null)
         {
             return OperationResult.Fail(CommonErrors.NotFound);
-        }
-
-        if (hasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword) == PasswordVerificationResult.Failed)
-        {
-            return OperationResult.Fail(AccountErrors.WrongCurrentPassword);
         }
 
         if (PasswordPolicy.Validate(newPassword) is { } error)
@@ -173,12 +140,82 @@ public sealed partial class UserAccounts(
             return OperationResult.Fail(AccountErrors.SamePassword);
         }
 
-        user.PasswordHash = hasher.HashPassword(user, newPassword);
-        user.MustChangePassword = false;
-        user.SecurityStamp = NewStamp();
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        // Wrong current passwords count towards lockout too, so a hijacked session can't brute-force the password.
+        var check = await CheckPasswordWithLockoutAsync(user, currentPassword, ct).ConfigureAwait(false);
+        if (!check.Succeeded)
+        {
+            LogPasswordChangeRejected(user.Email, check.Reason);
+            return OperationResult.Fail(AccountErrors.WrongCurrentPassword);
+        }
+
+        var newHash = hasher.HashPassword(user, newPassword);
+        var newStamp = NewStamp();
+        await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(s => s
+            .SetProperty(u => u.PasswordHash, newHash)
+            .SetProperty(u => u.MustChangePassword, false)
+            .SetProperty(u => u.SecurityStamp, newStamp), ct).ConfigureAwait(false);
         LogPasswordChanged(user.Email);
         return OperationResult.Ok;
+    }
+
+    /// <summary>
+    /// Verifies a password under the lockout rules. Each attempt first claims a try in one atomic UPDATE that
+    /// only succeeds while the account isn't locked, and that sets the lockout when the claim reaches
+    /// <see cref="MaxFailedAttempts"/>. PostgreSQL row locking serialises the claims, so at most
+    /// <see cref="MaxFailedAttempts"/> passwords are ever checked per lockout window, however many requests run
+    /// in parallel. A correct password gives the claimed try back. A locked account still pays for a dummy hash,
+    /// so timing doesn't reveal the lockout.
+    /// </summary>
+    /// <returns>The successful result, or a failure with the reason (for the log only).</returns>
+    private async Task<PasswordCheck> CheckPasswordWithLockoutAsync(User user, string password, CancellationToken ct)
+    {
+        var now = time.GetUtcNow();
+        var lockoutEnd = now + LockoutDuration;
+        var claimed = await db.Database.SqlQuery<int>(
+            $"""
+            UPDATE users SET
+                access_failed_count = CASE WHEN lockout_end <= {now} THEN 1 ELSE access_failed_count + 1 END,
+                lockout_end = CASE
+                    WHEN (CASE WHEN lockout_end <= {now} THEN 1 ELSE access_failed_count + 1 END) >= {MaxFailedAttempts} THEN {lockoutEnd}
+                    WHEN lockout_end <= {now} THEN NULL
+                    ELSE lockout_end
+                END
+            WHERE id = {user.Id} AND (lockout_end IS NULL OR lockout_end <= {now})
+            RETURNING access_failed_count AS "Value"
+            """).ToListAsync(ct).ConfigureAwait(false);
+
+        if (claimed is not [var attempt])
+        {
+            VerifyDummy(password);
+            return PasswordCheck.Fail("locked out");
+        }
+
+        var result = hasher.VerifyHashedPassword(user, user.PasswordHash!, password);
+        if (result == PasswordVerificationResult.Failed)
+        {
+            if (attempt >= MaxFailedAttempts)
+            {
+                LogLockedOut(user.Email, MaxFailedAttempts);
+            }
+            return PasswordCheck.Fail("wrong password");
+        }
+
+        var hash = result == PasswordVerificationResult.SuccessRehashNeeded ? hasher.HashPassword(user, password) : user.PasswordHash;
+        await db.Users.Where(u => u.Id == user.Id).ExecuteUpdateAsync(s => s
+            .SetProperty(u => u.AccessFailedCount, 0)
+            .SetProperty(u => u.LockoutEnd, (DateTimeOffset?)null)
+            .SetProperty(u => u.PasswordHash, hash), ct).ConfigureAwait(false);
+        return PasswordCheck.Ok;
+    }
+
+    private void VerifyDummy(string password) =>
+        hasher.VerifyHashedPassword(new User { Email = "", NormalizedEmail = "", DisplayName = "" }, DummyHash.Value, password);
+
+    private readonly record struct PasswordCheck(bool Succeeded, string Reason)
+    {
+        public static PasswordCheck Ok => new(true, "");
+
+        public static PasswordCheck Fail(string reason) => new(false, reason);
     }
 
     /// <summary>An admin resets a user's password to a temporary one (R-52). Ends the user's sessions.</summary>
@@ -303,6 +340,9 @@ public sealed partial class UserAccounts(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User {Email} changed their password")]
     private partial void LogPasswordChanged(string email);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Password change rejected for {Email}: {Reason}")]
+    private partial void LogPasswordChangeRejected(string email, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Password of {Email} reset by an admin")]
     private partial void LogPasswordReset(string email);
