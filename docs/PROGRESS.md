@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-01 Data model & settings — branch `wp-01-data-model` — status In progress
+- Package: WP-01 Data model & settings — branch `wp-01-data-model` — status In review (round 1 requested)
 - Plan: entities in `Domain/` (Guid v7 ids, enums as strings, DateTimeOffset UTC, xmin concurrency on
   human-edited roots, case-insensitive ICU collation on unique names, NormalizedEmail);
   `Data/SignageDbContext` + `Configurations/`, design-time factory, `InitialCreate` migration;
@@ -20,7 +20,7 @@ Milestone 1: in progress (WP-00 done). Project docs, skills and the reviewer age
   index (swap updates would violate it).
 - Done: packages + dotnet-ef manifest (`dotnet-tools.json` at repo root); domain entities; resolver/schedule/duration (41 unit tests); DbContext (snake_case, ICU case-insensitive names, xmin), InitialCreate migration, DatabaseInitializer (fail-fast if migrations off and schema stale), DP keys in DB, TimeProvider; 22 integration tests green (per-test DBs).
 - Half-done: —
-- Next step: WP-00 follow-ups (a)-(f), ADR-0003 data-model decisions, ARCHITECTURE/CLAUDE.md updates, then self-check + review.
+- Next step: handle review round 1 verdict (docs/reviews/WP-01-review-1.md). Self-check done: build clean, 64 tests (63 pass + E2E skip on host), E2E green.
 - Last checkpoint: (this commit)
 
 
