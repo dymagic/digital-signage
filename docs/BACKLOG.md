@@ -13,7 +13,7 @@ Every package's Definition of Done (on top of its own acceptance criteria):
 
 ---
 
-### WP-00 Repository foundation — `In progress`
+### WP-00 Repository foundation — `In review`
 `git` hygiene, `.gitignore`, `.editorconfig`, `Directory.Build.props`, `Signage.sln`, the
 `Signage.Web` skeleton with `/healthz` + `/readyz`, three test projects, a multi-stage `Dockerfile`
 (non-root, arm64+amd64 buildable), `docker-compose.yml` (app + postgres:16 with healthcheck),
