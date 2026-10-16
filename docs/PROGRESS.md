@@ -20,7 +20,8 @@ Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the revie
 - Risks: htmx antiforgery header later; Secure cookie flag vs plain-HTTP LAN deployments (ADR).
 - Done: UserAccounts (lockout on TimeProvider, first admin w/ advisory lock, create/reset/update with last-admin + self guards), cookie auth with per-request DB validation, policies, must-change filter, bootstrap, SettingsService, pages (login, logout, setup, forbidden, home, password, users list/create/edit, settings, error), layout + admin.css, SharedResource.resx (80 keys). Builds clean.
 - Half-done: —
-- Next step: look at it in the browser, then integration tests for the role matrix, setup, lockout, stamp invalidation, bootstrap, settings; resx key-coverage unit test; E2E login smoke; ADR-0004.
+- Done (2): 70+ integration tests for role matrix, sign-in/lockout/cookie flags, setup (+ concurrent), session invalidation, user admin, bootstrap, settings — all green.
+- Next step: resx key-coverage unit test, PasswordPolicy tests, E2E login smoke (compose bootstrap admin), screenshots, ADR-0004, docs.
 - Last checkpoint: (this commit)
 
 

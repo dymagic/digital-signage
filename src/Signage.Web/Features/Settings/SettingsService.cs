@@ -13,7 +13,9 @@ public sealed class SettingsService(SignageDbContext db)
 
     public static IReadOnlyList<string> TimeZoneIds { get; } = TimeZoneInfo.GetSystemTimeZones()
         .Select(z => z.Id)
-        .Where(id => id.Contains('/', StringComparison.Ordinal) || id == "UTC")
+        .Where(id => id.Contains('/', StringComparison.Ordinal))
+        .Append(SystemSettings.DefaultTimeZoneId)
+        .Distinct(StringComparer.Ordinal)
         .Order(StringComparer.Ordinal)
         .ToList();
 
