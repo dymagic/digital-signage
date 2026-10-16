@@ -1,4 +1,5 @@
-using Npgsql;
+using Signage.Web;
+using Signage.Web.Data;
 using Signage.Web.Features.Health;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,21 +11,16 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "Connection string 'Default' is missing. Set ConnectionStrings__Default to a PostgreSQL connection string.");
 }
 
-builder.Services.AddNpgsqlDataSource(connectionString, dataSource =>
-{
-    // The chiseled runtime image has no Kerberos libraries. Npgsql would otherwise probe GSS encryption on
-    // every new connection and log an error. Operators who need GSS can still set it explicitly.
-    if (!connectionString.Contains("Gss Encryption Mode", StringComparison.OrdinalIgnoreCase)
-        && !connectionString.Contains("GssEncryptionMode", StringComparison.OrdinalIgnoreCase))
-    {
-        dataSource.ConnectionStringBuilder.GssEncryptionMode = GssEncryptionMode.Disable;
-    }
-});
+builder.Services.Configure<SignageOptions>(builder.Configuration.GetSection(SignageOptions.SectionName));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSignageData(connectionString);
 builder.Services.AddRazorPages();
 builder.Services.AddProblemDetails();
 builder.Services.AddSignageHealthChecks();
 
 var app = builder.Build();
+
+await app.Services.InitializeDatabaseAsync().ConfigureAwait(false);
 
 if (!app.Environment.IsDevelopment())
 {

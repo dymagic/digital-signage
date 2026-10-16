@@ -41,3 +41,7 @@ dotnet_naming_style.underscore_prefix.required_prefix = _
 dotnet_diagnostic.CA1707.severity = none
 # Tests don't need ConfigureAwait.
 dotnet_diagnostic.CA2007.severity = none
+
+# EF Core migrations are generated; analyzers and style rules don't apply.
+[src/Signage.Web/Data/Migrations/**.cs]
+generated_code = true

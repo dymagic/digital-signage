@@ -18,9 +18,9 @@ Milestone 1: in progress (WP-00 done). Project docs, skills and the reviewer age
   Plus WP-00 follow-ups (a)-(f) from BACKLOG.
 - Risks: concurrent migrations across replicas (EF 9+ migration lock); dense positions without a unique
   index (swap updates would violate it).
-- Done: packages + dotnet-ef manifest (`dotnet-tools.json` at repo root); domain entities; SequenceResolver, SlideSchedule, SlideDuration with 41 green unit tests.
+- Done: packages + dotnet-ef manifest (`dotnet-tools.json` at repo root); domain entities; resolver/schedule/duration (41 unit tests); DbContext (snake_case, ICU case-insensitive names, xmin), InitialCreate migration, DatabaseInitializer (fail-fast if migrations off and schema stale), DP keys in DB, TimeProvider; 22 integration tests green (per-test DBs).
 - Half-done: —
-- Next step: SignageDbContext + configurations, design-time factory, InitialCreate migration.
+- Next step: WP-00 follow-ups (a)-(f), ADR-0003 data-model decisions, ARCHITECTURE/CLAUDE.md updates, then self-check + review.
 - Last checkpoint: (this commit)
 
 
