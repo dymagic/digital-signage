@@ -23,7 +23,7 @@ Every package's Definition of Done (on top of its own acceptance criteria):
 **Accept:** `dotnet build` clean; `dotnet test` runs (Testcontainers) green; `docker compose up`
 serves `/healthz` 200; `scripts/test-e2e.sh` passes. Covers R-60 (partly), R-61 (partly).
 
-### WP-01 Data model & settings — `Todo`
+### WP-01 Data model & settings — `In progress`
 EF Core model per ARCHITECTURE §3, the initial migration, auto-migrate on start-up (switchable),
 `SystemSettings` seeding, the data-protection key store in the DB, `TimeProvider` registration. Includes
 the pure `SequenceResolver` with exhaustive unit tests (ordering, de-dup, schedule boundaries,
