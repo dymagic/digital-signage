@@ -9,6 +9,16 @@ Milestone 1: not started. Project docs, skills and the reviewer agent were set u
 ## Current package
 _None. Next: WP-00 Repository foundation._
 
+<!-- While a package is in flight, keep this shape and update it at every checkpoint:
+- Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
+- Plan: files / tests / risks
+- Done: …
+- Half-done: … (what state it is in, whether the build or tests are red)
+- Next step: one concrete action
+- Last checkpoint: <commit sha>
+-->
+
+
 ## Completed
 _(one line per package: WP-xx — outcome — merge commit)_
 

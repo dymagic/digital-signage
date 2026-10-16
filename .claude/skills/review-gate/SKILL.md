@@ -5,6 +5,11 @@ description: Request an independent review of a Signage work package (or the mil
 
 # Review gate
 
+## Before requesting
+Commit everything and note "Requested review round n" in PROGRESS.md. If the session dies during the
+review, the next session can then see what was going on. An incomplete review file found later is
+handled per "Resuming after an interruption" in CLAUDE.md.
+
 ## Request
 Invoke the `principal-reviewer` subagent (Agent tool, `subagent_type: principal-reviewer`). Run it in the
 foreground, because your next step depends on it. Keep the prompt **factual and minimal**. Don't argue your

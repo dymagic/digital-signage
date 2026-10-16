@@ -5,6 +5,10 @@ description: The development loop for one Signage backlog work package (WP-xx) â
 
 # Work package loop
 
+## 0. Resume check
+Always start with the "Resuming after an interruption" steps in CLAUDE.md. They tell you whether you are
+picking up a half-done package.
+
 ## 1. Pick
 - Read `docs/PROGRESS.md` and `docs/BACKLOG.md`. Resume any package that is `In progress`/`In review`.
   Otherwise take the first `Todo`.
@@ -22,6 +26,9 @@ Set the package to `In progress` in BACKLOG.md and commit (`chore: start WP-xx`)
 - Endpoints, pages, authz, DB: integration tests with `WebApplicationFactory` + Testcontainers.
 - Player behaviour: Playwright E2E using the `data-state` hooks and `?test=1&timeScale=`.
 - Commit in small, coherent steps with conventional messages.
+- **Checkpoint:** at each meaningful step, update "Current package" in PROGRESS.md (done /
+  half-done / next step) in the same commit as the code. Do this before requesting a review and
+  before long-running commands too. Never sit on more than ~20 minutes of uncommitted work.
 - If you face a real decision, use the `record-decision` skill before moving on.
 
 ## 4. Self-check before review (don't skip any line)

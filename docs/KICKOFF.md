@@ -11,7 +11,16 @@ gating every package with the review-gate skill. Continue until Milestone 1 is d
 one of the stop conditions in CLAUDE.md. Keep docs/PROGRESS.md current.
 ```
 
-To resume after a break or a context reset, paste the same prompt. PROGRESS.md carries the state.
+## If usage runs out mid-development
+Claude Code stops and shows when your usage resets. Nothing is lost beyond (at most) the last few
+minutes of uncommitted edits, because the developer checkpoints to its branch and PROGRESS.md as it
+goes. Once usage resets:
+- **Same session still open:** type `continue`.
+- **New session or after a context reset:** paste the prompt above again. The session runs the
+  "Resuming after an interruption" checklist in CLAUDE.md first. That checklist covers uncommitted
+  changes, an interrupted review, and leftover containers.
+
+`main` only ever contains reviewed, merged packages, so an interruption can't damage it.
 
 ## Optional: your own independent review
 At any point you can open a **separate** session and ask:

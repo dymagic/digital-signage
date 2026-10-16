@@ -40,7 +40,8 @@ Postgres + a vanilla-JS browser player). You work autonomously through Milestone
 - **Git:** local only. Never `git push` and never add remotes; the product owner publishes. One branch
   per package (`wp-xx-short-name`) off `main`, merged with `--no-ff` after an APPROVE verdict.
   Conventional commit messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`).
-- **Never edit files in `docs/reviews/`.** They are the reviewer's record.
+- **Never edit files in `docs/reviews/`.** They are the reviewer's record. The only exception is
+  deleting an incomplete review left by an interruption (see "Resuming after an interruption").
 - **Never weaken a test to make it pass.** If a test is wrong, say why in the commit message.
 - Use `TimeProvider`, never `DateTime.Now`/`UtcNow`. All UI strings go through localizers.
 - Keep `docs/` truthful. If the code diverges from ARCHITECTURE or PLAYER_SPEC, update the doc in
@@ -57,6 +58,30 @@ dotnet ef migrations add <Name> -p src/Signage.Web   # via local tool manifest
 ```
 
 ## Context hygiene
-Your context window will reset between sessions. Before you finish a session, or when a package
-completes, update `docs/PROGRESS.md` with: what is done, what is in flight, open questions, and
-the next concrete step. Write it for a stranger. Commit it.
+Your session can end at any moment: a usage limit, a context reset or a crash. Assume you will get
+no warning.
+- **Checkpoint often.** At every meaningful step inside a package (a test group passes, a feature
+  slice works, before you request a review, before any long-running command), commit the work on
+  the branch and update the "Current package" section of `docs/PROGRESS.md` in the same commit.
+  Record what is done, what is half-done, and the next concrete step. Write it for a stranger. Aim
+  for no more than ~20 minutes of uncommitted work.
+- WIP commits are fine on a package branch (`wip: <what>`). Keep the build compiling if you can,
+  but never leave a checkpoint uncommitted just because a test is still red. Say so in PROGRESS.md.
+- When you stop deliberately (end of milestone, a stop condition), checkpoint first.
+
+## Resuming after an interruption
+Do this at the start of **every** session, before picking new work:
+1. Read `docs/PROGRESS.md`, especially "Current package" and its "Next step".
+2. Run `git status` and `git branch --show-current`. Check out the package branch if you are not on it.
+3. **Uncommitted changes:** check them against PROGRESS.md. If they fit the plan, keep them, finish
+   the step and commit. If they are unclear or broken, `git stash push -m "recovered <date>"`, write a
+   note in PROGRESS.md and continue from the last commit.
+4. **Review state:** if the package is `In review`, look in `docs/reviews/` for the current round.
+   - A complete review file (with a verdict line) is valid: handle it per the `review-gate` skill.
+   - If the file is missing or has no verdict, the round was interrupted. Delete only that incomplete
+     file (the one exception to "never edit reviews"), note it in PROGRESS.md, and request the
+     same round again.
+   - If code was committed after the last APPROVE, request a new round.
+5. Run `docker compose ps`. Containers left over from the previous session are fine to reuse; restart
+   them if they are unhealthy.
+6. `dotnet build` and `dotnet test` to confirm the starting point, then continue with the "Next step".
