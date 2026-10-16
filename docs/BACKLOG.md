@@ -13,7 +13,7 @@ Every package's Definition of Done (on top of its own acceptance criteria):
 
 ---
 
-### WP-00 Repository foundation — `In review`
+### WP-00 Repository foundation — `Done`
 `git` hygiene, `.gitignore`, `.editorconfig`, `Directory.Build.props`, `Signage.sln`, the
 `Signage.Web` skeleton with `/healthz` + `/readyz`, three test projects, a multi-stage `Dockerfile`
 (non-root, arm64+amd64 buildable), `docker-compose.yml` (app + postgres:16 with healthcheck),
@@ -29,6 +29,7 @@ EF Core model per ARCHITECTURE §3, the initial migration, auto-migrate on start
 the pure `SequenceResolver` with exhaustive unit tests (ordering, de-dup, schedule boundaries,
 disabled, empty, repeated slide).
 **Accept:** resolver tests cover every R-12 rule; the migration applies on an empty DB in integration tests. R-02, R-03, R-04, R-12.
+*Follow-ups from WP-00 review:* (a) make the host dev loop work: publish db 5432 on 127.0.0.1 and align the dev password with compose, or document an override; (b) add the dotnet-ef local tool manifest and re-verify the CLAUDE.md command line; (c) E2E: dispose pages via `await using` contexts, capture trace/screenshot to `artifacts/e2e/` on failure; (d) use a Stopwatch instead of `DateTimeOffset.UtcNow` in `BrowserFixture`; (e) make Npgsql GSS opt-out detection less fragile (parse the connection string); (f) fix the run-and-verify comment "app and db healthy?" (the app has no HEALTHCHECK).
 
 ### WP-02 Authentication & users — `Todo`
 Cookie auth, login/logout, lockout, first-run setup page, bootstrap via env vars, forced password
