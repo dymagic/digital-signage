@@ -62,7 +62,7 @@ properly; NITs 5–9: singular/plural in `Slides.Usage`, own `Slides.Column.Stat
 Pages (e.g. minimal-API htmx endpoints) must enforce the forced password change too, so move the check into
 an authorization requirement or middleware when the first such endpoint appears.
 
-### WP-05 Screens, groups & composition — `In review`
+### WP-05 Screens, groups & composition — `Done`
 Screen CRUD (admin), mode + single video URL (admin), group CRUD + membership + sort order
 (admin), assigning playlists to groups and screens and managing prepended/appended slides (editor+).
 The screen detail page shows the resolved sequence with its sources (R-13; the preview link
@@ -89,6 +89,8 @@ pre-configured URL + `/api/player/session` exchange, revoke/re-pair, rate limiti
 endpoints.
 **Accept:** E2E — a device shows a code, the admin claims it, and the device lands in the player; a revoked
 device returns to pairing. Integration tests for expiry, reuse and rate limits. R-40, R-41, R-42.
+*From WP-05 review round 3 (NIT):* the `Name` input properties on the screen, group and playlist forms are
+non-nullable but arrive as null when empty; make them `string?` (services already handle null).
 
 ### WP-07 Spike: video lifecycle & memory — `Todo` *(may run any time after WP-00)*
 Build a throwaway harness page (`tests/Signage.E2E/spikes/`) that cycles videos and images with the

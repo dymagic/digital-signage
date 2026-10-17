@@ -4,27 +4,10 @@
 > does not read this file.
 
 ## Status
-Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
+Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-05 Screens, groups & composition — branch `wp-05-screens-groups` — status In review (round 3 requested)
-- Plan: Screen gets an app-managed `version` (heartbeats in WP-10 won't conflict); `IPositioned` + shared
-  `OrderedList` helpers; `IScreenNotifier` (+ NoOp) and `AffectedScreens` queries; `ScreenService` (CRUD admin,
-  details/mode/single-video admin, groups membership admin, prepend/append slides + direct playlists editor+,
-  resolved sequence); `GroupService` (CRUD/sort/members admin, group playlists editor+). Pages: screens
-  list/create/detail/delete, groups list/create/detail/delete; detail pages mix admin-only forms (handler-level
-  `Forbid()` checks) and editor htmx lists. Follow-ups from WP-02 r4 + WP-04 (focus after swap, HX-Redirect when
-  parent gone, stale-details test, must-change on htmx test, slide delete bumps versions).
-- Risks: handler-level authorization on mixed pages (tests per handler).
-- Done: screen app-managed version (+ migration), IPositioned/OrderedList, IScreenNotifier (NoOp) + AffectedScreens, ScreenService, GroupService; slides/playlists/settings notify affected screens; slide delete bumps playlist/screen versions.
-- Half-done: —
-- Done (2): pages screens (list/create/detail with composition + resolved sequence/delete), groups (list/create/detail with playlists/delete), AdminPageModel (RequireAdmin, GoneMeanwhile HX-Redirect), shared _EntryButtons with stable ids, reorder.js generic + focus restore, nav, ~95 strings, coverage test for enum/ternary keys.
-- Done (3): integration + E2E tests, follow-ups, docs. Self-check: build clean, 320 tests green, E2E 10/10, glossary clean.
-- Round 1: CHANGES_REQUIRED (1 MAJOR oob version after failed change, 3 MINOR, 3 NIT); all fixed in 018572b. 330 tests, E2E 10/10.
-- Round 2: CHANGES_REQUIRED (1 MAJOR: implicit required on non-nullable strings; 1 NIT); fixed in 7d59591. 335 tests, E2E 10/10.
-- Next step: handle review round 3 verdict (docs/reviews/WP-05-review-3.md).
-- Last checkpoint: (this commit)
-
+_None. Next: WP-06 Pairing & screen tokens._
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -43,6 +26,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-02 — cookie auth (per-request stamp validation), lockout via atomic claims in user_lockouts, setup + bootstrap under advisory lock, user admin with self/last-admin guards, settings page, layout + i18n (resx coverage test), E2E admin; app-managed user version; start-up advisory lock; 4 review rounds (PO approved round 4), 1 MINOR + NITs deferred to WP-05 — 677bb74
 - WP-03 — slide library: validator + schedule clock (DST rules), CRUD pages with sandboxed previews, search, toggle, delete-in-use; ADR-0005; APPROVE round 1 (4 MINOR + 5 NIT deferred to WP-04/WP-08/WP-12) — d6c6a9e
 - WP-04 — playlists: CRUD, ordered entries via htmx page handlers (dense, versioned, oob version), native drag & drop, delete renumbering; ADR-0006; APPROVE round 1 (3 MINOR + 1 NIT deferred to WP-05) — fe33f04
+- WP-05 — screens + groups with admin/editor split per handler, composition lists (htmx, versioned, focus kept), resolved sequence page == resolver, IScreenNotifier (no-op) wired into all features, app-managed screen version; 3 review rounds, 1 NIT deferred to WP-06 — 20d1742
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
