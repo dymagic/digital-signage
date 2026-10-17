@@ -73,5 +73,11 @@ public class ScreenCompositionTests(BrowserFixture fixture) : E2ETest(fixture)
         await Page.Keyboard.PressAsync("Enter");
         await Expect(Page.Locator("ol.entries > li .entry-title a")).ToHaveTextAsync(titles);
         await Expect(Page.GetByRole(AriaRole.Button, new() { Name = $"Move \"{titles[0]}\" down" })).ToBeFocusedAsync();
+
+        // Removing an entry moves focus to the remove button of the entry that took its place.
+        await Page.GetByRole(AriaRole.Button, new() { Name = $"Remove \"{titles[0]}\" from the playlist" }).FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await Expect(Page.Locator("ol.entries > li .entry-title a")).ToHaveTextAsync([titles[1]]);
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = $"Remove \"{titles[1]}\" from the playlist" })).ToBeFocusedAsync();
     }
 }

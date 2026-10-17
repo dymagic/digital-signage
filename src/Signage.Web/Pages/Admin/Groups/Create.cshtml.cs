@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Signage.Web.Features;
 using Signage.Web.Features.Groups;
 
 namespace Signage.Web.Pages.Admin.Groups;
@@ -16,6 +17,12 @@ public class CreateModel(GroupService groups, IStringLocalizer<SharedResource> l
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
+        if (!ModelState.IsValid)
+        {
+            ModelState.AddModelError(string.Empty, l[CommonErrors.InvalidRequest]);
+            return Page();
+        }
+
         var (result, id) = await groups.CreateAsync(Input.Name, Input.Description, Input.SortOrder, ct);
         if (!result.Succeeded)
         {

@@ -50,6 +50,11 @@ public class DetailModel(GroupService groups, ScreenService screens, PlaylistSer
             return forbidden;
         }
 
+        if (!ModelState.IsValid)
+        {
+            return await AfterFormPostAsync(OperationResult.Fail(CommonErrors.InvalidRequest), ct);
+        }
+
         return await AfterFormPostAsync(await groups.UpdateDetailsAsync(Id, Input.Name, Input.Description, Input.SortOrder, Version, ct), ct);
     }
 
@@ -60,17 +65,22 @@ public class DetailModel(GroupService groups, ScreenService screens, PlaylistSer
             return forbidden;
         }
 
+        if (!ModelState.IsValid)
+        {
+            return await AfterFormPostAsync(OperationResult.Fail(CommonErrors.InvalidRequest), ct);
+        }
+
         return await AfterFormPostAsync(await groups.SetMembersAsync(Id, ScreenIds, Version, ct), ct);
     }
 
     public Task<IActionResult> OnPostAddPlaylistAsync(Guid playlistId, CancellationToken ct) =>
-        PlaylistsChangeAsync(groups.AddPlaylistAsync(Id, playlistId, Version, ct), ct);
+        PlaylistsChangeAsync(() => groups.AddPlaylistAsync(Id, playlistId, Version, ct), ct);
 
     public Task<IActionResult> OnPostRemovePlaylistAsync(Guid entryId, CancellationToken ct) =>
-        PlaylistsChangeAsync(groups.RemovePlaylistAsync(Id, entryId, Version, ct), ct);
+        PlaylistsChangeAsync(() => groups.RemovePlaylistAsync(Id, entryId, Version, ct), ct);
 
     public Task<IActionResult> OnPostMovePlaylistAsync(Guid entryId, int toIndex, CancellationToken ct) =>
-        PlaylistsChangeAsync(groups.MovePlaylistAsync(Id, entryId, toIndex, Version, ct), ct);
+        PlaylistsChangeAsync(() => groups.MovePlaylistAsync(Id, entryId, toIndex, Version, ct), ct);
 
     private async Task<IActionResult> AfterFormPostAsync(OperationResult result, CancellationToken ct)
     {
@@ -92,9 +102,10 @@ public class DetailModel(GroupService groups, ScreenService screens, PlaylistSer
         return RedirectToPage(new { id = Id });
     }
 
-    private async Task<IActionResult> PlaylistsChangeAsync(Task<OperationResult> change, CancellationToken ct)
+    private async Task<IActionResult> PlaylistsChangeAsync(Func<Task<OperationResult>> change, CancellationToken ct)
     {
-        var result = await change;
+        // A value that failed to bind (tampered or outdated form) must not silently become a default.
+        var result = ModelState.IsValid ? await change() : OperationResult.Fail(CommonErrors.InvalidRequest);
         if (result.ErrorKey == CommonErrors.NotFound && !await LoadAsync(ct))
         {
             return GoneMeanwhile("/Admin/Groups/Index");

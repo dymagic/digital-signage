@@ -144,6 +144,10 @@ public sealed class PlaylistService(SignageDbContext db, IScreenNotifier notifie
 
             await db.RenumberScreenPlaylistsAsync(screenIds, ct).ConfigureAwait(false);
             await db.RenumberGroupPlaylistsAsync(groupIds, ct).ConfigureAwait(false);
+
+            // Their lists changed under any open editor: move the versions on (as a slide delete does).
+            await db.Screens.Where(s => screenIds.Contains(s.Id)).ExecuteUpdateAsync(s => s.SetProperty(x => x.Version, x => x.Version + 1), ct).ConfigureAwait(false);
+            await db.ScreenGroups.Where(g => groupIds.Contains(g.Id)).ExecuteUpdateAsync(s => s.SetProperty(g => g.SortOrder, g => g.SortOrder), ct).ConfigureAwait(false); // rewrites the row: new xmin
             await tx.CommitAsync(ct).ConfigureAwait(false);
             await notifier.ScreensChangedAsync(affected, ct).ConfigureAwait(false);
             return OperationResult.Ok;

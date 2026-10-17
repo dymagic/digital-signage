@@ -143,6 +143,7 @@ public sealed class PlaylistPagesTests(PostgresFixture postgres) : IAsyncLifetim
 
         var fragment = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Contains("Someone else changed this in the meantime.", fragment, StringComparison.Ordinal);
+        Assert.DoesNotContain("hx-swap-oob", fragment, StringComparison.Ordinal); // the details form keeps its old version
         Assert.Equal([("C", 0), ("A", 1), ("B", 2)], await EntriesAsync(id));
     }
 

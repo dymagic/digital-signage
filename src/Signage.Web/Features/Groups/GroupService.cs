@@ -73,10 +73,19 @@ public sealed class GroupService(SignageDbContext db, IScreenNotifier notifier)
             }
 
             var current = await db.ScreenGroupMembers.Where(m => m.GroupId == id).ToListAsync(ct).ConfigureAwait(false);
-            db.ScreenGroupMembers.RemoveRange(current.Where(m => !wanted.Contains(m.ScreenId)));
-            foreach (var screenId in wanted.Except(current.Select(m => m.ScreenId)))
+            var removed = current.Where(m => !wanted.Contains(m.ScreenId)).ToList();
+            var added = wanted.Except(current.Select(m => m.ScreenId)).ToList();
+            db.ScreenGroupMembers.RemoveRange(removed);
+            foreach (var screenId in added)
             {
                 db.ScreenGroupMembers.Add(new ScreenGroupMember { GroupId = id, ScreenId = screenId });
+            }
+
+            // Membership is also edited on the screen page: move those screens' versions on too (see ScreenService).
+            var touched = removed.Select(m => m.ScreenId).Concat(added).ToList();
+            foreach (var screen in await db.Screens.Where(s => touched.Contains(s.Id)).ToListAsync(ct).ConfigureAwait(false))
+            {
+                screen.Version++;
             }
             return null;
         }, ct, extraAffected: screenIds);

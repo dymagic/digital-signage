@@ -11,6 +11,8 @@
 
     let dragged = null;
     let focusedId = null;
+    let neighbourId = null; // after a remove: the same button on the next (or previous) entry
+    let listFallbackId = null; // the add control that belongs to the same list
 
     function clearMarkers(list) {
         list.querySelectorAll('.drop-before, .drop-after').forEach((el) => el.classList.remove('drop-before', 'drop-after'));
@@ -78,6 +80,24 @@
         root.querySelectorAll('[data-reorder]').forEach(setup);
     }
 
+    function rememberFocus() {
+        const active = document.activeElement;
+        focusedId = active?.id || null;
+        neighbourId = null;
+        listFallbackId = null;
+        const li = active?.closest('li[data-entry-id]');
+        if (li && focusedId?.startsWith('remove-')) {
+            const neighbour = li.nextElementSibling ?? li.previousElementSibling;
+            neighbourId = neighbour ? `remove-${neighbour.dataset.entryId}` : null;
+        }
+        // The add form that follows this list (each list on a page has its own).
+        let next = (li?.closest('ol') ?? active?.closest('form'))?.nextElementSibling;
+        while (next && !next.querySelector?.('[data-focus-fallback]') && !next.matches?.('ol')) {
+            next = next.nextElementSibling;
+        }
+        listFallbackId = next?.querySelector?.('[data-focus-fallback]')?.id ?? null;
+    }
+
     function restoreFocus() {
         if (!focusedId) {
             return;
@@ -91,6 +111,12 @@
             const twin = id.startsWith('up-') ? id.replace('up-', 'down-') : id.startsWith('down-') ? id.replace('down-', 'up-') : null;
             target = twin ? document.getElementById(twin) : null;
         }
+        if (!usable(target) && neighbourId) {
+            target = document.getElementById(neighbourId);
+        }
+        if (!usable(target) && listFallbackId) {
+            target = document.getElementById(listFallbackId);
+        }
         if (!usable(target)) {
             target = document.querySelector('[data-focus-fallback]');
         }
@@ -98,9 +124,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => init(document));
-    document.addEventListener('htmx:beforeRequest', () => {
-        focusedId = document.activeElement?.id || null;
-    });
+    document.addEventListener('htmx:beforeRequest', rememberFocus);
     document.addEventListener('htmx:afterSettle', (e) => {
         init(e.target.parentElement ?? document);
         restoreFocus();

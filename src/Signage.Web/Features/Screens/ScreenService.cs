@@ -8,7 +8,7 @@ using Signage.Web.Features.Slides;
 
 namespace Signage.Web.Features.Screens;
 
-public sealed record ScreenListItem(Guid Id, string Name, string? Location, ScreenMode Mode, IReadOnlyList<string> Groups, DateTimeOffset? LastSeenAt, bool IsPaired);
+public sealed record ScreenListItem(Guid Id, string Name, string? Location, ScreenMode Mode, IReadOnlyList<string> Groups, bool IsPaired);
 
 /// <summary>What an admin edits on a screen (R-10, R-14).</summary>
 public sealed record ScreenDetails(string Name, string? Location, ScreenMode Mode, string? SingleVideoUrl);
@@ -26,12 +26,12 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
             .OrderBy(s => s.Name)
             .Select(s => new
             {
-                s.Id, s.Name, s.Location, s.Mode, s.LastSeenAt,
+                s.Id, s.Name, s.Location, s.Mode,
                 IsPaired = s.TokenHash != null,
                 Groups = s.Groups.OrderBy(m => m.Group.SortOrder).ThenBy(m => m.Group.Name).Select(m => m.Group.Name).ToList(),
             })
             .ToListAsync(ct).ConfigureAwait(false);
-        return rows.Select(r => new ScreenListItem(r.Id, r.Name, r.Location, r.Mode, r.Groups, r.LastSeenAt, r.IsPaired)).ToList();
+        return rows.Select(r => new ScreenListItem(r.Id, r.Name, r.Location, r.Mode, r.Groups, r.IsPaired)).ToList();
     }
 
     /// <summary>The screen with groups, prepended/appended slides and direct playlists, each list in order.</summary>
@@ -78,6 +78,10 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
         ArgumentNullException.ThrowIfNull(details);
         var warnings = new List<string>();
         var error = ValidateNameAndLocation(details.Name, details.Location);
+        if (error is null && !Enum.IsDefined(details.Mode))
+        {
+            error = CommonErrors.InvalidRequest;
+        }
         var url = Normalize(details.SingleVideoUrl);
         if (error is null && url is not null && (url.Length > Limits.Url || !SlideValidator.IsAbsoluteHttpUrl(url)))
         {
@@ -121,10 +125,20 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
             }
 
             var current = await db.ScreenGroupMembers.Where(m => m.ScreenId == id).ToListAsync(ct).ConfigureAwait(false);
-            db.ScreenGroupMembers.RemoveRange(current.Where(m => !wanted.Contains(m.GroupId)));
-            foreach (var groupId in wanted.Except(current.Select(m => m.GroupId)))
+            var removed = current.Where(m => !wanted.Contains(m.GroupId)).ToList();
+            var added = wanted.Except(current.Select(m => m.GroupId)).ToList();
+            db.ScreenGroupMembers.RemoveRange(removed);
+            foreach (var groupId in added)
             {
                 db.ScreenGroupMembers.Add(new ScreenGroupMember { ScreenId = id, GroupId = groupId });
+            }
+
+            // Membership is also edited on the group page: move those groups' versions on too, so a stale
+            // members form there reports a conflict instead of undoing this change.
+            var touched = removed.Select(m => m.GroupId).Concat(added).ToList();
+            foreach (var group in await db.ScreenGroups.Where(g => touched.Contains(g.Id)).ToListAsync(ct).ConfigureAwait(false))
+            {
+                db.Entry(group).State = EntityState.Modified;
             }
             return null;
         }, ct);
@@ -133,6 +147,11 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
     public Task<OperationResult> AddSlideAsync(Guid id, SlidePlacement placement, Guid slideId, int version, CancellationToken ct) =>
         ChangeAsync(id, version, async _ =>
         {
+            if (!Enum.IsDefined(placement))
+            {
+                return CommonErrors.InvalidRequest;
+            }
+
             if (!await db.Slides.AnyAsync(s => s.Id == slideId, ct).ConfigureAwait(false))
             {
                 return CommonErrors.NotFound;
@@ -186,11 +205,20 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
     public Task<OperationResult> MovePlaylistAsync(Guid id, Guid playlistId, int toIndex, int version, CancellationToken ct) =>
         ChangePlaylistListAsync(id, playlistId, version, (list, entry) => OrderedList.Move(list, entry, toIndex), ct);
 
-    /// <summary>Admin. Deletes the screen and everything attached to it (not the slides or playlists).</summary>
+    /// <summary>
+    /// Admin. Deletes the screen and everything attached to it (not the slides or playlists). The screen is notified
+    /// so a connected player finds out at once: its token no longer works and it goes back to pairing.
+    /// </summary>
     public async Task<OperationResult> DeleteAsync(Guid id, CancellationToken ct)
     {
         var deleted = await db.Screens.Where(s => s.Id == id).ExecuteDeleteAsync(ct).ConfigureAwait(false);
-        return deleted == 0 ? OperationResult.Fail(CommonErrors.NotFound) : OperationResult.Ok;
+        if (deleted == 0)
+        {
+            return OperationResult.Fail(CommonErrors.NotFound);
+        }
+
+        await notifier.ScreensChangedAsync([id], ct).ConfigureAwait(false);
+        return OperationResult.Ok;
     }
 
     private Task<OperationResult> ChangeSlideListAsync(Guid id, Guid entryId, int version, Action<List<ScreenSlide>, ScreenSlide> change, CancellationToken ct) =>

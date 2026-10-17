@@ -151,6 +151,42 @@ public sealed class GroupPagesTests(PostgresFixture postgres) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_membership_change_on_the_group_page_makes_a_stale_groups_form_on_the_screen_page_conflict()
+    {
+        var id = await CreateGroupAsync();
+        var screen = await AddAsync(new Screen { Name = "A" });
+        var screenPageVersion = screen.Version;
+
+        (await SetMembersAsync(_admin, id, screen.Id)).Dispose();
+
+        var stale = new FormUrlEncodedContent(
+        [
+            new("Version", screenPageVersion.ToString(CultureInfo.InvariantCulture)),
+            new("__RequestVerificationToken", await _admin.GetAntiforgeryTokenAsync($"/admin/screens/{screen.Id}")),
+        ]);
+        using var response = await _admin.Http.PostAsync(new Uri($"/admin/screens/{screen.Id}?handler=Groups", UriKind.Relative), stale, TestContext.Current.CancellationToken);
+
+        Assert.Contains("Someone else changed this", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal(1, await _app.Factory.WithDbAsync(db => db.ScreenGroupMembers.CountAsync()));
+    }
+
+    [Fact]
+    public async Task A_failed_playlist_change_on_the_group_page_does_not_refresh_the_side_forms()
+    {
+        var id = await CreateGroupAsync();
+        var playlist = await AddAsync(new Playlist { Name = "P" });
+        var pageVersion = await VersionAsync(id);
+        (await HtmxAsync(_admin, id, "AddPlaylist", new() { ["playlistId"] = playlist.Id.ToString() })).Dispose();
+
+        using var response = await _editor.PostHtmxAsync($"/admin/groups/{id}", $"/admin/groups/{id}?handler=RemovePlaylist", new Dictionary<string, string> { ["entryId"] = playlist.Id.ToString(), ["Version"] = pageVersion });
+
+        var fragment = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("Someone else changed this", WebUtility.HtmlDecode(fragment), StringComparison.Ordinal);
+        Assert.DoesNotContain("hx-swap-oob", fragment, StringComparison.Ordinal);
+        Assert.Equal(1, await _app.Factory.WithDbAsync(db => db.GroupPlaylists.CountAsync()));
+    }
+
+    [Fact]
     public async Task Deleting_a_group_keeps_its_screens_and_playlists_and_notifies_former_members()
     {
         var id = await CreateGroupAsync();

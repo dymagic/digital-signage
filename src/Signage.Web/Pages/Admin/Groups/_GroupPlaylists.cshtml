@@ -6,7 +6,8 @@
 }
 <div id="group-playlists" hx-target="this" hx-swap="outerHTML">
     <input type="hidden" id="group-playlists-version" value="@Model.Version" />
-    @if (Model.IsHtmx)
+    @* Only after a successful change (see _ScreenComposition). *@
+    @if (Model.IsHtmx && Model.PlaylistsError is null)
     {
         <input type="hidden" id="details-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
         <input type="hidden" id="members-version" name="Version" value="@Model.Version" hx-swap-oob="true" />

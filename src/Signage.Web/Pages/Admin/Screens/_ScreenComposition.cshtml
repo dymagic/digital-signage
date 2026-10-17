@@ -11,7 +11,9 @@
 }
 <div id="composition" hx-target="this" hx-swap="outerHTML">
     <input type="hidden" id="composition-version" value="@Model.Version" />
-    @if (Model.IsHtmx)
+    @* Only after a successful change: the side forms then still show current data. After a conflict they keep
+       their old version, so saving them reports the conflict instead of overwriting the other person's edit. *@
+    @if (Model.IsHtmx && Model.CompositionError is null)
     {
         <input type="hidden" id="details-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
         <input type="hidden" id="groups-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
@@ -66,7 +68,7 @@
         <input type="hidden" name="Version" value="@Model.Version" />
         <label for="playlistId">@L["Screens.AddPlaylist"]</label>
         <div class="row">
-            <select id="playlistId" name="playlistId" required>
+            <select id="playlistId" name="playlistId" required data-focus-fallback>
                 <option value="">@L["Screens.ChoosePlaylist"]</option>
                 @foreach (var playlist in Model.AvailablePlaylists.Where(p => screen.Playlists.All(sp => sp.PlaylistId != p.Id)))
                 {

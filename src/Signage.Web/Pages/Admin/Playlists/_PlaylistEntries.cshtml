@@ -9,7 +9,8 @@
     var count = entries.Count;
 }
 <div id="entries" hx-target="this" hx-swap="outerHTML">
-    @if (Model.IsHtmx)
+    @* Only after a successful change (see Screens/_ScreenComposition). *@
+    @if (Model.IsHtmx && Model.EntriesError is null)
     {
         <input type="hidden" id="playlist-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
     }

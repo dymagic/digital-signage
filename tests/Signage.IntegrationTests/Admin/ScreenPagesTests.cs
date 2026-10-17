@@ -315,6 +315,113 @@ public sealed partial class ScreenPagesTests(PostgresFixture postgres) : IAsyncL
         });
     }
 
+    [Fact]
+    public async Task A_failed_list_change_does_not_refresh_the_details_form_so_saving_it_still_reports_the_conflict()
+    {
+        var id = await CreateScreenAsync();
+        var slide = await AddAsync(NewSlide("S"));
+        var pageVersion = await VersionAsync(id);
+
+        // Another admin renames the screen.
+        (await PostDetailsAsync(_admin, id, "Renamed by B")).Dispose();
+
+        // This admin's page (opened before the rename) tries a list change: refused as a conflict...
+        using var listChange = await HtmxAsync(_editor, id, "AddSlide", new() { ["placement"] = "Prepend", ["slideId"] = slide.Id.ToString() }, pageVersion);
+        var fragment = await listChange.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("Someone else changed this", WebUtility.HtmlDecode(fragment), StringComparison.Ordinal);
+        Assert.DoesNotContain("hx-swap-oob", fragment, StringComparison.Ordinal);
+
+        // ...and the details form, still on the old version, can't overwrite the rename.
+        using var details = await PostDetailsAsync(_admin, id, "Stale name", version: pageVersion);
+        Assert.Contains("Someone else changed this", WebUtility.HtmlDecode(await details.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal("Renamed by B", (await ScreenAsync(id)).Name);
+    }
+
+    [Fact]
+    public async Task A_successful_list_change_refreshes_the_side_forms_versions()
+    {
+        var id = await CreateScreenAsync();
+        var slide = await AddAsync(NewSlide("S"));
+
+        using var listChange = await HtmxAsync(_editor, id, "AddSlide", new() { ["placement"] = "Prepend", ["slideId"] = slide.Id.ToString() });
+
+        var fragment = await listChange.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var newVersion = await VersionAsync(id);
+        Assert.Contains($"id=\"details-version\" name=\"Version\" value=\"{newVersion}\" hx-swap-oob=\"true\"", fragment, StringComparison.Ordinal);
+        Assert.Contains($"id=\"groups-version\" name=\"Version\" value=\"{newVersion}\" hx-swap-oob=\"true\"", fragment, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_membership_change_on_the_screen_page_makes_a_stale_members_form_on_the_group_page_conflict()
+    {
+        var id = await CreateScreenAsync();
+        var group = await AddAsync(new ScreenGroup { Name = "G" });
+        var groupPageVersion = group.Version;
+
+        var form = new FormUrlEncodedContent(
+        [
+            new("GroupIds", group.Id.ToString()),
+            new("Version", await VersionAsync(id)),
+            new("__RequestVerificationToken", await _admin.GetAntiforgeryTokenAsync($"/admin/screens/{id}")),
+        ]);
+        (await _admin.Http.PostAsync(new Uri($"/admin/screens/{id}?handler=Groups", UriKind.Relative), form, TestContext.Current.CancellationToken)).Dispose();
+
+        // The group page was open before: its (empty) members form must not silently remove the screen again.
+        var stale = new FormUrlEncodedContent(
+        [
+            new("Version", groupPageVersion.ToString(CultureInfo.InvariantCulture)),
+            new("__RequestVerificationToken", await _admin.GetAntiforgeryTokenAsync($"/admin/groups/{group.Id}")),
+        ]);
+        using var response = await _admin.Http.PostAsync(new Uri($"/admin/groups/{group.Id}?handler=Members", UriKind.Relative), stale, TestContext.Current.CancellationToken);
+
+        Assert.Contains("Someone else changed this", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal(1, await _app.Factory.WithDbAsync(db => db.ScreenGroupMembers.CountAsync()));
+    }
+
+    [Fact]
+    public async Task Deleting_a_screen_notifies_it()
+    {
+        var id = await CreateScreenAsync();
+        _notifier.Clear();
+
+        (await _admin.PostFormAsync($"/admin/screens/{id}/delete", new Dictionary<string, string>())).Dispose();
+
+        Assert.Equal([id], _notifier.NotifiedScreens);
+    }
+
+    [Theory]
+    [InlineData("Details", "Details.Name=X&Details.Mode=Hologram")]
+    [InlineData("Details", "Details.Name=X&Details.Mode=7")]
+    [InlineData("Details", "Details.Name=X&Details.Mode=Carousel&Version=abc")]
+    public async Task Values_the_form_cannot_produce_are_refused_not_turned_into_defaults(string handler, string body)
+    {
+        var id = await CreateScreenAsync("Original");
+        await _app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == id).ExecuteUpdateAsync(s => s.SetProperty(x => x.Mode, ScreenMode.SingleVideo).SetProperty(x => x.SingleVideoUrl, "https://example.org/a.mp4")));
+        var version = await VersionAsync(id);
+        var token = await _admin.GetAntiforgeryTokenAsync($"/admin/screens/{id}");
+        var withVersion = body.Contains("Version=", StringComparison.Ordinal) ? body : $"{body}&Version={version}";
+        using var content = new StringContent($"{withVersion}&__RequestVerificationToken={Uri.EscapeDataString(token)}", System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+
+        using var response = await _admin.Http.PostAsync(new Uri($"/admin/screens/{id}?handler={handler}", UriKind.Relative), content, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("contained a value this page can't use", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        var screen = await ScreenAsync(id);
+        Assert.Equal(("Original", ScreenMode.SingleVideo), (screen.Name, screen.Mode));
+    }
+
+    [Fact]
+    public async Task An_unknown_placement_is_refused()
+    {
+        var id = await CreateScreenAsync();
+        var slide = await AddAsync(NewSlide("S"));
+
+        using var response = await HtmxAsync(_editor, id, "AddSlide", new() { ["placement"] = "Sideways", ["slideId"] = slide.Id.ToString() });
+
+        Assert.Contains("contained a value this page can't use", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal(0, await _app.Factory.WithDbAsync(db => db.ScreenSlides.CountAsync()));
+    }
+
     [GeneratedRegex("<tr data-slide-id=\"([0-9a-f-]{36})\"")]
     private static partial Regex SequenceRow();
 }

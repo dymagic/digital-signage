@@ -69,6 +69,11 @@ public class DetailModel(
             return forbidden;
         }
 
+        if (!ModelState.IsValid)
+        {
+            return await AfterFormPostAsync(OperationResult.Fail(CommonErrors.InvalidRequest), [], ct);
+        }
+
         var (result, warnings) = await screens.UpdateDetailsAsync(Id, new ScreenDetails(Details.Name, Details.Location, Details.Mode, Details.SingleVideoUrl), Version, ct);
         return await AfterFormPostAsync(result, warnings, ct);
     }
@@ -81,26 +86,31 @@ public class DetailModel(
             return forbidden;
         }
 
+        if (!ModelState.IsValid)
+        {
+            return await AfterFormPostAsync(OperationResult.Fail(CommonErrors.InvalidRequest), [], ct);
+        }
+
         return await AfterFormPostAsync(await screens.SetGroupsAsync(Id, GroupIds, Version, ct), [], ct);
     }
 
     public Task<IActionResult> OnPostAddSlideAsync(SlidePlacement placement, Guid slideId, CancellationToken ct) =>
-        CompositionChangeAsync(screens.AddSlideAsync(Id, placement, slideId, Version, ct), ct);
+        CompositionChangeAsync(() => screens.AddSlideAsync(Id, placement, slideId, Version, ct), ct);
 
     public Task<IActionResult> OnPostRemoveSlideAsync(Guid entryId, CancellationToken ct) =>
-        CompositionChangeAsync(screens.RemoveSlideAsync(Id, entryId, Version, ct), ct);
+        CompositionChangeAsync(() => screens.RemoveSlideAsync(Id, entryId, Version, ct), ct);
 
     public Task<IActionResult> OnPostMoveSlideAsync(Guid entryId, int toIndex, CancellationToken ct) =>
-        CompositionChangeAsync(screens.MoveSlideAsync(Id, entryId, toIndex, Version, ct), ct);
+        CompositionChangeAsync(() => screens.MoveSlideAsync(Id, entryId, toIndex, Version, ct), ct);
 
     public Task<IActionResult> OnPostAddPlaylistAsync(Guid playlistId, CancellationToken ct) =>
-        CompositionChangeAsync(screens.AddPlaylistAsync(Id, playlistId, Version, ct), ct);
+        CompositionChangeAsync(() => screens.AddPlaylistAsync(Id, playlistId, Version, ct), ct);
 
     public Task<IActionResult> OnPostRemovePlaylistAsync(Guid entryId, CancellationToken ct) =>
-        CompositionChangeAsync(screens.RemovePlaylistAsync(Id, entryId, Version, ct), ct);
+        CompositionChangeAsync(() => screens.RemovePlaylistAsync(Id, entryId, Version, ct), ct);
 
     public Task<IActionResult> OnPostMovePlaylistAsync(Guid entryId, int toIndex, CancellationToken ct) =>
-        CompositionChangeAsync(screens.MovePlaylistAsync(Id, entryId, toIndex, Version, ct), ct);
+        CompositionChangeAsync(() => screens.MovePlaylistAsync(Id, entryId, toIndex, Version, ct), ct);
 
     public string DescribeSource(SequenceSource source) => source switch
     {
@@ -131,9 +141,10 @@ public class DetailModel(
     }
 
     /// <summary>htmx gets the refreshed composition block; a plain form post gets a redirect.</summary>
-    private async Task<IActionResult> CompositionChangeAsync(Task<OperationResult> change, CancellationToken ct)
+    private async Task<IActionResult> CompositionChangeAsync(Func<Task<OperationResult>> change, CancellationToken ct)
     {
-        var result = await change;
+        // A value that failed to bind (tampered or outdated form) must not silently become a default.
+        var result = ModelState.IsValid ? await change() : OperationResult.Fail(CommonErrors.InvalidRequest);
         if (result.ErrorKey == CommonErrors.NotFound && !await LoadAsync(ct))
         {
             return GoneMeanwhile("/Admin/Screens/Index");
