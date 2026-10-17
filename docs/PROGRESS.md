@@ -7,7 +7,16 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_(none: next is WP-09 Video & single video mode)_
+- Package: WP-09 Video & single video mode — branch `wp-09-video` — status In progress
+- Plan: `slides/video.js` (fresh <video>, muted unless playAudio, playsinline, preload=auto, no autoplay; ready on
+  canplay, false on error; start() after the transition; finished on ended / error / 8 s stall / 10 min cap; release per
+  ADR-0008); carousel dwells on `finished` with the progress bar following playback; a lone video loops;
+  `singlevideo.js` (mode SingleVideo: one looping <video>, 300 ms cross-fade on mode/URL change, applied at once: the
+  dwell is interrupted by a mode change). WP-08 follow-ups. E2E with testmedia clips: currentTime 0 during the
+  transition, next on ended, broken URL skipped, single video loops without progress bar, live mode switch.
+- Risks: headless Chromium codec support (H.264 confirmed in WP-07), timing flakiness with real-time video.
+- Next step: implement video.js and the carousel changes.
+- Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
