@@ -27,6 +27,20 @@ public static partial class AdminActions
         return Guid.Parse(new Uri(page.Url).Segments[^1]);
     }
 
+    /// <summary>Creates an Image or WebPage slide pointing at <paramref name="url"/>; returns its id.</summary>
+    public static async Task<Guid> CreateUrlSlideAsync(IPage page, string type, string title, Uri url, int durationSeconds)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(url);
+        await page.GotoAsync($"/admin/slides/create?type={type}");
+        await page.GetByLabel("Title").FillAsync(title);
+        await page.GetByLabel("Address (URL)").FillAsync(url.ToString());
+        await page.GetByLabel("Duration (seconds)").FillAsync(durationSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        await page.GetByRole(AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
+        await page.WaitForURLAsync(SlideEditUrl());
+        return Guid.Parse(new Uri(page.Url).Segments[^1]);
+    }
+
     /// <summary>Creates a playlist and adds the slides (by title) in order. Returns with the playlist page open.</summary>
     public static async Task CreatePlaylistAsync(IPage page, string name, params string[] slideTitles)
     {
@@ -37,7 +51,8 @@ public static partial class AdminActions
         await Expect(page.GetByText("Playlist created.")).ToBeVisibleAsync();
         foreach (var title in slideTitles)
         {
-            await page.GetByLabel("Add a slide").SelectOptionAsync(new SelectOptionValue { Label = $"{title} (HTML)" });
+            var option = page.GetByLabel("Add a slide").Locator("option").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(title)} \\(") });
+            await page.GetByLabel("Add a slide").SelectOptionAsync(await option.GetAttributeAsync("value") ?? "");
             await page.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
             await Expect(page.Locator("ol.entries > li").Filter(new() { HasText = title })).ToBeVisibleAsync();
         }

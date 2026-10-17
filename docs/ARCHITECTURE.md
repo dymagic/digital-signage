@@ -141,22 +141,27 @@ answer with `HX-Redirect` to the list and a message.
 | Method & path | Auth | Purpose |
 |---|---|---|
 | `GET /screen` | none | Player shell (static) |
-| `POST /api/player/pairing` | none, rate-limited (10/min/IP) | Start pairing → `{ code ("XXX-XXX"), pairingId, deviceSecret, expiresAt }` |
+| `POST /api/player/pairing` | none, rate-limited (10/min/IP) | Start pairing → `{ code ("XXX-XXX"), pairingId, deviceSecret, expiresAt, expiresInSeconds }`. The player times codes with `expiresInSeconds` on its monotonic clock, so a wrong device clock can't break pairing |
 | `GET /api/player/pairing/{id}` | `X-Device-Secret` header, 60/min/IP | `{ status: "pending", expiresAt }`; once claimed, mints the token, sets the cookie and returns `{ status: "paired", screen{name} }` (one-time); afterwards or when expired `410`; wrong secret `404` |
 | `POST /api/player/session` | `token` in body, rate-limited | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
-| `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion, etag, screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. Supports `If-None-Match` |
+| `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion, screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
+| `GET /api/player/preview/{screenId}/manifest` | admin cookie, Editor | The same manifest for the admin preview. `401` without a session, `403` while the user must change their password, `404` for an unknown screen |
 | `GET /api/player/events` | screen cookie | SSE stream: `manifest-changed`, `identify{seconds}`, `identify-all{seconds}`, `reload`, keep-alive comments every 15 s |
 | `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId }`; the server records IP/UA/LastSeen |
 
 Slides in the manifest carry `{ id, type, url?, html?, durationSeconds (resolved), playAudio,
 activeFromUtc?, activeUntilUtc? }`. The player re-checks the schedule client-side so offline playback
-respects expiry (R-24).
+respects expiry (R-24). So the server applies only the enabled flag and drops slides whose window has already
+ended; future and current windows are sent and filtered by the player. Html slides are sent raw; the player wraps them
+in the same base stylesheet as the admin preview (`HtmlSlideDocument.BaseStyle` in C#, `BASE_STYLE` in
+`wwwroot/screen/slides/html.js`; a unit test keeps the two identical).
 
 A revoked or unknown token returns `401`, and the response deletes the cookie (the player can't: it's HttpOnly).
 The player then shows the pairing screen. The cookie is `signage.screen`, path `/api/player` (ADR-0007).
 
-Admin preview of a screen (R-13) uses `/screen?preview={screenId}`. That path authorises with the
-**admin** cookie and never records heartbeats.
+Admin preview of a screen (R-13) uses `/screen?preview={screenId}`, which loads the preview manifest above with the
+**admin** cookie and never records heartbeats. It never pairs or caches: on `401` it asks the admin to sign in. For
+`/api/*` paths the admin cookie handler answers `401`/`403` instead of redirecting to the login page.
 
 ### Event fan-out
 `IScreenNotifier` raises domain events like "screen X affected" and "all screens affected". Until WP-10 it is a
@@ -176,6 +181,7 @@ is acceptable, since a manifest ETag stops redundant re-renders.
 | `SIGNAGE__BOOTSTRAP__ADMINEMAIL` / `__ADMINPASSWORD` | — | Only used if there are no users. The admin must change the password at first sign-in. Invalid values stop start-up |
 | `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Trust `X-Forwarded-*` (behind ingress/load balancer) |
 | `SIGNAGE__FORWARDEDHEADERS__KNOWNNETWORKS` | — | CIDRs of the proxies |
+| `SIGNAGE__SEEDDEMO` | `false` (`true` in Development) | Seeds a demo Playlist and an unpaired "Demo screen" on start when there are no slides yet. The compose file turns it on |
 | `ASPNETCORE_HTTP_PORTS` | `8080` | Set by the .NET base image; the container listens on 8080 |
 
 Never commit real secrets. The compose file uses obvious demo values with a comment.
@@ -187,8 +193,9 @@ Never commit real secrets. The compose file uses obvious demo values with a comm
 - Logging: structured `ILogger` with no PII beyond email in auth audit logs.
 - Errors: ProblemDetails for APIs. Friendly error pages in the admin.
 - Every admin string goes through `IStringLocalizer`/`IViewLocalizer`.
-- The player JS has no dependencies. Organise it as small ES modules (`player.js`, `carousel.js`,
-  `slides/*.js`, `connection.js`, `overlay.js`, `storage.js`). All timing constants live in one
+- The player JS has no dependencies. Organise it as small ES modules in `wwwroot/screen/` (`player.js` boot, `carousel.js`,
+  `slides/*.js`, `schedule.js`, `connection.js`, `pairing.js`, `empty.js`, `reload.js`, `storage.js`, `api.js`,
+  `strings.js`; `overlay.js` from WP-11). All timing constants live in one
   `config.js`.
 - Player test hooks: the player exposes state through `data-*` attributes on `<body>` and slide
   elements (`data-state="entering|active|leaving|covered"`, `data-slide-id`), plus
