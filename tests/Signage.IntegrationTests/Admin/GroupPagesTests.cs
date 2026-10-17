@@ -90,6 +90,39 @@ public sealed class GroupPagesTests(PostgresFixture postgres) : IAsyncLifetime
         Assert.Equal(5, await _app.Factory.WithDbAsync(db => db.ScreenGroups.Select(g => g.SortOrder).SingleAsync()));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task A_blank_group_name_says_enter_a_name_on_create_and_on_edit(string name)
+    {
+        using (var create = await _admin.PostFormAsync("/admin/groups/create", new Dictionary<string, string> { ["Input.Name"] = name, ["Input.SortOrder"] = "0" }))
+        {
+            Assert.Contains("Enter a name.", WebUtility.HtmlDecode(await create.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        }
+
+        var id = await CreateGroupAsync("Original");
+        using var edit = await _admin.PostFormAsync($"/admin/groups/{id}", new Dictionary<string, string>
+        {
+            ["Input.Name"] = name, ["Input.SortOrder"] = "0", ["Version"] = await VersionAsync(id),
+        }, action: $"/admin/groups/{id}?handler=Details");
+
+        Assert.Contains("Enter a name.", WebUtility.HtmlDecode(await edit.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal(["Original"], await _app.Factory.WithDbAsync(db => db.ScreenGroups.Select(g => g.Name).ToListAsync()));
+    }
+
+    [Fact]
+    public async Task Deleting_a_playlist_moves_the_version_of_groups_that_used_it()
+    {
+        var id = await CreateGroupAsync();
+        var playlist = await AddAsync(new Playlist { Name = "P" });
+        (await HtmxAsync(_admin, id, "AddPlaylist", new() { ["playlistId"] = playlist.Id.ToString() })).Dispose();
+        var before = await VersionAsync(id);
+
+        (await _admin.PostFormAsync($"/admin/playlists/{playlist.Id}/delete", new Dictionary<string, string>())).Dispose();
+
+        Assert.NotEqual(before, await VersionAsync(id));
+    }
+
     [Fact]
     public async Task Group_names_are_unique_regardless_of_case()
     {

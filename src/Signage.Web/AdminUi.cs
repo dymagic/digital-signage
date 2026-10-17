@@ -34,6 +34,11 @@ public static class AdminUi
         // Model-binding messages ("The value 'x' is not valid") also come from the resource file.
         services.AddOptions<MvcOptions>().Configure<IStringLocalizer<SharedResource>>((o, l) =>
             {
+                // Validation lives in the services (with field-specific messages) and in explicit [Required] attributes.
+                // Without this, every non-nullable string would be implicitly required, and a blank name would hit the
+                // generic "invalid value" path instead of "Enter a name".
+                o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+
                 var messages = o.ModelBindingMessageProvider;
                 messages.SetValueIsInvalidAccessor(v => l["Validation.ValueInvalid", v]);
                 messages.SetAttemptedValueIsInvalidAccessor((v, f) => l["Validation.ValueInvalid", v]);

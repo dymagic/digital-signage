@@ -410,6 +410,19 @@ public sealed partial class ScreenPagesTests(PostgresFixture postgres) : IAsyncL
         Assert.Equal(("Original", ScreenMode.SingleVideo), (screen.Name, screen.Mode));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task A_blank_name_on_the_details_form_says_enter_a_name(string name)
+    {
+        var id = await CreateScreenAsync("Original");
+
+        using var response = await PostDetailsAsync(_admin, id, name);
+
+        Assert.Contains("Enter a name.", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal("Original", (await ScreenAsync(id)).Name);
+    }
+
     [Fact]
     public async Task An_unknown_placement_is_refused()
     {
