@@ -18,9 +18,9 @@ Milestone 1: in progress (WP-00–WP-02 done). Project docs, skills and the revi
   conversion, role matrix rows, delete-in-use, conflict, XSS encoding, sandbox attrs. WP-01 follow-ups
   (ExecuteUpdate note, UpdatedAt test).
 - Risks: datetime-local parsing/culture; preview iframes must never get allow-same-origin for Html.
-- Done: —
+- Done: SlideValidator + ScheduleClock (unit-tested), SlideService, pages (list with previews/search/toggle, create, edit + preview, delete with usage), nav, ~75 strings, CSS.
 - Half-done: —
-- Next step: validator + schedule clock with unit tests.
+- Next step: integration tests (CRUD, validation, TZ, role matrix, delete in use, conflict, XSS, sandbox), WP-01 follow-ups, screenshots, ADR-0005 (schedule time semantics, type fixed after creation).
 - Last checkpoint: (this commit)
 
 

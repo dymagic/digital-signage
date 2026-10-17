@@ -144,3 +144,47 @@ body.auth { display: grid; place-items: center; min-height: 100vh; padding: 1rem
     .content { padding: 1rem; }
     .table th:nth-child(2), .table td:nth-child(2) { display: none; }
 }
+
+/* Slides */
+.button-group { display: flex; gap: .5rem; flex-wrap: wrap; }
+.search { display: flex; gap: .5rem; margin-bottom: 1rem; max-width: 560px; }
+.empty { color: var(--muted); padding: 2rem; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+textarea.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; }
+fieldset.schedule { border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; margin: 1rem 0 .5rem; }
+fieldset.schedule legend { font-weight: 600; padding: 0 .25rem; }
+fieldset.schedule .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+fieldset.schedule .row > div { display: flex; flex-direction: column; gap: .35rem; }
+.split { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 2rem; align-items: start; }
+.preview-pane { position: sticky; top: 1rem; }
+.badge-button { font-size: .8rem; padding: .1rem .6rem; border-radius: 999px; }
+.badge-button.on { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.badge-button.off { background: var(--bg); color: var(--muted); }
+.table.slides td { vertical-align: middle; }
+
+/* A slide preview: a 16:9 black box. Iframes render at 1920×1080 and are scaled down, like a real screen. */
+.slide-preview {
+    --preview-width: 480;
+    position: relative;
+    width: calc(var(--preview-width) * 1px);
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #000;
+    border-radius: 4px;
+}
+.slide-preview img, .slide-preview video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slide-preview iframe {
+    width: 1920px;
+    height: 1080px;
+    border: 0;
+    transform: scale(calc(var(--preview-width) / 1920));
+    transform-origin: 0 0;
+    pointer-events: none;
+    background: #000;
+}
+.thumb .slide-preview { --preview-width: 128; }
+
+@media (max-width: 900px) {
+    .split { grid-template-columns: 1fr; }
+    .preview-pane { position: static; }
+    .preview-pane .slide-preview { --preview-width: 320; }
+}

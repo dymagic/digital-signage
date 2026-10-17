@@ -1,0 +1,29 @@
+@page "/admin/slides/{id:guid}/delete"
+@model Signage.Web.Pages.Admin.Slides.DeleteModel
+@{
+    ViewData["Title"] = L["Slides.Delete.Title"];
+    ViewData["Section"] = "Slides";
+}
+<h1>@L["Slides.Delete.Title"]: @Model.Slide!.Title</h1>
+@if (Model.Usage!.InUse)
+{
+    <div class="notice notice-error" role="alert">
+        <p>@L["Slides.Delete.InUse"]</p>
+        @if (Model.Usage.Playlists.Count > 0)
+        {
+            <p>@L["Slides.Delete.Playlists"] @string.Join(", ", Model.Usage.Playlists)</p>
+        }
+        @if (Model.Usage.Screens.Count > 0)
+        {
+            <p>@L["Slides.Delete.Screens"] @string.Join(", ", Model.Usage.Screens)</p>
+        }
+    </div>
+}
+else
+{
+    <p>@L["Slides.Delete.NotInUse"]</p>
+}
+<form method="post" class="form-actions">
+    <button type="submit" class="danger">@L["Slides.Delete.Confirm"]</button>
+    <a asp-page="Edit" asp-route-id="@Model.Id">@L["Common.Cancel"]</a>
+</form>

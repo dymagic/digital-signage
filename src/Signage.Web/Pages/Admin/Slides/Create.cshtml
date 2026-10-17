@@ -1,0 +1,15 @@
+@page
+@model Signage.Web.Pages.Admin.Slides.CreateModel
+@{
+    ViewData["Title"] = L[$"Slides.New.{Model.Type}"];
+    ViewData["Section"] = "Slides";
+}
+<h1>@L[$"Slides.New.{Model.Type}"]</h1>
+<form method="post" class="form">
+    <input type="hidden" name="type" value="@Model.Type" />
+    <partial name="_SlideForm" model="Model" />
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Slides.Create"]</button>
+        <a asp-page="Index">@L["Common.Cancel"]</a>
+    </div>
+</form>

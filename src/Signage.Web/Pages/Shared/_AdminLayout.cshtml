@@ -21,6 +21,7 @@
         <a class="brand" href="~/admin">@L["App.Name"]</a>
         <nav class="nav" aria-label="@L["Nav.Label"]">
             <a href="~/admin" aria-current="@Current("Home")">@L["Nav.Home"]</a>
+            <a href="~/admin/slides" aria-current="@Current("Slides")">@L["Nav.Slides"]</a>
             @if (isAdmin)
             {
                 <a href="~/admin/users" aria-current="@Current("Users")">@L["Nav.Users"]</a>

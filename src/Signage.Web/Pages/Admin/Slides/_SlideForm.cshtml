@@ -1,0 +1,58 @@
+@model Signage.Web.Features.Slides.ISlideFormPage
+@using Signage.Web.Features.Slides
+<partial name="_ValidationSummary" />
+<label asp-for="Input.Title"></label>
+<input asp-for="Input.Title" maxlength="200" />
+<span asp-validation-for="Input.Title" class="field-error"></span>
+
+@if (Model.Type == SlideType.Html)
+{
+    <label asp-for="Input.Html"></label>
+    <textarea asp-for="Input.Html" rows="14" class="code" spellcheck="false"></textarea>
+    <span class="hint">@L["Slides.Hint.Html"]</span>
+    <span asp-validation-for="Input.Html" class="field-error"></span>
+}
+else
+{
+    <label asp-for="Input.Url"></label>
+    <input asp-for="Input.Url" type="url" placeholder="https://" />
+    <span class="hint">@L[$"Slides.Hint.Url.{Model.Type}"]</span>
+    <span asp-validation-for="Input.Url" class="field-error"></span>
+}
+
+@if (Model.Type == SlideType.WebPage)
+{
+    <p class="notice notice-info">@L["Slides.Hint.Framing"]</p>
+}
+
+@if (Model.Type == SlideType.Video)
+{
+    <label class="checkbox"><input asp-for="Input.PlayAudio" /> @L["Slides.Field.PlayAudio"]</label>
+    <span class="hint">@L["Slides.Hint.PlayAudio"]</span>
+}
+else
+{
+    <label asp-for="Input.DurationSeconds"></label>
+    <input asp-for="Input.DurationSeconds" type="number" min="@SlideValidator.MinDuration" max="@SlideValidator.MaxDuration" placeholder="@L["Slides.Placeholder.DefaultDuration"]" />
+    <span class="hint">@L["Slides.Hint.Duration"]</span>
+    <span asp-validation-for="Input.DurationSeconds" class="field-error"></span>
+}
+
+<fieldset class="schedule">
+    <legend>@L["Slides.Schedule"]</legend>
+    <p class="hint">@L["Slides.Hint.Schedule", Model.TimeZoneId]</p>
+    <div class="row">
+        <div>
+            <label asp-for="Input.ActiveFrom"></label>
+            <input asp-for="Input.ActiveFrom" type="datetime-local" step="60" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+            <span asp-validation-for="Input.ActiveFrom" class="field-error"></span>
+        </div>
+        <div>
+            <label asp-for="Input.ActiveUntil"></label>
+            <input asp-for="Input.ActiveUntil" type="datetime-local" step="60" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+            <span asp-validation-for="Input.ActiveUntil" class="field-error"></span>
+        </div>
+    </div>
+</fieldset>
+
+<label class="checkbox"><input asp-for="Input.IsEnabled" /> @L["Slides.Field.IsEnabled"]</label>

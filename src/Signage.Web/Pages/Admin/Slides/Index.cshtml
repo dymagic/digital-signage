@@ -1,0 +1,77 @@
+@page
+@model Signage.Web.Pages.Admin.Slides.IndexModel
+@{
+    ViewData["Title"] = L["Slides.Title"];
+    ViewData["Section"] = "Slides";
+}
+<div class="page-head">
+    <h1>@L["Slides.Title"]</h1>
+    <div class="button-group" role="group" aria-label="@L["Slides.NewSlide"]">
+        @foreach (var type in Enum.GetValues<SlideType>())
+        {
+            <a class="button" asp-page="Create" asp-route-type="@type">+ @L[$"Slides.Type.{type}"]</a>
+        }
+    </div>
+</div>
+<form method="get" class="search" role="search">
+    <label for="q" class="visually-hidden">@L["Slides.Search"]</label>
+    <input id="q" name="q" type="search" value="@Model.Q" placeholder="@L["Slides.Search"]" />
+    <button type="submit">@L["Slides.SearchButton"]</button>
+</form>
+@if (Model.Items.Count == 0)
+{
+    <p class="empty">@(string.IsNullOrWhiteSpace(Model.Q) ? L["Slides.Empty"] : L["Slides.NoMatches"])</p>
+}
+else
+{
+    <table class="table slides">
+        <thead>
+            <tr>
+                <th scope="col"><span class="visually-hidden">@L["Slides.Preview"]</span></th>
+                <th scope="col">@L["Slides.Field.Title"]</th>
+                <th scope="col">@L["Slides.Field.Duration"]</th>
+                <th scope="col">@L["Slides.Schedule"]</th>
+                <th scope="col">@L["Slides.UsedIn"]</th>
+                <th scope="col">@L["Users.Field.Status"]</th>
+                <th scope="col"><span class="visually-hidden">@L["Common.Actions"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                var slide = item.Slide;
+                <tr data-slide-id="@slide.Id">
+                    <td class="thumb"><partial name="_SlidePreview" model="slide" /></td>
+                    <td>
+                        <a asp-page="Edit" asp-route-id="@slide.Id">@slide.Title</a>
+                        <div class="muted">@L[$"Slides.Type.{slide.Type}"]</div>
+                    </td>
+                    <td>
+                        @if (slide.Type == SlideType.Video)
+                        {
+                            <span class="muted">@L["Slides.Duration.Video"]</span>
+                        }
+                        else if (slide.DurationSeconds is { } seconds)
+                        {
+                            @L["Slides.Duration.Seconds", seconds]
+                        }
+                        else
+                        {
+                            <span class="muted">@L["Slides.Duration.Default", Model.DefaultDuration]</span>
+                        }
+                    </td>
+                    <td>@Model.DescribeSchedule(slide)</td>
+                    <td>@L["Slides.Usage", item.PlaylistCount, item.ScreenCount]</td>
+                    <td>
+                        <form method="post" asp-page-handler="Toggle" asp-route-id="@slide.Id" asp-route-enabled="@(!slide.IsEnabled)" asp-route-q="@Model.Q">
+                            <button type="submit" class="badge-button @(slide.IsEnabled ? "on" : "off")" aria-pressed="@(slide.IsEnabled ? "true" : "false")" title="@(slide.IsEnabled ? L["Slides.Disable"] : L["Slides.Enable"])">
+                                @(slide.IsEnabled ? L["Slides.Enabled"] : L["Slides.Disabled"])
+                            </button>
+                        </form>
+                    </td>
+                    <td class="actions"><a asp-page="Edit" asp-route-id="@slide.Id">@L["Common.Edit"]</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
