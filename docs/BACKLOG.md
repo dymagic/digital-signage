@@ -31,7 +31,7 @@ disabled, empty, repeated slide).
 **Accept:** resolver tests cover every R-12 rule; the migration applies on an empty DB in integration tests. R-02, R-03, R-04, R-12.
 *Follow-ups from WP-00 review:* (a) make the host dev loop work: publish db 5432 on 127.0.0.1 and align the dev password with compose, or document an override; (b) add the dotnet-ef local tool manifest and re-verify the CLAUDE.md command line; (c) E2E: dispose pages via `await using` contexts, capture trace/screenshot to `artifacts/e2e/` on failure; (d) use a Stopwatch instead of `DateTimeOffset.UtcNow` in `BrowserFixture`; (e) make Npgsql GSS opt-out detection less fragile (parse the connection string); (f) fix the run-and-verify comment "app and db healthy?" (the app has no HEALTHCHECK).
 
-### WP-02 Authentication & users — `In review`
+### WP-02 Authentication & users — `Done`
 Cookie auth, login/logout, lockout, first-run setup page, bootstrap via env vars, forced password
 change, user management (admins only), role policies, antiforgery, the admin layout shell with
 navigation and the i18n plumbing (resx + localizers). Also the global Settings page (admin only; no other
@@ -64,6 +64,13 @@ The screen detail page shows the resolved sequence with its sources (R-13; the p
 comes in WP-08). Domain events emitted through `IScreenNotifier` (a no-op implementation for now).
 **Accept:** the role split matches the brief; the resolved sequence on the page equals the resolver's output
 (integration test). R-10, R-11, R-12, R-13 (partly), R-14 (config).
+*From WP-02 review round 4:* heartbeats (WP-10) will write `LastSeenAt`/`LastIp`/… on `screens`, which bumps
+`xmin` and would make an open screen edit form fail with a conflict, the same class of bug as on users. Give
+`Screen` an app-managed `version` like `User` (ADR-0004), or keep heartbeat data in its own table, and reword
+the ADR-0004 sentence that says other entities are "written only by human edits". Add a test: a heartbeat
+between loading and saving a screen form doesn't cause a conflict. Optional NITs from the same review: tidy the
+ADR sentence placement, rename `ConcurrentSignInTests` (it now covers password changes too), and make
+`GatedPasswordHasher.Gate.Dispose` release a waiting thread.
 
 ### WP-06 Pairing & screen tokens — `Todo`
 Pairing request API, the pairing screen in the player, the admin "Pair screen" page (enter code → new
