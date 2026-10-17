@@ -8,7 +8,10 @@
     <h1>@L["Screens.Title"]</h1>
     @if (Model.IsAdmin)
     {
-        <a class="button primary" asp-page="Create">@L["Screens.Create"]</a>
+        <div class="button-group">
+            <a class="button primary" asp-page="Pair">@L["Pairing.Title"]</a>
+            <a class="button" asp-page="Create">@L["Screens.Create"]</a>
+        </div>
     }
 </div>
 @if (Model.Items.Count == 0)

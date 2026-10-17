@@ -88,8 +88,11 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
         return request.ExpiresAt <= now ? new PairingPoll(PairingPollStatus.Gone) : new PairingPoll(PairingPollStatus.Pending, request.ExpiresAt);
     }
 
-    /// <summary>Admin: claims a code for an existing unpaired screen.</summary>
-    public async Task<(OperationResult Result, Guid? ScreenId)> ClaimForScreenAsync(string? code, Guid screenId, CancellationToken ct)
+    /// <summary>
+    /// Admin: claims a code for an existing screen. An already paired screen is only accepted for an explicit re-pair
+    /// (R-42); the old device keeps working until the new one picks up its token, which replaces the old one.
+    /// </summary>
+    public async Task<(OperationResult Result, Guid? ScreenId)> ClaimForScreenAsync(string? code, Guid screenId, bool repair, CancellationToken ct)
     {
         var screen = await db.Screens.AsNoTracking().Where(s => s.Id == screenId).Select(s => new { s.TokenHash }).SingleOrDefaultAsync(ct).ConfigureAwait(false);
         if (screen is null)
@@ -97,7 +100,7 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
             return (OperationResult.Fail(CommonErrors.NotFound), null);
         }
 
-        if (screen.TokenHash is not null)
+        if (screen.TokenHash is not null && !repair)
         {
             return (OperationResult.Fail(PairingErrors.ScreenAlreadyPaired), null);
         }

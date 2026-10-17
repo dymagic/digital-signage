@@ -5,7 +5,7 @@ namespace Signage.Web.Pages.Admin.Groups;
 public sealed class GroupInput
 {
     [Display(Name = "Groups.Field.Name")]
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     [Display(Name = "Groups.Field.Description")]
     public string? Description { get; set; }

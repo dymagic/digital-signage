@@ -57,6 +57,37 @@
             }
         </section>
         <section class="panel">
+            <h2>@L["Pairing.Section"]</h2>
+            @if (screen.TokenHash is not null)
+            {
+                <p>@L["Pairing.PairedSince", screen.PairedAt?.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) + " UTC"]</p>
+            }
+            else
+            {
+                <p class="muted">@L["Screens.Paired.No"]</p>
+            }
+            @if (Model.ScreenAddress is not null)
+            {
+                <div class="notice notice-success" role="status">
+                    <p>@L["Pairing.Address.Intro"]</p>
+                    <p><code class="secret" data-testid="screen-address">@Model.ScreenAddress</code></p>
+                    <p class="muted">@L["Pairing.Address.Once"]</p>
+                </div>
+            }
+            @if (Model.IsAdmin)
+            {
+                <div class="form-actions wrap">
+                    <a class="button" asp-page="Pair" asp-route-screenId="@Model.Id">@L[screen.TokenHash is null ? "Pairing.Pair" : "Pairing.Repair"]</a>
+                    @if (screen.TokenHash is not null)
+                    {
+                        <form method="post" asp-page-handler="Revoke"><button type="submit" class="danger">@L["Pairing.Revoke"]</button></form>
+                    }
+                    <form method="post" asp-page-handler="Address"><button type="submit">@L["Pairing.Address.Create"]</button></form>
+                </div>
+                <p class="hint">@L["Pairing.Address.Hint"]</p>
+            }
+        </section>
+        <section class="panel">
             <h2>@L["Screens.Groups"]</h2>
             @if (Model.IsAdmin)
             {

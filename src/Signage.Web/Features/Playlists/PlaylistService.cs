@@ -52,20 +52,20 @@ public sealed class PlaylistService(SignageDbContext db, IScreenNotifier notifie
     public Task<List<Slide>> SlidesForPickerAsync(CancellationToken ct) =>
         db.Slides.AsNoTracking().OrderBy(s => s.Title).ToListAsync(ct);
 
-    public async Task<(OperationResult Result, Guid? Id)> CreateAsync(string name, string? description, CancellationToken ct)
+    public async Task<(OperationResult Result, Guid? Id)> CreateAsync(string? name, string? description, CancellationToken ct)
     {
         if (ValidateDetails(name, description) is { } error)
         {
             return (OperationResult.Fail(error), null);
         }
 
-        var playlist = new Playlist { Name = name.Trim(), Description = Normalize(description) };
+        var playlist = new Playlist { Name = name!.Trim(), Description = Normalize(description) };
         db.Playlists.Add(playlist);
         var result = await SaveAsync(ct).ConfigureAwait(false);
         return (result, result.Succeeded ? playlist.Id : null);
     }
 
-    public async Task<OperationResult> UpdateDetailsAsync(Guid id, string name, string? description, uint version, CancellationToken ct)
+    public async Task<OperationResult> UpdateDetailsAsync(Guid id, string? name, string? description, uint version, CancellationToken ct)
     {
         if (ValidateDetails(name, description) is { } error)
         {
@@ -78,7 +78,7 @@ public sealed class PlaylistService(SignageDbContext db, IScreenNotifier notifie
             return OperationResult.Fail(CommonErrors.NotFound);
         }
 
-        playlist.Name = name.Trim();
+        playlist.Name = name!.Trim();
         playlist.Description = Normalize(description);
         return await SaveAsync(ct).ConfigureAwait(false);
     }
@@ -214,7 +214,7 @@ public sealed class PlaylistService(SignageDbContext db, IScreenNotifier notifie
         }
     }
 
-    private static string? ValidateDetails(string name, string? description) =>
+    private static string? ValidateDetails(string? name, string? description) =>
         string.IsNullOrWhiteSpace(name) ? PlaylistErrors.NameRequired
         : name.Trim().Length > Limits.Name ? PlaylistErrors.NameTooLong
         : description?.Trim().Length > Limits.Description ? PlaylistErrors.DescriptionTooLong

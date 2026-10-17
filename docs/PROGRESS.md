@@ -22,7 +22,8 @@ Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the revi
 - Risks: rate limits are per replica; E2E needs timeScale for the revoke check.
 - Done: PairingCode + ScreenTokens (unit-tested), PairingService (start/poll/claim/deliver), ScreenAccessService (address token, revoke, lookup), ScreenToken auth handler (cookie, 401 deletes it), PlayerApi (pairing, poll, session, minimal manifest), per-IP rate limits, AppInfo.
 - Half-done: —
-- Next step: admin pair page + screen detail actions (revoke, re-pair, screen address); player pairing UI.
+- Done (2): admin Pair page (new/existing/re-pair), screen detail device section (revoke, re-pair, one-time screen address), player shell /screen with config/strings/api/pairing/player modules, no-cache for player files, strings; WP-05 NIT (nullable names).
+- Next step: integration tests (pairing flow, expiry, one-time delivery, reuse, rate limits, session, manifest 401 + cookie deletion, role split), E2E pairing + revoke, ADR-0007.
 - Last checkpoint: (this commit)
 
 

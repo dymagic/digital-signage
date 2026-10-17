@@ -24,6 +24,7 @@ public static class AdminUi
                 o.Conventions.AuthorizeFolder("/Admin/Settings", Policies.Admin);
                 o.Conventions.AuthorizePage("/Admin/Screens/Create", Policies.Admin);
                 o.Conventions.AuthorizePage("/Admin/Screens/Delete", Policies.Admin);
+                o.Conventions.AuthorizePage("/Admin/Screens/Pair", Policies.Admin);
                 o.Conventions.AuthorizePage("/Admin/Groups/Create", Policies.Admin);
                 o.Conventions.AuthorizePage("/Admin/Groups/Delete", Policies.Admin);
                 o.Conventions.ConfigureFilter(new MustChangePasswordFilter());

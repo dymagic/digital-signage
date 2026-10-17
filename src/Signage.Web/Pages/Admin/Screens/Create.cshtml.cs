@@ -10,7 +10,7 @@ public class CreateModel(ScreenService screens, IStringLocalizer<SharedResource>
 {
     [BindProperty]
     [Display(Name = "Screens.Field.Name")]
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     [BindProperty]
     [Display(Name = "Screens.Field.Location")]

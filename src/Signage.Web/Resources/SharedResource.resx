@@ -201,6 +201,78 @@
   <data name="Nav.Users" xml:space="preserve">
     <value>Users</value>
   </data>
+  <data name="Pairing.Address.Create" xml:space="preserve">
+    <value>Create screen address</value>
+  </data>
+  <data name="Pairing.Address.Hint" xml:space="preserve">
+    <value>A screen address has the token built in, for kiosk setups and scripts. Creating one replaces the current pairing.</value>
+  </data>
+  <data name="Pairing.Address.Intro" xml:space="preserve">
+    <value>Open this address on the screen's browser. It's shown only now; create a new one if it gets lost.</value>
+  </data>
+  <data name="Pairing.Address.Once" xml:space="preserve">
+    <value>Anyone with this address can show this screen's content. Treat it like a password.</value>
+  </data>
+  <data name="Pairing.Claimed" xml:space="preserve">
+    <value>Code accepted. The screen connects within a few seconds.</value>
+  </data>
+  <data name="Pairing.Error.CodeNotFound" xml:space="preserve">
+    <value>No screen is showing that code right now. Check the code on the screen, which changes every 15 minutes.</value>
+  </data>
+  <data name="Pairing.Error.ScreenAlreadyPaired" xml:space="preserve">
+    <value>That screen is already paired. Use "Re-pair" on the screen's page to replace its device.</value>
+  </data>
+  <data name="Pairing.Field.Code" xml:space="preserve">
+    <value>Code shown on the screen</value>
+  </data>
+  <data name="Pairing.Field.NewName" xml:space="preserve">
+    <value>Name of the new screen</value>
+  </data>
+  <data name="Pairing.Field.Screen" xml:space="preserve">
+    <value>Screen</value>
+  </data>
+  <data name="Pairing.Intro" xml:space="preserve">
+    <value>Open /screen on the device. It shows a 6-character code. Enter that code here and choose which screen the device becomes.</value>
+  </data>
+  <data name="Pairing.NewNamePlaceholder" xml:space="preserve">
+    <value>e.g. Canteen TV</value>
+  </data>
+  <data name="Pairing.Pair" xml:space="preserve">
+    <value>Pair a device</value>
+  </data>
+  <data name="Pairing.PairedSince" xml:space="preserve">
+    <value>Paired since {0}</value>
+  </data>
+  <data name="Pairing.Repair" xml:space="preserve">
+    <value>Re-pair</value>
+  </data>
+  <data name="Pairing.RepairOption" xml:space="preserve">
+    <value>{0} (replaces its current device)</value>
+  </data>
+  <data name="Pairing.Revoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="Pairing.Revoked" xml:space="preserve">
+    <value>Access revoked. The device goes back to the pairing screen.</value>
+  </data>
+  <data name="Pairing.Section" xml:space="preserve">
+    <value>Device</value>
+  </data>
+  <data name="Pairing.Submit" xml:space="preserve">
+    <value>Pair screen</value>
+  </data>
+  <data name="Pairing.Target" xml:space="preserve">
+    <value>The device becomes</value>
+  </data>
+  <data name="Pairing.Target.Existing" xml:space="preserve">
+    <value>An existing screen</value>
+  </data>
+  <data name="Pairing.Target.New" xml:space="preserve">
+    <value>A new screen</value>
+  </data>
+  <data name="Pairing.Title" xml:space="preserve">
+    <value>Pair screen</value>
+  </data>
   <data name="Password.Changed" xml:space="preserve">
     <value>Your password has been changed.</value>
   </data>
