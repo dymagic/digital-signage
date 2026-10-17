@@ -16,14 +16,11 @@ public sealed class ScreenAccessService(SignageDbContext db, TimeProvider time, 
         var token = ScreenTokens.NewSecret();
         var hash = ScreenTokens.Hash(token);
         var now = time.GetUtcNow();
-        var updated = await db.Screens.Where(s => s.Id == screenId)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.TokenHash, hash).SetProperty(x => x.PairedAt, now), ct).ConfigureAwait(false);
-        if (updated == 0)
+        var changed = await ReplaceTokenAsync(screenId, hash, now, ct).ConfigureAwait(false);
+        if (!changed)
         {
             return null;
         }
-
-        await PairingService.CancelPendingClaimsAsync(db, screenId, now, ct).ConfigureAwait(false);
 
         await notifier.ScreensChangedAsync([screenId], ct).ConfigureAwait(false);
         return token;
@@ -32,15 +29,11 @@ public sealed class ScreenAccessService(SignageDbContext db, TimeProvider time, 
     /// <summary>R-42: the token stops working at once; the device goes back to the pairing screen.</summary>
     public async Task<OperationResult> RevokeAsync(Guid screenId, CancellationToken ct)
     {
-        var updated = await db.Screens.Where(s => s.Id == screenId)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.TokenHash, (string?)null).SetProperty(x => x.PairedAt, (DateTimeOffset?)null), ct).ConfigureAwait(false);
-        if (updated == 0)
+        if (!await ReplaceTokenAsync(screenId, hash: null, time.GetUtcNow(), ct).ConfigureAwait(false))
         {
             return OperationResult.Fail(CommonErrors.NotFound);
         }
 
-        // A device that was claimed but hasn't collected its token yet must not get one after the revoke.
-        await PairingService.CancelPendingClaimsAsync(db, screenId, time.GetUtcNow(), ct).ConfigureAwait(false);
         await notifier.ScreensChangedAsync([screenId], ct).ConfigureAwait(false);
         return OperationResult.Ok;
     }
@@ -57,5 +50,30 @@ public sealed class ScreenAccessService(SignageDbContext db, TimeProvider time, 
         var screen = await db.Screens.AsNoTracking().Where(s => s.TokenHash == hash)
             .Select(s => new { s.Id, s.Name }).SingleOrDefaultAsync(ct).ConfigureAwait(false);
         return screen is null ? null : (screen.Id, screen.Name);
+    }
+
+    /// <summary>
+    /// Sets (or clears) the screen's token and cancels claims that haven't been collected yet, in one transaction, so a
+    /// device polling at that moment can't pick up a token that is about to be replaced.
+    /// </summary>
+    private async Task<bool> ReplaceTokenAsync(Guid screenId, string? hash, DateTimeOffset now, CancellationToken ct)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+            await PairingService.CancelPendingClaimsAsync(db, screenId, now, ct).ConfigureAwait(false);
+            var updated = await db.Screens.Where(s => s.Id == screenId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.TokenHash, hash)
+                    .SetProperty(x => x.PairedAt, hash == null ? null : now), ct).ConfigureAwait(false);
+            if (updated == 0)
+            {
+                return false;
+            }
+
+            await tx.CommitAsync(ct).ConfigureAwait(false);
+            return true;
+        }).ConfigureAwait(false);
     }
 }

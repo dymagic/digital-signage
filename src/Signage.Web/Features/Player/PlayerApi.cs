@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Signage.Web.Features.Pairing;
+using Signage.Web.Features.Users;
 
 namespace Signage.Web.Features.Player;
 
@@ -16,6 +17,7 @@ public static class PlayerApi
     {
         services.AddScoped<PairingService>();
         services.AddScoped<ScreenAccessService>();
+        services.AddScoped<ManifestService>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ScreenAuthenticationHandler>(ScreenAuthenticationHandler.SchemeName, null);
         services.AddAuthorizationBuilder().AddPolicy(ScreenPolicy, p => p
             .AddAuthenticationSchemes(ScreenAuthenticationHandler.SchemeName)
@@ -75,17 +77,40 @@ public static class PlayerApi
             return Results.NoContent();
         }).RequireRateLimiting(PairingStartLimit);
 
-        // Minimal manifest: who am I. WP-08 adds the sequence, settings and the ETag.
-        api.MapGet("/manifest", (HttpContext http) =>
+        // The screen's manifest (R-13, R-24, R-25). Supports If-None-Match so the 60 s poll is cheap.
+        api.MapGet("/manifest", async (HttpContext http, ManifestService manifests, CancellationToken ct) =>
         {
-            NoStore(http);
-            return Results.Ok(new { appVersion = AppInfo.Version, screen = new { id = http.User.ScreenId(), name = http.User.Identity!.Name } });
+            var manifest = await manifests.BuildAsync(http.User.ScreenId(), http.Connection.RemoteIpAddress?.ToString(), ct).ConfigureAwait(false);
+            return manifest is null ? Results.Unauthorized() : ManifestResult(http, manifest);
         }).RequireAuthorization(ScreenPolicy);
+
+        // R-13: an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
+        // the preview never records anything about a device.
+        api.MapGet("/preview/{screenId:guid}/manifest", async (Guid screenId, HttpContext http, ManifestService manifests, CancellationToken ct) =>
+        {
+            if (http.User.MustChangePassword())
+            {
+                return Results.Forbid();
+            }
+
+            var manifest = await manifests.BuildAsync(screenId, observedIp: null, ct).ConfigureAwait(false);
+            return manifest is null ? Results.NotFound() : ManifestResult(http, manifest);
+        }).RequireAuthorization(Policies.Editor);
 
         return endpoints;
     }
 
     private static void NoStore(HttpContext http) => http.Response.Headers.CacheControl = "no-store";
+
+    private static IResult ManifestResult(HttpContext http, Manifest manifest)
+    {
+        var (body, etag) = ManifestService.Serialize(manifest);
+        http.Response.Headers.CacheControl = "no-cache";
+        http.Response.Headers.ETag = etag;
+        return http.Request.Headers.IfNoneMatch.Contains(etag)
+            ? Results.StatusCode(StatusCodes.Status304NotModified)
+            : Results.Bytes(body, "application/json; charset=utf-8");
+    }
 
     private static RateLimitPartition<string> FixedWindowPerIp(HttpContext ctx, int permits) =>
         RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",

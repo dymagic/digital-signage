@@ -25,7 +25,11 @@ public sealed record ResolvedSlide(Slide Slide, SequenceSource Source);
 /// </summary>
 public static class SequenceResolver
 {
-    public static IReadOnlyList<ResolvedSlide> Resolve(Screen screen, DateTimeOffset nowUtc)
+    /// <param name="applySchedule">
+    /// True (default) filters by the schedule at <paramref name="nowUtc"/>. The player manifest passes false and sends the
+    /// windows instead, so an offline player can still start and stop scheduled slides on time (R-24).
+    /// </param>
+    public static IReadOnlyList<ResolvedSlide> Resolve(Screen screen, DateTimeOffset nowUtc, bool applySchedule = true)
     {
         ArgumentNullException.ThrowIfNull(screen);
 
@@ -86,7 +90,7 @@ public static class SequenceResolver
 
         void AddIfPlayable(Slide slide, SequenceSource source)
         {
-            if (slide.IsEnabled && SlideSchedule.IsActive(slide, nowUtc))
+            if (slide.IsEnabled && (!applySchedule || SlideSchedule.IsActive(slide, nowUtc)))
             {
                 result.Add(new ResolvedSlide(slide, source));
             }

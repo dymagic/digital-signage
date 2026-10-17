@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Signage.Web;
 using Signage.Web.Data;
+using Signage.Web.Features.Demo;
 using Signage.Web.Features.Events;
 using Signage.Web.Features.Groups;
 using Signage.Web.Features.Health;
@@ -40,6 +41,7 @@ var app = builder.Build();
 
 await app.Services.InitializeDatabaseAsync().ConfigureAwait(false);
 await app.Services.BootstrapAdminAsync().ConfigureAwait(false);
+await app.Services.SeedDemoIfRequestedAsync().ConfigureAwait(false);
 
 if (!app.Environment.IsDevelopment())
 {

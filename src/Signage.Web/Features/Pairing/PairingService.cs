@@ -175,16 +175,21 @@ public sealed partial class PairingService(SignageDbContext db, TimeProvider tim
             return OperationResult.Fail(PairingErrors.CodeNotFound);
         }
 
-        // Only the newest claim for a screen may deliver: earlier, still undelivered claims for it are cancelled.
-        var now = time.GetUtcNow();
-        await CancelPendingClaimsAsync(db, screenId, now, ct, except: request.Value).ConfigureAwait(false);
-
         // Conditional, so two admins typing the same code can't both claim it.
+        var now = time.GetUtcNow();
         var claimed = await db.PairingRequests
             .Where(p => p.Id == request.Value && p.ClaimedAt == null && p.ExpiresAt > now)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.ClaimedScreenId, screenId).SetProperty(p => p.ClaimedAt, now), ct)
             .ConfigureAwait(false);
-        return claimed == 1 ? OperationResult.Ok : OperationResult.Fail(PairingErrors.CodeNotFound);
+        if (claimed != 1)
+        {
+            return OperationResult.Fail(PairingErrors.CodeNotFound);
+        }
+
+        // Only the newest claim for a screen may deliver. Earlier claims are cancelled only now that this one has
+        // succeeded, so losing a race doesn't cost the screen its earlier claim.
+        await CancelPendingClaimsAsync(db, screenId, now, ct, except: request.Value).ConfigureAwait(false);
+        return OperationResult.Ok;
     }
 
     private async Task<Guid?> FindClaimableAsync(string? code, CancellationToken ct)

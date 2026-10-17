@@ -12,6 +12,7 @@ services:
         # so the browser reaches the app under this alias instead.
         aliases: [signage-web]
     environment:
+      SIGNAGE__SEEDDEMO: "false" # E2E tests create their own content
       # Test-only values for the throwaway E2E database; never use them anywhere else.
       SIGNAGE__BOOTSTRAP__ADMINEMAIL: e2e-admin@example.org
       SIGNAGE__BOOTSTRAP__ADMINPASSWORD: e2e-bootstrap-password

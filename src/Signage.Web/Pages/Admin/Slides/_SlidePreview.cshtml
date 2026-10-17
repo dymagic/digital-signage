@@ -14,7 +14,7 @@
             <iframe src="@Model.Url" sandbox="allow-scripts allow-same-origin allow-forms" referrerpolicy="no-referrer" loading="lazy" tabindex="-1" title=""></iframe>
             break;
         case SlideType.Html:
-            <iframe srcdoc="@Model.Html" sandbox="allow-scripts" loading="lazy" tabindex="-1" title=""></iframe>
+            <iframe srcdoc="@Signage.Web.Features.Slides.HtmlSlideDocument.Build(Model.Html)" sandbox="allow-scripts" loading="lazy" tabindex="-1" title=""></iframe>
             break;
     }
 </div>

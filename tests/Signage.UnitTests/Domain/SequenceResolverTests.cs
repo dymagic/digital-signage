@@ -215,6 +215,20 @@ public class SequenceResolverTests
     }
 
     [Fact]
+    public void Without_the_schedule_filter_out_of_window_slides_stay_but_disabled_ones_still_go()
+    {
+        var screen = Screen().WithPlaylist(0, Playlist("p",
+            Slide("future", from: Now.AddDays(1)),
+            Slide("expired", until: Now.AddDays(-1)),
+            Slide("off", enabled: false),
+            Slide("now")));
+
+        var titles = SequenceResolver.Resolve(screen, Now, applySchedule: false).Select(r => r.Slide.Title);
+
+        Assert.Equal(["future", "expired", "now"], titles);
+    }
+
+    [Fact]
     public void Sources_describe_where_each_slide_came_from()
     {
         var grouped = Playlist("Canteen", Slide("g"));

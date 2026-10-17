@@ -31,6 +31,9 @@ services:
         condition: service_healthy
     environment:
       ConnectionStrings__Default: "Host=db;Port=5432;Database=signage;Username=signage;Password=signage-demo-password"
+      # Demo content (a playlist and a "Demo screen" to pair a device to). Created only on an empty database;
+      # set to false, or remove, for a clean start.
+      SIGNAGE__SEEDDEMO: "true"
     ports:
       - "8080:8080"
     # The runtime image is chiseled (no shell, no curl), so there is no container HEALTHCHECK.
