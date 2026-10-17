@@ -126,6 +126,7 @@ export class Carousel {
                 }
                 this.current.slide = list[0]; // e.g. a new duration
                 this.current.item.setLoop?.(true); // a lone video loops
+                await this.keepCurrentPlaying();
                 this.hideProgress();
                 document.body.dataset.mode = 'player';
                 await this.idle(config.staticRecheckMs);
@@ -144,12 +145,45 @@ export class Carousel {
                 this.beforeTransition = null;
                 await task();
             }
-            if (!(await this.advance(incoming)) && this.isStale()) {
-                // The current slide has expired or was removed, and nothing else could be shown: don't keep it (R-03).
-                this.showEmptyState();
-                await this.idle(ms(config.nothingShowableRetryMs));
+            if (!(await this.advance(incoming))) {
+                if (this.isStale()) {
+                    // The current slide has expired or was removed, and nothing else could be shown: don't keep it (R-03).
+                    this.showEmptyState();
+                    await this.idle(ms(config.nothingShowableRetryMs));
+                } else {
+                    await this.keepCurrentPlaying();
+                }
             }
         }
+    }
+
+    /**
+     * The current slide stays on screen for another round: a video that ended plays again, and one that failed (error,
+     * stall, cap) is replaced by a fresh element after a calm pause (ADR-0008, ADR-0009). Never a busy loop.
+     */
+    async keepCurrentPlaying() {
+        const item = this.current?.item;
+        if (item?.state === 'ended') {
+            item.replay();
+            return;
+        }
+        if (item?.state !== 'failed') {
+            return;
+        }
+        await this.idle(ms(config.nothingShowableRetryMs));
+        if (this.stopped || this.current?.item !== item) {
+            return;
+        }
+        const fresh = this.prepare(this.current.slide);
+        const ok = await Promise.race([fresh.item.ready, sleep(ms(config.preloadGraceMs)).then(() => false)]);
+        if (!ok || this.stopped || this.current?.item !== item) {
+            this.release(fresh.layer);
+            return;
+        }
+        fresh.layer.dataset.state = 'active'; // swapped in place, no transition to itself
+        this.release(this.current.layer);
+        this.current = fresh;
+        fresh.item.start();
     }
 
     /** True when the slide on screen has left a non-empty sequence (expired or removed). */
@@ -282,7 +316,9 @@ export class Carousel {
         this.hideProgress();
         document.body.dataset.mode = 'single-video';
         this.single.show(url);
-        if (this.current && this.single.visible) {
+        // The carousel slide goes once the video has faded in, or at once if the video can't play (black until a retry
+        // succeeds: stale carousel content must not stay on a screen set to single video).
+        if (this.current && (this.single.visible || this.single.failed)) {
             this.release(this.current.layer);
             this.current = null;
             this.lastIds = ''; // back in carousel mode, start from the beginning

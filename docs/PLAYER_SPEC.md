@@ -63,6 +63,10 @@ Baseline behaviour (must hold whatever the spike finds):
    muted instead of being skipped, and logs a warning.
 7. While the video plays, the progress bar follows its playback position (R-21). A video that is the only playable
    slide loops (`loop`), so it never ends.
+   It also loops when it *becomes* the only playable slide while it plays (a neighbour expired or was removed).
+9. When a video slide stays on screen for another round because nothing else can be shown (§2, Skipping), a video
+   that ended plays again from the start, and one that failed (error, stall, cap) is replaced by a fresh element after
+   10 s. The player never retries in a tight loop.
 8. The stall limit and the cap are real time, never scaled by `timeScale` (videos play at normal speed in tests).
 
 **Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
@@ -101,8 +105,10 @@ One `<video loop muted playsinline>` filling the screen. No carousel, progress b
 When the mode or URL changes through an event, cross-fade (300 ms) to the new state. A mode or URL change applies at once, also in
 the middle of a slide (it does not wait for the next transition). The carousel slide underneath is released once the
 video has faded in; going back, the carousel starts from its first slide underneath the fading video. Without a URL
-the empty state shows. A video that fails is tried again after 10 s. The video is released like a video slide
-(ADR-0008). The info and
+the empty state shows. A video that fails (an error, a refused `play()`, or no progress for 8 s) is tried again after
+10 s with a fresh element; the last good picture stays until the new one plays. If the URL can't play at all, the
+carousel slide underneath is released anyway (black until a retry succeeds), so stale content never stays on a screen
+set to single video. Every replaced or failed layer is released like a video slide (ADR-0008). The info and
 identify overlays still work.
 
 ## 7. Overlays

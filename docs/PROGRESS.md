@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-09 Video & single video mode — branch `wp-09-video` — status In review (round 1 requested)
+- Package: WP-09 Video & single video mode — branch `wp-09-video` — status In review (round 2 pending)
 - Plan: `slides/video.js` (fresh <video>, muted unless playAudio, playsinline, preload=auto, no autoplay; ready on
   canplay, false on error; start() after the transition; finished on ended / error / 8 s stall / 10 min cap; release per
   ADR-0008); carousel dwells on `finished` with the progress bar following playback; a lone video loops;
@@ -19,7 +19,12 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
   lone video loops, mode change interrupts the dwell), WP-08 follow-ups; VideoTests (3) + ClockTests stale test written.
 - Player E2E 25/25 (video + clock tests 3 repeat runs green); docs: PLAYER_SPEC §2/§4/§6, ARCHITECTURE, ADR-0009.
 - Self-check green: build 0 warnings, `dotnet test` 433, E2E 43 (8 opt-in spike skips); single-video screenshot checked.
-- Next step: handle the review round 1 verdict (docs/reviews/WP-09-review-1.md).
+- Round 1: CHANGES_REQUIRED (2 BLOCKER: busy loop after a video ends next to a broken slide, orphaned single video
+  layer; 1 MAJOR: lone video froze; 3 MINOR; 2 NIT). Fixed: replayable video item (state, replay, renewed finished,
+  setLoop only on change), carousel keepCurrentPlaying (replay ended, fresh element after 10 s for failed), single video
+  tracks all layers + stall watchdog + refused play() counts as failure, carousel slide released when the URL fails.
+  6 new VideoTests; the regression ones fail on the round-1 code (checked).
+- Next step: full self-check, request round 2.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

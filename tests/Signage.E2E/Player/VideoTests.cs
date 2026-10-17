@@ -120,4 +120,192 @@ public class VideoTests(BrowserFixture fixture) : PlayerTest(fixture)
         await Expect(device.GetByTestId("single-video")).ToHaveCountAsync(0);
         await device.Context.CloseAsync();
     }
+
+    private const string Wraps = """
+        (v) => new Promise((resolve) => {
+            let last = v.currentTime;
+            const timer = setInterval(() => {
+                if (v.currentTime + 0.5 < last) { clearInterval(timer); resolve(true); }
+                last = v.currentTime;
+            }, 100);
+            setTimeout(() => { clearInterval(timer); resolve(false); }, (v.duration + 4) * 1000);
+        })
+        """;
+
+    [Fact]
+    public async Task A_video_next_to_a_slide_that_cannot_load_plays_again_without_hammering_the_broken_host()
+    {
+        var tag = Tag();
+        await AdminActions.CreateUrlSlideAsync(Page, "Video", $"Clip {tag}", Media("/media/clip-b-h264.mp4"));
+        await AdminActions.CreateUrlSlideAsync(Page, "Image", $"Gone {tag}", Media($"/media/gone-{tag}.png"), 2);
+        await EmptyScreenAsync($"Video and gone {tag}", $"Video and gone {tag}", [$"Clip {tag}", $"Gone {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var requests = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 1, ctx =>
+        {
+            ctx.Request += (_, r) => { if (r.Url.Contains($"gone-{tag}", StringComparison.Ordinal)) Interlocked.Increment(ref requests); };
+            return Task.CompletedTask;
+        });
+        await WaitForActivationsAsync(device, 1);
+        var video = device.Locator(".slide[data-state=active] video");
+
+        // Each time the video ends, the image is tried once and fails; the video then plays again from the start.
+        Assert.True(await video.EvaluateAsync<bool>(Wraps), "the video plays again");
+        Assert.True(await video.EvaluateAsync<bool>(Wraps), "and again");
+        Assert.InRange(requests, 1, 4); // one try per round, not a busy loop
+        Assert.False(await video.EvaluateAsync<bool>("v => v.paused || v.ended"));
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_video_that_becomes_the_only_slide_while_it_plays_loops()
+    {
+        var tag = Tag();
+        await AdminActions.CreateHtmlSlideAsync(Page, $"Ends {tag}", 2, activeUntilLocal: "2030-01-02T10:02");
+        await AdminActions.CreateUrlSlideAsync(Page, "Video", $"Clip {tag}", Media("/media/clip-b-h264.mp4"));
+        await EmptyScreenAsync($"Lone video {tag}", $"Lone video {tag}", [$"Ends {tag}", $"Clip {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var device = await OpenDeviceAsync(token, timeScale: 1, ctx => ctx.Clock.InstallAsync(new() { TimeDate = new DateTime(2030, 1, 2, 10, 0, 0, DateTimeKind.Utc) }));
+        await WaitForActivationsAsync(device, 2); // "Ends", then the video
+        await device.Clock.FastForwardAsync("03:00"); // the neighbour's window ends while the video plays
+
+        var video = device.Locator(".slide[data-state=active] video");
+        Assert.True(await video.EvaluateAsync<bool>(Wraps), "the lone video keeps going");
+        Assert.True(await video.EvaluateAsync<bool>(Wraps), "and loops");
+        Assert.True(await video.EvaluateAsync<bool>("v => v.loop && !v.ended"));
+        Assert.Equal(2, await ActivationCountAsync(device));
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_video_that_stops_making_progress_is_skipped_after_8_seconds()
+    {
+        var tag = Tag();
+        await AdminActions.CreateUrlSlideAsync(Page, "Video", $"Clip {tag}", Media("/media/clip-a-h264.mp4"));
+        var next = await AdminActions.CreateHtmlSlideAsync(Page, $"Next {tag}", 4);
+        await EmptyScreenAsync($"Stall {tag}", $"Stall {tag}", [$"Clip {tag}", $"Next {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var device = await OpenDeviceAsync(token, timeScale: 1);
+        await WaitForActivationsAsync(device, 1);
+
+        // Playback stops making progress without an error (as when a stream hangs): freeze it from outside.
+        var frozenAt = await device.EvaluateAsync<double>("""
+            async () => {
+                const v = document.querySelector('.slide[data-state=active] video');
+                while (v.currentTime < 0.3) await new Promise((r) => setTimeout(r, 50));
+                v.pause();
+                return performance.now();
+            }
+            """);
+        var played = await WaitForActivationsAsync(device, 2, timeoutMs: 20_000);
+        var times = await ActivationTimesAsync(device);
+
+        Assert.Equal(next.ToString(), played[1]);
+        Assert.InRange(times[1] - frozenAt, 8000, 11_000); // the 8 s stall limit, then the transition
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_video_with_sound_plays_with_sound_when_the_browser_allows_it_and_muted_when_it_does_not()
+    {
+        var tag = Tag();
+        await AdminActions.CreateHtmlSlideAsync(Page, $"Intro {tag}", 2);
+        await Page.GotoAsync("/admin/slides/create?type=Video");
+        await Page.GetByLabel("Title").FillAsync($"Loud {tag}");
+        await Page.GetByLabel("Address (URL)").FillAsync(Media("/media/clip-b-h264.mp4").ToString());
+        await Page.GetByLabel("Play audio").CheckAsync();
+        await Page.GetByRole(Microsoft.Playwright.AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
+        await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/admin/slides/[0-9a-f-]{36}$"));
+        await EmptyScreenAsync($"Sound {tag}", $"Sound {tag}", [$"Intro {tag}", $"Loud {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var device = await OpenDeviceAsync(token, timeScale: 1);
+        await WaitForActivationsAsync(device, 2);
+
+        var result = await device.EvaluateAsync<JsonElement>("""
+            async () => {
+                const v = document.querySelector('.slide[data-state=active] video');
+                while (v.currentTime < 0.3) await new Promise((r) => setTimeout(r, 50));
+                // Ask the browser the same question with a separate, unmuted element.
+                const probe = document.createElement('video');
+                probe.src = v.currentSrc;
+                const soundAllowed = await probe.play().then(() => true, (e) => (e.name === 'NotAllowedError' ? false : String(e)));
+                probe.pause();
+                probe.removeAttribute('src');
+                probe.load();
+                return { muted: v.muted, playing: !v.paused, soundAllowed };
+            }
+            """);
+
+        // R-07: the slide asks for sound. A kiosk started with the autoplay policy plays it audibly; a browser without it
+        // still plays the video, muted (ADR-0009). Either way it plays.
+        var soundAllowed = result.GetProperty("soundAllowed");
+        TestContext.Current.TestOutputHelper?.WriteLine($"autoplay with sound allowed: {soundAllowed}");
+        Assert.True(soundAllowed.ValueKind is JsonValueKind.True or JsonValueKind.False, $"probe: {soundAllowed}");
+        Assert.True(result.GetProperty("playing").GetBoolean());
+        Assert.Equal(!soundAllowed.GetBoolean(), result.GetProperty("muted").GetBoolean());
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_video_with_sound_plays_muted_in_a_browser_that_refuses_autoplay_with_sound()
+    {
+        var tag = Tag();
+        await AdminActions.CreateHtmlSlideAsync(Page, $"Intro {tag}", 2);
+        await Page.GotoAsync("/admin/slides/create?type=Video");
+        await Page.GetByLabel("Title").FillAsync($"Loud {tag}");
+        await Page.GetByLabel("Address (URL)").FillAsync(Media("/media/clip-b-h264.mp4").ToString());
+        await Page.GetByLabel("Play audio").CheckAsync();
+        await Page.GetByRole(Microsoft.Playwright.AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
+        await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/admin/slides/[0-9a-f-]{36}$"));
+        await EmptyScreenAsync($"Quiet kiosk {tag}", $"Quiet kiosk {tag}", [$"Intro {tag}", $"Loud {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+
+        // A kiosk started without the autoplay-with-sound policy (R-07): unmuted play() is refused, as Chromium does.
+        var device = await OpenDeviceAsync(token, timeScale: 1, ctx => ctx.AddInitScriptAsync("""
+            const play = HTMLMediaElement.prototype.play;
+            HTMLMediaElement.prototype.play = function () {
+                return this.muted ? play.call(this) : Promise.reject(new DOMException('blocked', 'NotAllowedError'));
+            };
+            """));
+        await WaitForActivationsAsync(device, 2);
+
+        var video = device.Locator(".slide[data-state=active] video");
+        await device.WaitForFunctionAsync("() => document.querySelector('.slide[data-state=active] video')?.currentTime > 0.3", null, new() { Timeout = 10_000 });
+        Assert.True(await video.EvaluateAsync<bool>("v => v.muted && !v.paused"), "it plays, muted (ADR-0009)");
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task Single_video_mode_recovers_from_failures_and_leaves_nothing_behind()
+    {
+        var (screenId, token, _) = await ScreenWithSlidesAsync(("Stale", 200, "#7c2d12"));
+        var device = await OpenDeviceAsync(token, timeScale: 0.2); // retries after 2 s, manifest polls every 12 s
+        await WaitForActivationsAsync(device, 1);
+
+        // A URL that never plays: the old carousel content must not stay on a screen set to single video.
+        await AdminActions.SetScreenModeAsync(Page, screenId, Media($"/media/missing-{Tag()}.mp4"));
+        await ExpectModeAsync(device, "single-video");
+        await Expect(device.Locator(".slides > .slide")).ToHaveCountAsync(0, new() { Timeout = 20_000 });
+
+        // A good URL plays.
+        var clip = Media("/media/clip-c-h264.mp4");
+        await AdminActions.SetScreenModeAsync(Page, screenId, clip);
+        var visible = device.Locator("[data-testid=single-video].visible video");
+        await Expect(visible).ToHaveCountAsync(1, new() { Timeout = 20_000 });
+
+        // It fails mid-play and the first retries fail too (the host is down), then the host comes back.
+        await device.Context.RouteAsync(clip.ToString(), route => route.AbortAsync("connectionrefused"));
+        await visible.EvaluateAsync("v => { v.src = v.src.replace('clip-c', 'not-there'); }");
+        await device.WaitForTimeoutAsync(5000); // two failed retries at this scale
+        Assert.InRange(await device.Locator("[data-testid=single-video]").CountAsync(), 1, 2);
+        await device.Context.UnrouteAsync(clip.ToString());
+        await device.WaitForFunctionAsync("() => [...document.querySelectorAll('[data-testid=single-video].visible video')].some(v => v.src.includes('clip-c') && v.currentTime > 0.2)", null, new() { Timeout = 20_000 });
+        await Expect(device.Locator("[data-testid=single-video]")).ToHaveCountAsync(1);
+
+        // Back to the carousel: no single video layer is left on top of it.
+        await AdminActions.SetScreenModeAsync(Page, screenId, null);
+        await ExpectModeAsync(device, "player");
+        await Expect(device.Locator("[data-testid=single-video]")).ToHaveCountAsync(0);
+        await device.Context.CloseAsync();
+    }
 }

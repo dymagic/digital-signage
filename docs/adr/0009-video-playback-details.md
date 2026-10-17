@@ -31,3 +31,6 @@ timings follow the test `timeScale`.
 - A screen playing a video longer than 10 minutes as a slide moves on at 10 minutes. The admin hint can mention it in
   WP-12 if needed.
 - Heartbeat reporting of skipped videos is part of WP-10 (BACKLOG).
+- Tests: the Playwright Chromium in the E2E container allows autoplay with sound, so `VideoTests` checks the audible
+  path directly and the muted fallback with an init script that makes unmuted `play()` reject with `NotAllowedError`,
+  as a browser without the policy does.
