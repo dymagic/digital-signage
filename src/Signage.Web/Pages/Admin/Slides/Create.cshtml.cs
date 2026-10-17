@@ -39,6 +39,7 @@ public class CreateModel(SlideService slides, SettingsService settings, IStringL
         }
 
         var id = await slides.CreateAsync(type, result.Slide, ct);
+        KeepWarningForNextPage(result);
         TempData["Status"] = "Slides.Created";
         return RedirectToPage("Edit", new { id });
     }

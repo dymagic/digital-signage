@@ -7,7 +7,8 @@
             <img src="@Model.Url" alt="" loading="lazy" referrerpolicy="no-referrer" />
             break;
         case SlideType.Video:
-            <video src="@(Model.Url)#t=0.1" preload="metadata" muted playsinline></video>
+            @* "#t=0.1" asks for the frame at 0.1 s as a poster; any fragment already on the URL is replaced. *@
+            <video src="@(Model.Url?.Split('#')[0])#t=0.1" preload="metadata" muted playsinline></video>
             break;
         case SlideType.WebPage:
             <iframe src="@Model.Url" sandbox="allow-scripts allow-same-origin allow-forms" referrerpolicy="no-referrer" loading="lazy" tabindex="-1" title=""></iframe>

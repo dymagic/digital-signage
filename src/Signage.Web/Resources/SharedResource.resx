@@ -217,7 +217,7 @@
     <value>Screens:</value>
   </data>
   <data name="Playlists.UsedByCounts" xml:space="preserve">
-    <value>{0} screens · {1} groups</value>
+    <value>Screens: {0} · Groups: {1}</value>
   </data>
   <data name="Settings.DurationHint" xml:space="preserve">
     <value>Used for every slide that doesn't set its own duration. Videos always play to the end.</value>
@@ -263,6 +263,9 @@
   </data>
   <data name="Slides.Column.Duration" xml:space="preserve">
     <value>Duration</value>
+  </data>
+  <data name="Slides.Column.Status" xml:space="preserve">
+    <value>Status</value>
   </data>
   <data name="Slides.Create" xml:space="preserve">
     <value>Create slide</value>
@@ -463,7 +466,7 @@
     <value>Web page</value>
   </data>
   <data name="Slides.Usage" xml:space="preserve">
-    <value>{0} playlists · {1} screens</value>
+    <value>Playlists: {0} · Screens: {1}</value>
   </data>
   <data name="Slides.UsedIn" xml:space="preserve">
     <value>Used in</value>

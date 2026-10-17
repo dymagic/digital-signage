@@ -156,6 +156,9 @@ fieldset.schedule legend { font-weight: 600; padding: 0 .25rem; }
 fieldset.schedule .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 fieldset.schedule .row > div { display: flex; flex-direction: column; gap: .35rem; }
 .split { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 2rem; align-items: start; }
+/* Slide editor: the form takes the rest, the 440 px preview never overflows the content column. */
+.split.split-preview { grid-template-columns: minmax(0, 1fr) auto; }
+.preview-pane .slide-preview { --preview-width: 440; }
 .preview-pane { position: sticky; top: 1rem; }
 .badge-button { font-size: .8rem; padding: .1rem .6rem; border-radius: 999px; }
 .badge-button.on { background: var(--ok-bg); color: var(--ok); border-color: transparent; }

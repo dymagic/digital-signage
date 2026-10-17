@@ -11,6 +11,7 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
     private AdminApp _app = null!;
     private Guid _editorId;
     private Guid _slideId;
+    private Guid _playlistId;
 
     public static TheoryData<string, bool> Pages => new()
     {
@@ -25,6 +26,10 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
         { "/admin/slides/create?type=Image", true },
         { "/admin/slides/{slide}", true },
         { "/admin/slides/{slide}/delete", true },
+        { "/admin/playlists", true },
+        { "/admin/playlists/create", true },
+        { "/admin/playlists/{playlist}", true },
+        { "/admin/playlists/{playlist}/delete", true },
     };
 
     public async ValueTask InitializeAsync()
@@ -39,6 +44,13 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
             await db.SaveChangesAsync();
         });
         _slideId = slide.Id;
+        var playlist = new Playlist { Name = "Matrix playlist" };
+        await _app.Factory.WithDbAsync(async db =>
+        {
+            db.Playlists.Add(playlist);
+            await db.SaveChangesAsync();
+        });
+        _playlistId = playlist.Id;
     }
 
     public ValueTask DisposeAsync() => _app.DisposeAsync();
@@ -187,5 +199,6 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
 
     private string Resolve(string path) => path
         .Replace("{editor}", _editorId.ToString(), StringComparison.Ordinal)
-        .Replace("{slide}", _slideId.ToString(), StringComparison.Ordinal);
+        .Replace("{slide}", _slideId.ToString(), StringComparison.Ordinal)
+        .Replace("{playlist}", _playlistId.ToString(), StringComparison.Ordinal);
 }

@@ -91,7 +91,9 @@ public sealed class PlaylistService(SignageDbContext db)
                 return CommonErrors.NotFound;
             }
 
-            entries.Add(new PlaylistSlide { PlaylistId = playlistId, SlideId = slideId, Position = entries.Count });
+            var entry = new PlaylistSlide { PlaylistId = playlistId, SlideId = slideId, Position = entries.Count };
+            entries.Add(entry);
+            db.PlaylistSlides.Add(entry);
             return null;
         }, ct);
 
