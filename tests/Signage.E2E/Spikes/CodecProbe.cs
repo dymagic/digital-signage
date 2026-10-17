@@ -13,7 +13,7 @@ public class CodecProbe(BrowserFixture fixture) : E2ETest(fixture)
     public async Task Report_codec_support_and_actual_playback()
     {
         Assert.SkipUnless(E2EEnvironment.SpikeEnabled, "Spike: set SIGNAGE_E2E_SPIKE=1.");
-        await Page.GotoAsync(new Uri(E2EEnvironment.MediaBaseUrl, "/spikes/").ToString());
+        await Page.GotoAsync(new Uri(E2EEnvironment.MediaBaseUrl, "/spikes/video-lifecycle/harness.html?transitions=0").ToString());
 
         var result = await Page.EvaluateAsync<JsonElement>("""
             async (base) => {

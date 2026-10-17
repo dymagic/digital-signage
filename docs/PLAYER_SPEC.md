@@ -52,7 +52,11 @@ Baseline behaviour (must hold whatever the spike finds):
 4. On `error`, or a stall longer than 8 s without progress: log it, skip to the next slide, and report it in the heartbeat.
 5. If the video has no duration metadata, a safety cap (10 min) applies.
 
-**Spike WP-07 must investigate and decide** (record in an ADR), measuring on Chromium in Docker and
+**Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
+`removeAttribute('src')` → `load()` → remove the layer. Only the next slide is prepared, so at most two video
+elements exist: the playing one and the next one. No element reuse.
+
+The original brief for the spike: **Spike WP-07 must investigate and decide** (record in an ADR), measuring on Chromium in Docker and
 noting the Raspberry Pi implications from the literature:
 - whether a covered video element should be released by `pause()` → `removeAttribute('src')` →
   `load()` → remove from DOM. That is the hypothesis: it frees decoder and buffer memory, which
