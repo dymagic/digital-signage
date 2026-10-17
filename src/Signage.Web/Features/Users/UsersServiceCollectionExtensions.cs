@@ -29,6 +29,10 @@ public static class UsersServiceCollectionExtensions
                 options.ExpireTimeSpan = TimeSpan.FromHours(12);
                 options.SlidingExpiration = true;
                 options.Events.OnValidatePrincipal = UserPrincipal.ValidateAsync;
+
+                // APIs (e.g. the admin preview manifest) answer 401/403 instead of redirecting to the sign-in page.
+                options.Events.OnRedirectToLogin = ctx => ApiAware(ctx, StatusCodes.Status401Unauthorized);
+                options.Events.OnRedirectToAccessDenied = ctx => ApiAware(ctx, StatusCodes.Status403Forbidden);
             });
 
         services.AddAuthorizationBuilder()
@@ -36,5 +40,18 @@ public static class UsersServiceCollectionExtensions
             .AddPolicy(Policies.Editor, p => p.RequireRole(nameof(UserRole.Admin), nameof(UserRole.Editor)));
 
         return services;
+    }
+
+    private static Task ApiAware(Microsoft.AspNetCore.Authentication.RedirectContext<CookieAuthenticationOptions> ctx, int status)
+    {
+        if (ctx.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Response.StatusCode = status;
+        }
+        else
+        {
+            ctx.Response.Redirect(ctx.RedirectUri);
+        }
+        return Task.CompletedTask;
     }
 }

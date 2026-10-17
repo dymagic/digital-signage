@@ -37,8 +37,9 @@ public class PairingFlowTests(BrowserFixture fixture) : E2ETest(fixture)
         await Page.GetByRole(AriaRole.Button, new() { Name = "Pair screen" }).ClickAsync();
         await Expect(Page.GetByText("Code accepted.")).ToBeVisibleAsync();
 
-        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "player", new() { Timeout = 15_000 });
-        await Expect(device.GetByTestId("screen-name")).ToHaveTextAsync(name);
+        // A new screen has no content yet: the player shows its empty state with the screen's name (R-23).
+        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "empty", new() { Timeout = 15_000 });
+        await Expect(device.GetByTestId("empty-name")).ToHaveTextAsync(name);
 
         await Page.ReloadAsync();
         Page.Dialog += (_, dialog) => _ = dialog.AcceptAsync(); // "Revoke this screen's access?"
@@ -65,8 +66,9 @@ public class PairingFlowTests(BrowserFixture fixture) : E2ETest(fixture)
         var device = await NewDeviceAsync();
         await device.GotoAsync($"{DeviceUrl}&token={token}");
 
-        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "player", new() { Timeout = 15_000 });
-        await Expect(device.GetByTestId("screen-name")).ToHaveTextAsync(name);
+        // A new screen has no content yet: the player shows its empty state with the screen's name (R-23).
+        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "empty", new() { Timeout = 15_000 });
+        await Expect(device.GetByTestId("empty-name")).ToHaveTextAsync(name);
         Assert.DoesNotContain("token=", device.Url, StringComparison.Ordinal);
         Assert.Contains("timeScale=0.05", device.Url, StringComparison.Ordinal);
         await device.Context.CloseAsync();
@@ -98,8 +100,9 @@ public class PairingFlowTests(BrowserFixture fixture) : E2ETest(fixture)
         });
         await device.GotoAsync($"{DeviceUrl}&token={token}");
 
-        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "player", new() { Timeout = 15_000 });
-        await Expect(device.GetByTestId("screen-name")).ToHaveTextAsync(name);
+        // A new screen has no content yet: the player shows its empty state with the screen's name (R-23).
+        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "empty", new() { Timeout = 15_000 });
+        await Expect(device.GetByTestId("empty-name")).ToHaveTextAsync(name);
         Assert.True(failures >= 3);
         Assert.DoesNotContain("token=", device.Url, StringComparison.Ordinal);
         await device.Context.CloseAsync();

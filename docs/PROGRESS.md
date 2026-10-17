@@ -7,19 +7,27 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-07 Spike: video lifecycle & memory — branch `wp-07-video-spike` — status In review (round 4 requested, PO approved)
-- Plan: generate H.264 test media in a container (`scripts/generate-test-media.sh`, linuxserver/ffmpeg:9.0.2), serve it
-  and the harness from nginx (`testmedia` service in docker-compose.e2e.yml), harness in
-  `tests/Signage.E2E/spikes/video-lifecycle/` with 4 strategies (release / remove / keep / reuse), runner
-  `tests/Signage.E2E/Spikes/VideoLifecycleSpike.cs` (240 transitions, samples every 20: JS heap after GC, nodes,
-  browser PSS from /proc, videos in DOM, media players created/destroyed via CDP Media). Then ADR-0008 with data.
-- Done: media, harness, runner, measurements (240 x 4 strategies; 1200 release vs images-only), ADR-0008, PLAYER_SPEC §4.
-- Round 1: CHANGES_REQUIRED (2 MAJOR: unexplained growth + tracing on, back-to-back videos unmeasured; 1 MINOR; 2 NIT); fixed in 7d9219d with new runs (artifacts/spike-short, artifacts/spike-long).
-- Round 2: CHANGES_REQUIRED (1 MAJOR: daily reload while offline; 2 MINOR; 2 NIT); fixed in d0d3641. The daily reload is user-visible, so it is Proposed and I asked the product owner.
-- PO confirmed the daily reload (2026-10-17); ADR-0008 and PLAYER_SPEC §9 updated.
-- Round 3: CHANGES_REQUIRED (1 MAJOR: growth rate understated, really ~0.15 MB/transition ≈ 1.3 GB/day worst case; 2 MINOR; 1 NIT); all docs, fixed in 0dfed25. Escalated to the PO per review-gate (round 3) and because the PO's reload decision rested on the corrected figure.
-- PO confirmed (corrected figure) and approved round 4.
-- Next step: handle review round 4 verdict (docs/reviews/WP-07-review-4.md).
+- Package: WP-08 Player core — branch `wp-08-player-core` — status In review (round 3 requested)
+- Plan: manifest endpoint (ETag/304, schedule filtered client-side, expired slides dropped) + admin preview manifest;
+  player ES modules in `wwwroot/screen/` (carousel, slides, schedule, storage, connection, pairing, empty, reload);
+  demo seed; WP-06/WP-03/WP-07 follow-ups (see BACKLOG). Tests: unit (base style parity, resolver), integration
+  (`Player/ManifestTests`, `DemoSeedTests`), E2E `Player/CarouselTests`, `ClockTests` (Playwright Clock API),
+  `SlideTypeTests` (testmedia).
+- Done: server (7cee47a), player (ad4b840), clock E2E, Image/WebPage E2E, ADR-0008 NITs, ARCHITECTURE §4/§5/§6.
+- Self-check green: build 0 warnings, `dotnet test` 417 passed, `scripts/test-e2e.sh` 33 (8 opt-in spike skips).
+- Known flake (not WP-08 code): `dotnet test` on the host twice crashed the E2E module at start with "Internal CLR
+  error (0x80131506)" before any test ran (all its tests skip on the host); reruns pass and the module alone passed
+  6/6. If it recurs, capture a dump (`DOTNET_DbgEnableMiniDump=1`) and file it.
+- Round 1: CHANGES_REQUIRED (4 MAJOR, 4 MINOR, 3 NIT). Fixed in code: shadow only while animating; carousel loop
+  (no second dwell after a replaced/skipped/expired slide, empty state + 10 s retry when nothing can be shown);
+  cached playback before the token exchange; reload no longer stuck; seed under advisory lock; weak ETag; preview 404
+  message; pairing tests (race interceptor, earlier code). E2E tests added for every finding (each fails on the
+  pre-fix player, checked); PLAYER_SPEC §2/§9/§10 updated.
+- Self-check green: build 0 warnings, `dotnet test` 428 passed, E2E 38 (8 opt-in spike skips).
+- Round 2: CHANGES_REQUIRED (1 MAJOR: edits to a one-slide screen never shown; 3 NIT). Fixed: edited single slide
+  slides in once ready; id in sameContent; expired current slide falls back to the empty state; calm-retry test on the
+  Playwright clock. New E2E test fails on the round-2 carousel (checked).
+- Next step: handle the review round 3 verdict (docs/reviews/WP-08-review-3.md).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

@@ -552,6 +552,9 @@
   <data name="Screens.Prepended" xml:space="preserve">
     <value>Prepended slides (played first)</value>
   </data>
+  <data name="Screens.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
   <data name="Screens.RemoveEntry" xml:space="preserve">
     <value>Remove "{0}"</value>
   </data>

@@ -100,7 +100,7 @@ strategies (PLAYER_SPEC §4). Use short, openly licensed sample MP4s served from
 **Output:** `docs/adr/000X-video-lifecycle.md` with the data, the recommendation and the decision;
 harness code kept but not shipped. The reviewer checks the method, not polish.
 
-### WP-08 Player core — `Todo`
+### WP-08 Player core — `In review`
 Manifest endpoint with ETag, the player shell, carousel engine, transition per PLAYER_SPEC §2,
 progress bar, Image/WebPage/Html slides, preloading, the 3-layer cap, empty state, localStorage
 manifest cache and offline cycling, schedule re-check on the client, admin preview mode

@@ -21,8 +21,8 @@
   accelerates *into* the stop and feels like a slam. The curve above gives the "firm" arrival. To
   change it, edit one constant.
 - **Shadow:** the incoming layer carries a subtle shadow on its left edge, e.g.
-  `box-shadow: -24px 0 48px -8px rgba(0,0,0,0.45)`. It must be visible on light content and never look
-  like a border.
+  `box-shadow: -24px 0 48px -8px rgba(0,0,0,0.45)`, only while it animates: a prepared slide waiting off-screen
+  casts nothing into view. It must be visible on light content and never look like a border.
 - **Stacking:** the outgoing slide **does not move**. It stays at `translateX(0)` under the incoming
   one (higher `z-index`). Once the incoming slide has fully arrived (`transitionend`, with a
   timeout fallback), the outgoing slide goes to state `covered` and is cleaned up (see §4).
@@ -31,7 +31,14 @@
 - **Preloading:** when a slide becomes `active`, the player starts preparing the *next* slide
   off-screen: image decode via `img.decode()`, iframe/srcdoc loading, video `preload="auto"`.
   If the next slide is not ready when its time comes, wait up to 3 s more, then transition anyway.
-- With only one playable slide: show it and do not transition to itself. A single video loops.
+- **Skipping:** a slide that failed to load, or whose schedule window has ended by the time it is due (R-03), is
+  skipped when its turn comes: the slide after it is prepared straight away, without a second dwell on the current
+  slide. If nothing else can be shown, the current slide stays for another round. If no slide can be shown at all
+  (e.g. every image host unreachable), the player shows the empty state (§10) and tries again after 10 s.
+- With only one playable slide: show it and do not transition to itself. A single video loops. If a new manifest
+  changes that slide's content, the new version is prepared and slides in over the old one once it is ready (the
+  normal transition); a slide that has expired or left the sequence is not kept on screen when nothing else can be
+  shown (empty state instead).
 
 ## 3. Progress bar (R-21)
 
@@ -108,12 +115,14 @@ screen (R-42).
 ## 9. Connectivity (R-24, R-25, R-26)
 
 - On boot: if a cached manifest exists in localStorage, start playing it **immediately**, then
-  fetch the fresh one.
+  fetch the fresh one. This holds for a pre-configured `/screen?token=…` address too: the cached slides play while the
+  token exchange is retried in the background.
 - Keep an `EventSource` to `/api/player/events` (it auto-reconnects). Also poll the manifest every
   60 s with `If-None-Match`.
 - On a new manifest: don't interrupt the current slide. The new sequence takes effect at the next
   transition. Continue from the slide after the current one's id if it still exists, otherwise
-  start from the beginning. Mode changes and overlay toggles apply immediately.
+  start from the beginning. If it changes which slide comes next, that slide is prepared at the transition; the current slide
+  is not shown any longer for it. Mode changes and overlay toggles apply immediately.
 - If `appVersion` differs from the loaded player's version: reload the page at the next transition.
 - Daily reload (ADR-0008, confirmed by the product owner on 2026-10-17): a timer checks once a minute. The reload is
   due after 20 h of uptime when the local time (system time zone) is between 02:00 and 05:00, or after 26 h at any
@@ -131,4 +140,5 @@ screen (R-42).
 ## 10. Empty state (R-23)
 
 A dark background with the screen name (small, top-left) and a large thin clock (HH:mm, using the system
-time zone from settings), centred. No error text.
+time zone from settings), centred. No error text. It is also shown while the sequence has slides but none of them can be shown
+(see §2, Skipping).

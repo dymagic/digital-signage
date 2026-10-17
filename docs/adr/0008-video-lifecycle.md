@@ -36,11 +36,14 @@ after the loop had stopped, so both are left out). That is about 0.18 and then 0
 linear, 10 s slides (8,640 transitions a day) would add about **1.3 GB a day**. That's too much for a 2 GB Pi left
 alone for weeks, and it is the figure the daily reload must hold down. So the player **reloads itself once a
 day**: after 20 hours of uptime, inside a night window (02:00–05:00 in the system time zone), or after 26 hours
-whatever the time. It reloads only when the server answers at that moment, so an offline screen keeps cycling (R-24)
-instead of landing on the browser's error page. A carousel reloads at a transition, and screens that never
+whatever the time. Immediately before reloading, `GET /screen` must answer 2xx; otherwise the reload waits for the next check, so an
+offline screen keeps cycling (R-24) instead of landing on the browser's error page. A carousel reloads at a transition, and screens that never
 transition reload at the check. It restarts from its cached manifest, so the screen shows a moment of black and then
 carries on. PLAYER_SPEC §9 has the details. A reload resets all renderer memory, so any slow growth, from video or anything else,
-stays bounded at one day's worth.
+stays bounded at one day's worth. **That bound is tight on a 2 GB Pi:** about 0.4 GB at start plus up to
+about 1.3 GB of growth by the next reload leaves little room for the OS and the browser shell. If a deployment shows
+memory pressure, shorten `config.dailyReload` in `wwwroot/screen/config.js` (`minUptimeMs`, `forceAfterMs`). WP-13's
+soak watches the growth rate.
 
 ## Consequences
 - Covered videos lose their decoded frames immediately. That's fine: they are covered.
