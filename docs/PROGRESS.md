@@ -7,15 +7,18 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-08 Player core — branch `wp-08-player-core` — status In progress (self-check)
+- Package: WP-08 Player core — branch `wp-08-player-core` — status In review (round 1 requested)
 - Plan: manifest endpoint (ETag/304, schedule filtered client-side, expired slides dropped) + admin preview manifest;
   player ES modules in `wwwroot/screen/` (carousel, slides, schedule, storage, connection, pairing, empty, reload);
   demo seed; WP-06/WP-03/WP-07 follow-ups (see BACKLOG). Tests: unit (base style parity, resolver), integration
   (`Player/ManifestTests`, `DemoSeedTests`), E2E `Player/CarouselTests`, `ClockTests` (Playwright Clock API),
   `SlideTypeTests` (testmedia).
 - Done: server (7cee47a), player (ad4b840), clock E2E, Image/WebPage E2E, ADR-0008 NITs, ARCHITECTURE §4/§5/§6.
-- Half-done: nothing.
-- Next step: full self-check (build, `dotnet test`, `scripts/test-e2e.sh`), then request review round 1.
+- Self-check green: build 0 warnings, `dotnet test` 417 passed, `scripts/test-e2e.sh` 33 (8 opt-in spike skips).
+- Known flake (not WP-08 code): `dotnet test` on the host twice crashed the E2E module at start with "Internal CLR
+  error (0x80131506)" before any test ran (all its tests skip on the host); reruns pass and the module alone passed
+  6/6. If it recurs, capture a dump (`DOTNET_DbgEnableMiniDump=1`) and file it.
+- Next step: handle the review round 1 verdict (docs/reviews/WP-08-review-1.md).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
