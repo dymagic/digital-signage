@@ -17,7 +17,8 @@ Milestone 1: in progress (WP-00–WP-06 done). Project docs, skills and the revi
 - Round 1: CHANGES_REQUIRED (2 MAJOR: unexplained growth + tracing on, back-to-back videos unmeasured; 1 MINOR; 2 NIT); fixed in 7d9219d with new runs (artifacts/spike-short, artifacts/spike-long).
 - Round 2: CHANGES_REQUIRED (1 MAJOR: daily reload while offline; 2 MINOR; 2 NIT); fixed in d0d3641. The daily reload is user-visible, so it is Proposed and I asked the product owner.
 - PO confirmed the daily reload (2026-10-17); ADR-0008 and PLAYER_SPEC §9 updated.
-- Next step: handle review round 3 verdict (docs/reviews/WP-07-review-3.md).
+- Round 3: CHANGES_REQUIRED (1 MAJOR: growth rate understated, really ~0.15 MB/transition ≈ 1.3 GB/day worst case; 2 MINOR; 1 NIT); all docs, fixed in 0dfed25. Escalated to the PO per review-gate (round 3) and because the PO's reload decision rested on the corrected figure.
+- Next step: PO answer → round 4.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
@@ -43,6 +44,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
 - (answered) WP-07 daily player reload confirmed by the product owner on 2026-10-17 (ADR-0008).
+- WP-07 round 3: corrected worst case is ~1.3 GB/day (not 0.7); does the daily-reload decision stand, and may I run review round 4?
 
 ## Notes
 - The shell is zsh and `grep` is aliased to ugrep: use `command grep` in scripts. Quote `-?`.
