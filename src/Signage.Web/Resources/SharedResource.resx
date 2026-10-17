@@ -42,6 +42,9 @@
   <data name="Error.Concurrency" xml:space="preserve">
     <value>Someone else changed this in the meantime. Reload the page to see their changes, then try again.</value>
   </data>
+  <data name="Error.GoneMeanwhile" xml:space="preserve">
+    <value>That item was deleted by someone else while you had it open.</value>
+  </data>
   <data name="Error.NotFound" xml:space="preserve">
     <value>That item no longer exists.</value>
   </data>
@@ -56,6 +59,99 @@
   </data>
   <data name="Forbidden.Title" xml:space="preserve">
     <value>No access</value>
+  </data>
+  <data name="Groups.AdminOnlyHint" xml:space="preserve">
+    <value>Only admins can change a group's details and members.</value>
+  </data>
+  <data name="Groups.Column.Playlists" xml:space="preserve">
+    <value>Playlists</value>
+  </data>
+  <data name="Groups.Column.Screens" xml:space="preserve">
+    <value>Screens</value>
+  </data>
+  <data name="Groups.Create" xml:space="preserve">
+    <value>New group</value>
+  </data>
+  <data name="Groups.Created" xml:space="preserve">
+    <value>Group created. Add screens and playlists to it.</value>
+  </data>
+  <data name="Groups.Delete.Body" xml:space="preserve">
+    <value>The group's {0} screens stay, but they stop playing its playlists.</value>
+  </data>
+  <data name="Groups.Delete.Confirm" xml:space="preserve">
+    <value>Delete group</value>
+  </data>
+  <data name="Groups.Delete.Title" xml:space="preserve">
+    <value>Delete group</value>
+  </data>
+  <data name="Groups.Deleted" xml:space="preserve">
+    <value>Group deleted.</value>
+  </data>
+  <data name="Groups.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Groups.Empty.Admin" xml:space="preserve">
+    <value>No groups yet. A group lets several screens share playlists, e.g. "Grand hall" or "Sales department".</value>
+  </data>
+  <data name="Groups.Empty.Editor" xml:space="preserve">
+    <value>No groups yet. Ask an admin to create one.</value>
+  </data>
+  <data name="Groups.Error.DescriptionTooLong" xml:space="preserve">
+    <value>The description can be at most 1000 characters.</value>
+  </data>
+  <data name="Groups.Error.NameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="Groups.Error.NameTaken" xml:space="preserve">
+    <value>A group with this name already exists.</value>
+  </data>
+  <data name="Groups.Error.NameTooLong" xml:space="preserve">
+    <value>The name can be at most 100 characters.</value>
+  </data>
+  <data name="Groups.Error.PlaylistAlreadyAssigned" xml:space="preserve">
+    <value>That playlist is already assigned to this group.</value>
+  </data>
+  <data name="Groups.Field.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Groups.Field.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Groups.Field.SortOrder" xml:space="preserve">
+    <value>Sort order</value>
+  </data>
+  <data name="Groups.Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Groups.Intro" xml:space="preserve">
+    <value>Playlists assigned to a group play on all its screens. A screen can be in several groups; their playlists play in the groups' sort order.</value>
+  </data>
+  <data name="Groups.Members" xml:space="preserve">
+    <value>Screens in this group</value>
+  </data>
+  <data name="Groups.NoMembers" xml:space="preserve">
+    <value>No screens in this group yet.</value>
+  </data>
+  <data name="Groups.NoPlaylists" xml:space="preserve">
+    <value>No playlists assigned to this group yet.</value>
+  </data>
+  <data name="Groups.NoScreensYet" xml:space="preserve">
+    <value>There are no screens yet.</value>
+  </data>
+  <data name="Groups.Playlists" xml:space="preserve">
+    <value>Playlists in order</value>
+  </data>
+  <data name="Groups.PlaylistsHint" xml:space="preserve">
+    <value>These play on every screen in the group, after the screen's prepended slides.</value>
+  </data>
+  <data name="Groups.SaveMembers" xml:space="preserve">
+    <value>Save members</value>
+  </data>
+  <data name="Groups.SortOrderHint" xml:space="preserve">
+    <value>Lower numbers play first. Groups with the same number are ordered by name.</value>
+  </data>
+  <data name="Groups.Title" xml:space="preserve">
+    <value>Screen groups</value>
   </data>
   <data name="Home.Title" xml:space="preserve">
     <value>Overview</value>
@@ -75,6 +171,9 @@
   <data name="Nav.ChangePassword" xml:space="preserve">
     <value>Change password</value>
   </data>
+  <data name="Nav.Groups" xml:space="preserve">
+    <value>Groups</value>
+  </data>
   <data name="Nav.Home" xml:space="preserve">
     <value>Overview</value>
   </data>
@@ -86,6 +185,9 @@
   </data>
   <data name="Nav.Playlists" xml:space="preserve">
     <value>Playlists</value>
+  </data>
+  <data name="Nav.Screens" xml:space="preserve">
+    <value>Screens</value>
   </data>
   <data name="Nav.Settings" xml:space="preserve">
     <value>Settings</value>
@@ -218,6 +320,192 @@
   </data>
   <data name="Playlists.UsedByCounts" xml:space="preserve">
     <value>Screens: {0} · Groups: {1}</value>
+  </data>
+  <data name="Screens.AddAppend" xml:space="preserve">
+    <value>Add a slide at the end</value>
+  </data>
+  <data name="Screens.AddPlaylist" xml:space="preserve">
+    <value>Add a playlist</value>
+  </data>
+  <data name="Screens.AddPrepend" xml:space="preserve">
+    <value>Add a slide at the start</value>
+  </data>
+  <data name="Screens.AdminOnlyHint" xml:space="preserve">
+    <value>Only admins can change a screen's name, location and mode.</value>
+  </data>
+  <data name="Screens.Appended" xml:space="preserve">
+    <value>Appended slides (played last)</value>
+  </data>
+  <data name="Screens.ChoosePlaylist" xml:space="preserve">
+    <value>Choose a playlist…</value>
+  </data>
+  <data name="Screens.Column.Groups" xml:space="preserve">
+    <value>Groups</value>
+  </data>
+  <data name="Screens.Column.Paired" xml:space="preserve">
+    <value>Paired</value>
+  </data>
+  <data name="Screens.Column.Source" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Screens.Composition" xml:space="preserve">
+    <value>What this screen plays</value>
+  </data>
+  <data name="Screens.Create" xml:space="preserve">
+    <value>New screen</value>
+  </data>
+  <data name="Screens.CreateHint" xml:space="preserve">
+    <value>Creates the screen record. You connect a device to it with pairing.</value>
+  </data>
+  <data name="Screens.Created" xml:space="preserve">
+    <value>Screen created.</value>
+  </data>
+  <data name="Screens.Delete.Body" xml:space="preserve">
+    <value>The screen and its own slides and playlist assignments are removed. Slides and playlists themselves stay.</value>
+  </data>
+  <data name="Screens.Delete.Confirm" xml:space="preserve">
+    <value>Delete screen</value>
+  </data>
+  <data name="Screens.Delete.Paired" xml:space="preserve">
+    <value>This screen is paired with a device. That device goes back to the pairing screen.</value>
+  </data>
+  <data name="Screens.Delete.Title" xml:space="preserve">
+    <value>Delete screen</value>
+  </data>
+  <data name="Screens.Deleted" xml:space="preserve">
+    <value>Screen deleted.</value>
+  </data>
+  <data name="Screens.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Screens.Empty.Admin" xml:space="preserve">
+    <value>No screens yet. Create one, or pair a device.</value>
+  </data>
+  <data name="Screens.Empty.Editor" xml:space="preserve">
+    <value>No screens yet. Ask an admin to add one.</value>
+  </data>
+  <data name="Screens.Error.LocationTooLong" xml:space="preserve">
+    <value>The location can be at most 1000 characters.</value>
+  </data>
+  <data name="Screens.Error.NameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="Screens.Error.NameTaken" xml:space="preserve">
+    <value>A screen with this name already exists.</value>
+  </data>
+  <data name="Screens.Error.NameTooLong" xml:space="preserve">
+    <value>The name can be at most 100 characters.</value>
+  </data>
+  <data name="Screens.Error.PlaylistAlreadyAssigned" xml:space="preserve">
+    <value>That playlist is already assigned to this screen.</value>
+  </data>
+  <data name="Screens.Error.VideoUrlInvalid" xml:space="preserve">
+    <value>Enter a full video address starting with http:// or https://.</value>
+  </data>
+  <data name="Screens.Error.VideoUrlRequired" xml:space="preserve">
+    <value>Single video mode needs a video address.</value>
+  </data>
+  <data name="Screens.Field.Location" xml:space="preserve">
+    <value>Location or notes</value>
+  </data>
+  <data name="Screens.Field.Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Screens.Field.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Screens.Field.SingleVideoUrl" xml:space="preserve">
+    <value>Video address (single video mode)</value>
+  </data>
+  <data name="Screens.FromGroups" xml:space="preserve">
+    <value>Playlists from groups</value>
+  </data>
+  <data name="Screens.FromGroupsHint" xml:space="preserve">
+    <value>Group playlists are edited on each group's page.</value>
+  </data>
+  <data name="Screens.Groups" xml:space="preserve">
+    <value>Groups</value>
+  </data>
+  <data name="Screens.InNoGroup" xml:space="preserve">
+    <value>This screen isn't in any group.</value>
+  </data>
+  <data name="Screens.LocationHint" xml:space="preserve">
+    <value>Optional, e.g. "Canteen, by the door".</value>
+  </data>
+  <data name="Screens.Mode.Carousel" xml:space="preserve">
+    <value>Carousel</value>
+  </data>
+  <data name="Screens.Mode.SingleVideo" xml:space="preserve">
+    <value>Single video</value>
+  </data>
+  <data name="Screens.ModeHint" xml:space="preserve">
+    <value>Carousel plays the sequence below. Single video loops one video and ignores the sequence. A change applies on the screen within seconds.</value>
+  </data>
+  <data name="Screens.NoAppend" xml:space="preserve">
+    <value>No appended slides.</value>
+  </data>
+  <data name="Screens.NoGroupsYet" xml:space="preserve">
+    <value>There are no groups yet.</value>
+  </data>
+  <data name="Screens.NoPlaylists" xml:space="preserve">
+    <value>No playlists assigned directly.</value>
+  </data>
+  <data name="Screens.NoPrepend" xml:space="preserve">
+    <value>No prepended slides.</value>
+  </data>
+  <data name="Screens.Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Screens.Paired.No" xml:space="preserve">
+    <value>Not paired</value>
+  </data>
+  <data name="Screens.Paired.Yes" xml:space="preserve">
+    <value>Paired</value>
+  </data>
+  <data name="Screens.Playlists" xml:space="preserve">
+    <value>Playlists assigned to this screen</value>
+  </data>
+  <data name="Screens.Prepended" xml:space="preserve">
+    <value>Prepended slides (played first)</value>
+  </data>
+  <data name="Screens.RemoveEntry" xml:space="preserve">
+    <value>Remove "{0}"</value>
+  </data>
+  <data name="Screens.SaveGroups" xml:space="preserve">
+    <value>Save groups</value>
+  </data>
+  <data name="Screens.Screen" xml:space="preserve">
+    <value>Screen</value>
+  </data>
+  <data name="Screens.Sequence" xml:space="preserve">
+    <value>Resolved sequence</value>
+  </data>
+  <data name="Screens.SequenceEmpty" xml:space="preserve">
+    <value>Nothing to play right now. The screen shows its name and a clock.</value>
+  </data>
+  <data name="Screens.SequenceHint" xml:space="preserve">
+    <value>What the screen plays now, in order, after removing disabled and out-of-schedule slides and repeated playlists. It loops.</value>
+  </data>
+  <data name="Screens.SingleVideoActive" xml:space="preserve">
+    <value>This screen is in single video mode. It loops its video and doesn't play this sequence.</value>
+  </data>
+  <data name="Screens.SingleVideoHint" xml:space="preserve">
+    <value>A direct link to an MP4 file. It loops without transitions.</value>
+  </data>
+  <data name="Screens.Source.Append" xml:space="preserve">
+    <value>Appended</value>
+  </data>
+  <data name="Screens.Source.Group" xml:space="preserve">
+    <value>Group "{0}" → playlist "{1}"</value>
+  </data>
+  <data name="Screens.Source.Playlist" xml:space="preserve">
+    <value>Playlist "{0}"</value>
+  </data>
+  <data name="Screens.Source.Prepend" xml:space="preserve">
+    <value>Prepended</value>
+  </data>
+  <data name="Screens.Title" xml:space="preserve">
+    <value>Screens</value>
   </data>
   <data name="Settings.DurationHint" xml:space="preserve">
     <value>Used for every slide that doesn't set its own duration. Videos always play to the end.</value>

@@ -27,7 +27,13 @@ public partial class ResourceCoverageTests
                      && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
 
         var missing = files
-            .SelectMany(f => KeyUsage().Matches(File.ReadAllText(f)).Select(m => (File: Path.GetFileName(f), Key: m.Groups["key"].Value)))
+            .SelectMany(f =>
+            {
+                var text = File.ReadAllText(f);
+                var direct = KeyUsage().Matches(text).Select(m => m.Groups["key"].Value);
+                var ternaries = TernaryKeyUsage().Matches(text).SelectMany(m => new[] { m.Groups["a"].Value, m.Groups["b"].Value });
+                return direct.Concat(ternaries).Select(key => (File: Path.GetFileName(f), Key: key));
+            })
             .Where(u => !ResourceKeys.Contains(u.Key))
             .Select(u => $"{u.File}: {u.Key}")
             .Distinct()
@@ -73,6 +79,21 @@ public partial class ResourceCoverageTests
     }
 
     [Fact]
+    public void Screen_texts_built_from_enums_exist()
+    {
+        foreach (var mode in Enum.GetNames<Signage.Web.Domain.ScreenMode>())
+        {
+            Assert.Contains($"Screens.Mode.{mode}", ResourceKeys);
+        }
+
+        foreach (var placement in Enum.GetNames<Signage.Web.Domain.SlidePlacement>())
+        {
+            Assert.Contains($"Screens.No{placement}", ResourceKeys);
+            Assert.Contains($"Screens.Add{placement}", ResourceKeys);
+        }
+    }
+
+    [Fact]
     public void The_shared_resource_is_found_at_runtime()
     {
         var name = typeof(SharedResource).Assembly.GetManifestResourceNames();
@@ -82,6 +103,10 @@ public partial class ResourceCoverageTests
     // L["Key"], l["Key", arg], ErrorMessage = "Key", Name = "Key", TempData["Status"] = "Key" — keys look like "Area.Thing".
     [GeneratedRegex("""(?:\b[Ll]\[\s*|ErrorMessage\s*=\s*|\bName\s*=\s*|TempData\["Status"\]\s*=\s*)"(?<key>[A-Z][A-Za-z]+(?:\.[A-Za-z]+)+)"(?!\s*\+)""")]
     private static partial Regex KeyUsage();
+
+    // L[cond ? "A.Key" : "B.Key"]
+    [GeneratedRegex("\\b[Ll]\\[[^\\]\"]*\\?\\s*\"(?<a>[A-Z][A-Za-z]+(?:\\.[A-Za-z]+)+)\"\\s*:\\s*\"(?<b>[A-Z][A-Za-z]+(?:\\.[A-Za-z]+)+)\"")]
+    private static partial Regex TernaryKeyUsage();
 
     private static string RepoRoot()
     {

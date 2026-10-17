@@ -1,0 +1,20 @@
+@page
+@model Signage.Web.Pages.Admin.Screens.CreateModel
+@{
+    ViewData["Title"] = L["Screens.Create"];
+    ViewData["Section"] = "Screens";
+}
+<h1>@L["Screens.Create"]</h1>
+<p class="hint">@L["Screens.CreateHint"]</p>
+<form method="post" class="form">
+    <partial name="_ValidationSummary" />
+    <label asp-for="Name"></label>
+    <input asp-for="Name" maxlength="100" />
+    <label asp-for="Location"></label>
+    <input asp-for="Location" maxlength="1000" />
+    <span class="hint">@L["Screens.LocationHint"]</span>
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Screens.Create"]</button>
+        <a asp-page="Index">@L["Common.Cancel"]</a>
+    </div>
+</form>

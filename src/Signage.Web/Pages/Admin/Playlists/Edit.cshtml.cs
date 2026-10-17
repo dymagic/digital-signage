@@ -7,7 +7,7 @@ using Signage.Web.Features.Playlists;
 
 namespace Signage.Web.Pages.Admin.Playlists;
 
-public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResource> l) : PageModel
+public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResource> l) : AdminPageModel
 {
     [BindProperty(SupportsGet = true)]
     public Guid Id { get; set; }
@@ -27,8 +27,6 @@ public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResourc
 
     /// <summary>Error to show above the entries after a failed htmx change.</summary>
     public string? EntriesError { get; private set; }
-
-    public bool IsHtmx => Request.Headers["HX-Request"] == "true";
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
@@ -77,7 +75,7 @@ public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResourc
         var result = await change;
         if (result.ErrorKey == CommonErrors.NotFound && !await LoadAsync(ct))
         {
-            return NotFound();
+            return GoneMeanwhile("/Admin/Playlists/Index");
         }
 
         if (!IsHtmx)

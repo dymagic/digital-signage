@@ -217,3 +217,15 @@ ol.entries li.drop-after { box-shadow: 0 3px 0 var(--accent); }
 .add-slide { display: flex; flex-direction: column; gap: .35rem; max-width: 560px; }
 .add-slide .row { display: flex; gap: .5rem; }
 .htmx-request #entries, #entries.htmx-request { opacity: .6; transition: opacity .15s; }
+
+/* Screens and groups */
+.panel.first { margin-top: 0; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: .25rem 1rem; margin: 0; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+fieldset.choices { border: 0; padding: 0; margin: .6rem 0 0; display: flex; flex-direction: column; gap: .25rem; }
+fieldset.choices legend { font-weight: 600; padding: 0; margin-bottom: .25rem; }
+ul.plain { list-style: none; padding: 0; margin: .25rem 0; }
+#composition h3 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
+#composition h3:first-of-type { margin-top: .5rem; }
+.sequence { margin-top: 2rem; }

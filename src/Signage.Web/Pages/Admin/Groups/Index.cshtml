@@ -1,0 +1,50 @@
+@page
+@model Signage.Web.Pages.Admin.Groups.IndexModel
+@{
+    ViewData["Title"] = L["Groups.Title"];
+    ViewData["Section"] = "Groups";
+}
+<div class="page-head">
+    <h1>@L["Groups.Title"]</h1>
+    @if (Model.IsAdmin)
+    {
+        <a class="button primary" asp-page="Create">@L["Groups.Create"]</a>
+    }
+</div>
+<p class="hint">@L["Groups.Intro"]</p>
+@if (Model.Items.Count == 0)
+{
+    <p class="empty">@L[Model.IsAdmin ? "Groups.Empty.Admin" : "Groups.Empty.Editor"]</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">@L["Groups.Field.SortOrder"]</th>
+                <th scope="col">@L["Groups.Field.Name"]</th>
+                <th scope="col">@L["Groups.Column.Screens"]</th>
+                <th scope="col">@L["Groups.Column.Playlists"]</th>
+                <th scope="col"><span class="visually-hidden">@L["Common.Actions"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.SortOrder</td>
+                    <td>
+                        <a asp-page="Detail" asp-route-id="@item.Id">@item.Name</a>
+                        @if (item.Description is not null)
+                        {
+                            <div class="muted">@item.Description</div>
+                        }
+                    </td>
+                    <td>@item.ScreenCount</td>
+                    <td>@item.PlaylistCount</td>
+                    <td class="actions"><a asp-page="Detail" asp-route-id="@item.Id">@L["Screens.Open"]</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,117 @@
+@model Signage.Web.Pages.Admin.Screens.DetailModel
+@*
+    What the screen plays, in R-12 order, plus the resolved sequence (R-13). Each list works like the playlist
+    editor (ADR-0006): plain forms, enhanced by htmx; the screen version travels with every change.
+*@
+@{
+    var screen = Model.Screen!;
+    var id = Model.Id;
+    var prepended = screen.Slides.Where(s => s.Placement == SlidePlacement.Prepend).ToList();
+    var appended = screen.Slides.Where(s => s.Placement == SlidePlacement.Append).ToList();
+}
+<div id="composition" hx-target="this" hx-swap="outerHTML">
+    <input type="hidden" id="composition-version" value="@Model.Version" />
+    @if (Model.IsHtmx)
+    {
+        <input type="hidden" id="details-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
+        <input type="hidden" id="groups-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
+    }
+    @if (Model.CompositionError is not null)
+    {
+        <p class="notice notice-error" role="alert">@L[Model.CompositionError]</p>
+    }
+
+    <h3>1. @L["Screens.Prepended"]</h3>
+    <partial name="_ScreenSlideList" model="(Model, SlidePlacement.Prepend, prepended)" />
+
+    <h3>2. @L["Screens.FromGroups"]</h3>
+    @if (screen.Groups.Count == 0)
+    {
+        <p class="muted">@L["Screens.InNoGroup"]</p>
+    }
+    else
+    {
+        <ul class="plain">
+            @foreach (var member in screen.Groups)
+            {
+                <li><a asp-page="/Admin/Groups/Detail" asp-route-id="@member.GroupId">@member.Group.Name</a></li>
+            }
+        </ul>
+        <p class="hint">@L["Screens.FromGroupsHint"]</p>
+    }
+
+    <h3>3. @L["Screens.Playlists"]</h3>
+    @if (screen.Playlists.Count == 0)
+    {
+        <p class="muted">@L["Screens.NoPlaylists"]</p>
+    }
+    else
+    {
+        <ol class="entries" data-reorder data-target="#composition" data-version-input="#composition-version"
+            data-move-url="@Url.Page("Detail", "MovePlaylist", new { id })" aria-label="@L["Screens.Playlists"]">
+            @for (var i = 0; i < screen.Playlists.Count; i++)
+            {
+                var entry = screen.Playlists[i];
+                <li draggable="true" data-entry-id="@entry.PlaylistId" data-index="@i">
+                    <span class="drag-handle" aria-hidden="true" title="@L["Playlists.DragHint"]">⋮⋮</span>
+                    <span class="position">@(i + 1)</span>
+                    <span></span>
+                    <div class="entry-title"><a asp-page="/Admin/Playlists/Edit" asp-route-id="@entry.PlaylistId">@entry.Playlist.Name</a></div>
+                    <partial name="/Pages/Admin/_EntryButtons.cshtml" model="@(new Signage.Web.Pages.Admin.EntryButtons(Url.Page("Detail", "MovePlaylist", new { id })!, Url.Page("Detail", "RemovePlaylist", new { id })!, entry.PlaylistId.ToString(), entry.Playlist.Name, i, screen.Playlists.Count, Model.Version.ToString(System.Globalization.CultureInfo.InvariantCulture)))" />
+                </li>
+            }
+        </ol>
+    }
+    <form method="post" asp-page-handler="AddPlaylist" asp-route-id="@id" hx-post="@Url.Page("Detail", "AddPlaylist", new { id })" class="add-slide">
+        <input type="hidden" name="Version" value="@Model.Version" />
+        <label for="playlistId">@L["Screens.AddPlaylist"]</label>
+        <div class="row">
+            <select id="playlistId" name="playlistId" required>
+                <option value="">@L["Screens.ChoosePlaylist"]</option>
+                @foreach (var playlist in Model.AvailablePlaylists.Where(p => screen.Playlists.All(sp => sp.PlaylistId != p.Id)))
+                {
+                    <option value="@playlist.Id">@playlist.Name</option>
+                }
+            </select>
+            <button type="submit">@L["Playlists.Add"]</button>
+        </div>
+    </form>
+
+    <h3>4. @L["Screens.Appended"]</h3>
+    <partial name="_ScreenSlideList" model="(Model, SlidePlacement.Append, appended)" />
+
+    <section class="sequence">
+        <h2>@L["Screens.Sequence"]</h2>
+        <p class="hint">@L["Screens.SequenceHint"]</p>
+        @if (Model.Sequence.Count == 0)
+        {
+            <p class="empty">@L["Screens.SequenceEmpty"]</p>
+        }
+        else
+        {
+            <table class="table" data-testid="resolved-sequence">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">@L["Slides.Field.Title"]</th>
+                        <th scope="col">@L["Slides.Column.Duration"]</th>
+                        <th scope="col">@L["Screens.Column.Source"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < Model.Sequence.Count; i++)
+                    {
+                        var item = Model.Sequence[i];
+                        var duration = Signage.Web.Domain.SlideDuration.Resolve(item.Slide, Model.DefaultDuration);
+                        <tr data-slide-id="@item.Slide.Id">
+                            <td>@(i + 1)</td>
+                            <td>@item.Slide.Title <span class="muted">· @L[$"Slides.Type.{item.Slide.Type}"]</span></td>
+                            <td>@(duration is { } seconds ? L["Slides.Duration.Seconds", seconds] : L["Slides.Duration.Video"])</td>
+                            <td>@Model.DescribeSource(item.Source)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+</div>

@@ -1,0 +1,78 @@
+@page "/admin/groups/{id:guid}"
+@model Signage.Web.Pages.Admin.Groups.DetailModel
+@{
+    var group = Model.Group!;
+    ViewData["Title"] = group.Name;
+    ViewData["Section"] = "Groups";
+}
+<div class="page-head">
+    <h1>@L["Groups.Group"]: @group.Name</h1>
+    @if (Model.IsAdmin)
+    {
+        <a class="button danger" asp-page="Delete" asp-route-id="@Model.Id">@L["Common.Delete"]</a>
+    }
+</div>
+<partial name="_ValidationSummary" />
+<div class="split">
+    <section>
+        <h2>@L["Groups.Playlists"]</h2>
+        <p class="hint">@L["Groups.PlaylistsHint"]</p>
+        <partial name="_GroupPlaylists" model="Model" />
+    </section>
+    <aside>
+        <section class="panel first">
+            <h2>@L["Groups.Details"]</h2>
+            @if (Model.IsAdmin)
+            {
+                <form method="post" asp-page-handler="Details" class="form">
+                    <input type="hidden" id="details-version" name="Version" value="@Model.Version" />
+                    <partial name="_GroupFields" for="Input" />
+                    <div class="form-actions"><button type="submit" class="primary">@L["Common.Save"]</button></div>
+                </form>
+            }
+            else
+            {
+                <dl class="facts">
+                    <dt>@L["Groups.Field.SortOrder"]</dt><dd>@group.SortOrder</dd>
+                    <dt>@L["Groups.Field.Description"]</dt><dd>@(group.Description ?? "—")</dd>
+                </dl>
+                <p class="hint">@L["Groups.AdminOnlyHint"]</p>
+            }
+        </section>
+        <section class="panel">
+            <h2>@L["Groups.Members"]</h2>
+            @if (Model.IsAdmin)
+            {
+                @if (Model.AllScreens.Count == 0)
+                {
+                    <p class="muted">@L["Groups.NoScreensYet"]</p>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Members" class="form">
+                        <input type="hidden" id="members-version" name="Version" value="@Model.Version" />
+                        @foreach (var screen in Model.AllScreens)
+                        {
+                            <label class="checkbox"><input type="checkbox" name="ScreenIds" value="@screen.Id" checked="@Model.ScreenIds.Contains(screen.Id)" /> @screen.Name</label>
+                        }
+                        <div class="form-actions"><button type="submit">@L["Groups.SaveMembers"]</button></div>
+                    </form>
+                }
+            }
+            else if (group.Members.Count == 0)
+            {
+                <p class="muted">@L["Groups.NoMembers"]</p>
+            }
+            else
+            {
+                <ul class="plain">
+                    @foreach (var member in group.Members)
+                    {
+                        <li><a asp-page="/Admin/Screens/Detail" asp-route-id="@member.ScreenId">@member.Screen.Name</a></li>
+                    }
+                </ul>
+            }
+        </section>
+    </aside>
+</div>
+<script src="~/admin/reorder.js" asp-append-version="true" defer></script>

@@ -22,6 +22,10 @@ public static class AdminUi
                 o.Conventions.AllowAnonymousToPage("/Admin/Forbidden");
                 o.Conventions.AuthorizeFolder("/Admin/Users", Policies.Admin);
                 o.Conventions.AuthorizeFolder("/Admin/Settings", Policies.Admin);
+                o.Conventions.AuthorizePage("/Admin/Screens/Create", Policies.Admin);
+                o.Conventions.AuthorizePage("/Admin/Screens/Delete", Policies.Admin);
+                o.Conventions.AuthorizePage("/Admin/Groups/Create", Policies.Admin);
+                o.Conventions.AuthorizePage("/Admin/Groups/Delete", Policies.Admin);
                 o.Conventions.ConfigureFilter(new MustChangePasswordFilter());
             })
             .AddViewLocalization()

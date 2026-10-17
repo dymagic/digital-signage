@@ -18,7 +18,8 @@ Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the revi
 - Risks: handler-level authorization on mixed pages (tests per handler).
 - Done: screen app-managed version (+ migration), IPositioned/OrderedList, IScreenNotifier (NoOp) + AffectedScreens, ScreenService, GroupService; slides/playlists/settings notify affected screens; slide delete bumps playlist/screen versions.
 - Half-done: —
-- Next step: pages (screens list/create/detail/delete, groups list/create/detail/delete) with handler-level admin checks; then tests.
+- Done (2): pages screens (list/create/detail with composition + resolved sequence/delete), groups (list/create/detail with playlists/delete), AdminPageModel (RequireAdmin, GoneMeanwhile HX-Redirect), shared _EntryButtons with stable ids, reorder.js generic + focus restore, nav, ~95 strings, coverage test for enum/ternary keys.
+- Next step: integration tests (role split per handler, composition, resolved sequence == resolver, notifier, heartbeat-no-conflict, follow-ups), E2E, docs.
 - Last checkpoint: (this commit)
 
 

@@ -46,18 +46,18 @@
                             <input type="hidden" name="Version" value="@Model.Version" />
                             <input type="hidden" name="entryId" value="@entry.Id" />
                             <input type="hidden" name="toIndex" value="@(i - 1)" />
-                            <button type="submit" disabled="@(i == 0)" aria-label="@L["Playlists.MoveUp", entry.Slide.Title]">↑</button>
+                            <button type="submit" id="up-@entry.Id" disabled="@(i == 0)" aria-label="@L["Playlists.MoveUp", entry.Slide.Title]">↑</button>
                         </form>
                         <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" hx-post="@Url.Page("Edit", "Move", new { id = Model.Id })">
                             <input type="hidden" name="Version" value="@Model.Version" />
                             <input type="hidden" name="entryId" value="@entry.Id" />
                             <input type="hidden" name="toIndex" value="@(i + 1)" />
-                            <button type="submit" disabled="@(i == count - 1)" aria-label="@L["Playlists.MoveDown", entry.Slide.Title]">↓</button>
+                            <button type="submit" id="down-@entry.Id" disabled="@(i == count - 1)" aria-label="@L["Playlists.MoveDown", entry.Slide.Title]">↓</button>
                         </form>
                         <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" hx-post="@Url.Page("Edit", "Remove", new { id = Model.Id })">
                             <input type="hidden" name="Version" value="@Model.Version" />
                             <input type="hidden" name="entryId" value="@entry.Id" />
-                            <button type="submit" class="danger" aria-label="@L["Playlists.Remove", entry.Slide.Title]">✕</button>
+                            <button type="submit" id="remove-@entry.Id" class="danger" aria-label="@L["Playlists.Remove", entry.Slide.Title]">✕</button>
                         </form>
                     </div>
                 </li>
@@ -68,7 +68,7 @@
         <input type="hidden" name="Version" value="@Model.Version" />
         <label for="slideId">@L["Playlists.AddSlide"]</label>
         <div class="row">
-            <select id="slideId" name="slideId" required>
+            <select id="slideId" name="slideId" required data-focus-fallback>
                 <option value="">@L["Playlists.ChooseSlide"]</option>
                 @foreach (var slide in Model.AvailableSlides)
                 {
