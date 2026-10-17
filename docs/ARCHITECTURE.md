@@ -194,8 +194,8 @@ Never commit real secrets. The compose file uses obvious demo values with a comm
 - Errors: ProblemDetails for APIs. Friendly error pages in the admin.
 - Every admin string goes through `IStringLocalizer`/`IViewLocalizer`.
 - The player JS has no dependencies. Organise it as small ES modules in `wwwroot/screen/` (`player.js` boot, `carousel.js`,
-  `slides/*.js`, `schedule.js`, `connection.js`, `pairing.js`, `empty.js`, `reload.js`, `storage.js`, `api.js`,
-  `strings.js`; `overlay.js` from WP-11). All timing constants live in one
+  `slides/*.js` (image, video, webpage, html), `singlevideo.js`, `schedule.js`, `connection.js`, `pairing.js`,
+  `empty.js`, `reload.js`, `storage.js`, `api.js`, `strings.js`; `overlay.js` from WP-11). All timing constants live in one
   `config.js`.
 - Player test hooks: the player exposes state through `data-*` attributes on `<body>` and slide
   elements (`data-state="entering|active|leaving|covered"`, `data-slide-id`), plus

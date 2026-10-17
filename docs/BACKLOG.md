@@ -123,7 +123,7 @@ so admin preview and screen match. Share one helper for the srcdoc wrapper.
 `translateX(0)` while the incoming one animates; the progress bar fills over the duration; at most 3 layers;
 it keeps cycling when the server is stopped. R-20, R-21, R-23, R-24, R-13.
 
-### WP-09 Video & single video mode — `Todo`
+### WP-09 Video & single video mode — `In review`
 Video slide per PLAYER_SPEC §4 plus the WP-07 ADR decision; single video mode per §6; error/stall
 skip.
 **Accept:** E2E — the video doesn't play until fully in view (`currentTime` stays 0 during the transition);
@@ -142,6 +142,8 @@ list (htmx refresh), `appVersion` self-reload, forwarded-headers configuration.
 **Accept:** E2E — an edit in the admin reaches the screen within 5 s; integration test — two app
 instances sharing one DB both deliver an event (R-63); the status flips to offline after 90 s (fake time).
 R-25, R-26, R-33, R-63.
+*From WP-09:* report skipped or failed videos (slide id, reason: error / stalled / safety cap / play() failed)
+and single-video failures in the heartbeat; today `slides/video.js` and `singlevideo.js` only `console.warn` (ADR-0009).
 
 ### WP-11 Identification — `Todo`
 Identify one (red border + name, 30 s), identify all, the global info overlay toggle with

@@ -48,6 +48,24 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none; }
     pointer-events: none;
 }
 
+/* Single video mode (PLAYER_SPEC §6): above the carousel layers, cross-faded with opacity only. */
+.single-video {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: #000;
+    opacity: 0;
+    transition: opacity var(--single-video-fade-ms) linear;
+    pointer-events: none;
+}
+.single-video.visible { opacity: 1; }
+.single-video > video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 /* Progress bar (R-21): 3 px, subtle, visible on white thanks to a soft dark under-glow. */
 .progress {
     position: absolute;

@@ -11,10 +11,13 @@ import { config, ms } from './config.js';
 import { isActive, playable } from './schedule.js';
 import { createSlide } from './slides/index.js';
 import { showEmpty, hideEmpty } from './empty.js';
+import { SingleVideo } from './singlevideo.js';
 
 const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const sameContent = (a, b) => a.id === b.id && a.type === b.type && a.url === b.url && a.html === b.html && a.playAudio === b.playAudio;
+// What has to change at once instead of at the next transition (PLAYER_SPEC §9): the mode and the single video's URL.
+const modeKey = (manifest) => (manifest?.mode === 'SingleVideo' ? `single:${manifest.singleVideoUrl ?? ''}` : 'carousel');
 
 export class Carousel {
     /** @param {HTMLElement} stage */
@@ -29,6 +32,7 @@ export class Carousel {
         this.progressFill.className = 'fill';
         this.progress.append(this.progressFill);
         stage.append(this.slidesEl, this.progress);
+        this.single = new SingleVideo(stage);
 
         this.manifest = null;
         this.pending = null; // a new manifest takes effect at the next transition (PLAYER_SPEC §9)
@@ -37,6 +41,8 @@ export class Carousel {
         this.position = -1;
         this.beforeTransition = null; // e.g. the daily reload: async () => void, run once at the next transition
         this.wake = null;
+        this.interrupt = null; // ends a dwell early when the mode changes
+        this.following = null; // the video item the progress bar follows
         this.stopped = false;
     }
 
@@ -46,13 +52,16 @@ export class Carousel {
             this.manifest = manifest;
         } else {
             this.pending = manifest;
+            if (modeKey(manifest) !== modeKey(this.manifest)) {
+                this.interrupt?.();
+            }
         }
         this.wake?.();
     }
 
     /** True while a slide is shown and two or more take turns (so a transition will come). */
     get isCycling() {
-        return this.current !== null && playable(this.manifest, Date.now()).length > 1;
+        return this.manifest?.mode !== 'SingleVideo' && this.current !== null && playable(this.manifest, Date.now()).length > 1;
     }
 
     /** Runs `task` right before the next transition (used by the daily reload). */
@@ -66,6 +75,7 @@ export class Carousel {
         for (const layer of [...this.slidesEl.children]) {
             this.release(layer);
         }
+        this.single.hide();
         this.hideProgress();
         hideEmpty(this.stage);
     }
@@ -76,6 +86,13 @@ export class Carousel {
                 this.manifest = this.pending;
                 this.pending = null;
             }
+
+            if (this.manifest?.mode === 'SingleVideo') {
+                this.showSingleVideo();
+                await this.idle(config.staticRecheckMs);
+                continue;
+            }
+            this.single.hide(); // back from single video mode: the carousel starts underneath while it fades out
 
             const list = playable(this.manifest, Date.now());
             if (list.length === 0) {
@@ -108,29 +125,65 @@ export class Carousel {
                     }
                 }
                 this.current.slide = list[0]; // e.g. a new duration
+                this.current.item.setLoop?.(true); // a lone video loops
+                await this.keepCurrentPlaying();
                 this.hideProgress();
                 document.body.dataset.mode = 'player';
                 await this.idle(config.staticRecheckMs);
                 continue;
             }
 
+            this.current.item.setLoop?.(false);
             const incoming = this.prepare(this.pickNext(list));
-            await this.dwell(this.current.slide);
-            if (this.stopped) {
-                this.release(incoming.layer);
-                return;
+            await this.dwell(this.current);
+            if (this.stopped || (this.pending && modeKey(this.pending) !== modeKey(this.manifest))) {
+                this.release(incoming.layer); // stopped, or the mode changed: that applies at once
+                continue;
             }
             if (this.beforeTransition) {
                 const task = this.beforeTransition;
                 this.beforeTransition = null;
                 await task();
             }
-            if (!(await this.advance(incoming)) && this.isStale()) {
-                // The current slide has expired or was removed, and nothing else could be shown: don't keep it (R-03).
-                this.showEmptyState();
-                await this.idle(ms(config.nothingShowableRetryMs));
+            if (!(await this.advance(incoming))) {
+                if (this.isStale()) {
+                    // The current slide has expired or was removed, and nothing else could be shown: don't keep it (R-03).
+                    this.showEmptyState();
+                    await this.idle(ms(config.nothingShowableRetryMs));
+                } else {
+                    await this.keepCurrentPlaying();
+                }
             }
         }
+    }
+
+    /**
+     * The current slide stays on screen for another round: a video that ended plays again, and one that failed (error,
+     * stall, cap) is replaced by a fresh element after a calm pause (ADR-0008, ADR-0009). Never a busy loop.
+     */
+    async keepCurrentPlaying() {
+        const item = this.current?.item;
+        if (item?.state === 'ended') {
+            item.replay();
+            return;
+        }
+        if (item?.state !== 'failed') {
+            return;
+        }
+        await this.idle(ms(config.nothingShowableRetryMs));
+        if (this.stopped || this.current?.item !== item) {
+            return;
+        }
+        const fresh = this.prepare(this.current.slide);
+        const ok = await Promise.race([fresh.item.ready, sleep(ms(config.preloadGraceMs)).then(() => false)]);
+        if (!ok || this.stopped || this.current?.item !== item) {
+            this.release(fresh.layer);
+            return;
+        }
+        fresh.layer.dataset.state = 'active'; // swapped in place, no transition to itself
+        this.release(this.current.layer);
+        this.current = fresh;
+        fresh.item.start();
     }
 
     /** True when the slide on screen has left a non-empty sequence (expired or removed). */
@@ -234,11 +287,43 @@ export class Carousel {
         return Promise.race([incoming.item.ready, sleep(ms(config.preloadGraceMs)).then(() => true)]);
     }
 
-    /** Shows the active slide for its duration, with the progress bar (R-21). */
-    async dwell(slide) {
-        const duration = ms((slide.durationSeconds ?? this.manifest?.settings?.defaultDuration ?? 10) * 1000);
-        this.startProgress(duration);
-        await sleep(duration);
+    /**
+     * Shows the active slide with the progress bar (R-21): for its duration, or for a video until it finishes (the bar
+     * follows playback). A mode change ends it early.
+     */
+    async dwell(current) {
+        const interrupted = new Promise((resolve) => { this.interrupt = resolve; });
+        if (current.item.finished) {
+            this.followProgress(current.item);
+            await Promise.race([current.item.finished, interrupted]);
+        } else {
+            const duration = ms((current.slide.durationSeconds ?? this.manifest?.settings?.defaultDuration ?? 10) * 1000);
+            this.startProgress(duration);
+            await Promise.race([sleep(duration), interrupted]);
+        }
+        this.interrupt = null;
+    }
+
+    /** Single video mode (R-14): the video over everything; the carousel slide goes once the video is visible. */
+    showSingleVideo() {
+        const url = this.manifest.singleVideoUrl;
+        if (!url) {
+            this.single.hide();
+            this.showEmptyState();
+            return;
+        }
+        hideEmpty(this.stage);
+        this.hideProgress();
+        document.body.dataset.mode = 'single-video';
+        this.single.show(url);
+        // The carousel slide goes once the video has faded in, or at once if the video can't play (black until a retry
+        // succeeds: stale carousel content must not stay on a screen set to single video).
+        if (this.current && (this.single.visible || this.single.failed)) {
+            this.release(this.current.layer);
+            this.current = null;
+            this.lastIds = ''; // back in carousel mode, start from the beginning
+            this.position = -1;
+        }
     }
 
     async transition(incoming) {
@@ -266,11 +351,29 @@ export class Carousel {
             this.release(outgoing.layer); // before anything new is prepared (ADR-0008)
         }
         this.current = incoming;
+        incoming.item.start?.(); // videos play only once fully in view (R-22)
     }
 
     release(layer) {
         layer.item?.release();
         layer.remove();
+    }
+
+    /** The progress bar follows a video's playback position (R-21). */
+    followProgress(item) {
+        const fill = this.progressFill;
+        this.progress.hidden = false;
+        fill.style.transition = 'none';
+        fill.style.transform = 'scaleX(0)';
+        this.following = item;
+        const step = () => {
+            if (this.following !== item) {
+                return;
+            }
+            fill.style.transform = `scaleX(${item.progress()})`;
+            requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
     }
 
     startProgress(duration) {
@@ -284,12 +387,16 @@ export class Carousel {
     }
 
     hideProgress() {
+        this.following = null;
         this.progress.hidden = true;
         this.progressFill.style.transition = 'none';
         this.progressFill.style.transform = 'scaleX(0)';
     }
 
     showEmptyState() {
+        if (this.stopped) {
+            return; // e.g. pairing or a preview message has the stage now
+        }
         if (this.current) {
             this.release(this.current.layer);
             this.current = null;

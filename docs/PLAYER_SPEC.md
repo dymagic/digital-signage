@@ -33,7 +33,8 @@
   If the next slide is not ready when its time comes, wait up to 3 s more, then transition anyway.
 - **Skipping:** a slide that failed to load, or whose schedule window has ended by the time it is due (R-03), is
   skipped when its turn comes: the slide after it is prepared straight away, without a second dwell on the current
-  slide. If nothing else can be shown, the current slide stays for another round. If no slide can be shown at all
+  slide. If nothing else can be shown, the current slide stays for another round, unless its own window has ended or it
+  has left the sequence: then the empty state (§10) replaces it. If no slide can be shown at all
   (e.g. every image host unreachable), the player shows the empty state (§10) and tries again after 10 s.
 - With only one playable slide: show it and do not transition to itself. A single video loops. If a new manifest
   changes that slide's content, the new version is prepared and slides in over the old one once it is ready (the
@@ -57,7 +58,16 @@ Baseline behaviour (must hold whatever the spike finds):
 2. `play()` is called only when the slide's transition has fully completed.
 3. On `ended`: the last frame stays visible, and the next transition starts at once.
 4. On `error`, or a stall longer than 8 s without progress: log it, skip to the next slide, and report it in the heartbeat.
-5. If the video has no duration metadata, a safety cap (10 min) applies.
+5. A safety cap (10 min) applies to every video slide, so a video without duration metadata can't hold the screen.
+6. A video slide with sound whose `play()` is refused (the browser lacks the autoplay-with-sound policy, R-07) plays
+   muted instead of being skipped, and logs a warning.
+7. While the video plays, the progress bar follows its playback position (R-21). A video that is the only playable
+   slide loops (`loop`), so it never ends.
+   It also loops when it *becomes* the only playable slide while it plays (a neighbour expired or was removed).
+8. When a video slide stays on screen for another round because nothing else can be shown (§2, Skipping), a video
+   that ended plays again from the start, and one that failed (error, stall, cap) is replaced by a fresh element after
+   10 s. The player never retries in a tight loop.
+9. The stall limit and the cap are real time, never scaled by `timeScale` (videos play at normal speed in tests).
 
 **Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
 `removeAttribute('src')` → `load()` → remove the layer. Only the next slide is prepared, so at most two video
@@ -92,7 +102,13 @@ Pointer events are disabled on all slide content.
 ## 6. Single video mode (R-14)
 
 One `<video loop muted playsinline>` filling the screen. No carousel, progress bar or transitions.
-When the mode or URL changes through an event, cross-fade (300 ms) to the new state. The info and
+When the mode or URL changes through an event, cross-fade (300 ms) to the new state. A mode or URL change applies at once, also in
+the middle of a slide (it does not wait for the next transition). The carousel slide underneath is released once the
+video has faded in; going back, the carousel starts from its first slide underneath the fading video. Without a URL
+the empty state shows. A video that fails (an error, a refused `play()`, or no progress for 8 s) is tried again after
+10 s with a fresh element; the last good picture stays until the new one plays. If the URL can't play at all, the
+carousel slide underneath is released anyway (black until a retry succeeds), so stale content never stays on a screen
+set to single video. Every replaced or failed layer is released like a video slide (ADR-0008). The info and
 identify overlays still work.
 
 ## 7. Overlays

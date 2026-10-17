@@ -20,6 +20,7 @@ function applyLook() {
     root.setProperty('--transition-ms', `${ms(config.transitionMs)}ms`);
     root.setProperty('--transition-easing', config.transitionEasing);
     root.setProperty('--transition-shadow', config.transitionShadow);
+    root.setProperty('--single-video-fade-ms', `${ms(config.singleVideoFadeMs)}ms`);
 }
 
 /** Hides the mouse pointer after a few seconds without movement (PLAYER_SPEC §1). */
