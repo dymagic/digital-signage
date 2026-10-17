@@ -44,14 +44,3 @@ export async function exchangeToken(token) {
     }
     throw new Error(`session ${response.status}`);
 }
-
-export async function getManifest() {
-    const response = await fetch('/api/player/manifest', { cache: 'no-store' });
-    if (response.status === 401) {
-        throw new Unauthorized();
-    }
-    if (!response.ok) {
-        throw new Error(`manifest ${response.status}`);
-    }
-    return json(response);
-}

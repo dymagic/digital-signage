@@ -5,9 +5,7 @@ const texts = {
         pairTitle: 'Pair this screen',
         pairInstruction: 'In the admin, open Screens → Pair screen and enter this code.',
         adminAddress: 'Admin address',
-        connecting: 'Connecting…',
-        pairedAs: 'Paired as {0}',
-        waitingForContent: 'Waiting for content…',
+        previewSignIn: 'Sign in to the admin in this browser to preview this screen.',
     },
 };
 
