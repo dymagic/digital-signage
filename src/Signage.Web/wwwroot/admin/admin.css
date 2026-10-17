@@ -236,3 +236,6 @@ ul.plain { list-style: none; padding: 0; margin: .25rem 0; }
 .form-actions.wrap { flex-wrap: wrap; }
 .form-actions form { margin: 0; }
 code.secret { word-break: break-all; }
+
+/* Screens list (R-33): the user agent is long; keep it to one quiet line. */
+.user-agent { font-size: .75rem; max-width: 18rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

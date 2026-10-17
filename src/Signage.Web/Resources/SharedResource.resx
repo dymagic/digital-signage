@@ -426,8 +426,26 @@
   <data name="Screens.Column.Groups" xml:space="preserve">
     <value>Groups</value>
   </data>
-  <data name="Screens.Column.Paired" xml:space="preserve">
-    <value>Paired</value>
+  <data name="Screens.Column.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Screens.Column.LastSeen" xml:space="preserve">
+    <value>Last seen</value>
+  </data>
+  <data name="Screens.Column.LastIp" xml:space="preserve">
+    <value>Last IP</value>
+  </data>
+  <data name="Screens.Column.Player" xml:space="preserve">
+    <value>Player</value>
+  </data>
+  <data name="Screens.Status.Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Screens.Status.Offline" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="Screens.StatusHint" xml:space="preserve">
+    <value>Online means the screen reported in within the last 90 seconds. Times are in {0}. The list refreshes itself.</value>
   </data>
   <data name="Screens.Column.Source" xml:space="preserve">
     <value>From</value>
@@ -542,9 +560,6 @@
   </data>
   <data name="Screens.Paired.No" xml:space="preserve">
     <value>Not paired</value>
-  </data>
-  <data name="Screens.Paired.Yes" xml:space="preserve">
-    <value>Paired</value>
   </data>
   <data name="Screens.Playlists" xml:space="preserve">
     <value>Playlists assigned to this screen</value>

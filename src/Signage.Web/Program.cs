@@ -6,6 +6,7 @@ using Signage.Web.Features.Demo;
 using Signage.Web.Features.Events;
 using Signage.Web.Features.Groups;
 using Signage.Web.Features.Health;
+using Signage.Web.Features.Hosting;
 using Signage.Web.Features.Playlists;
 using Signage.Web.Features.Player;
 using Signage.Web.Features.Screens;
@@ -23,6 +24,8 @@ if (string.IsNullOrWhiteSpace(connectionString))
 }
 
 builder.Services.Configure<SignageOptions>(builder.Configuration.GetSection(SignageOptions.SectionName));
+var forwardedHeaders = builder.Services.AddSignageForwardedHeaders(
+    builder.Configuration.GetSection(SignageOptions.SectionName).Get<SignageOptions>()?.ForwardedHeaders ?? new());
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSignageData(connectionString);
 builder.Services.AddSignageAuthentication();
@@ -31,7 +34,10 @@ builder.Services.AddScoped<SlideService>();
 builder.Services.AddScoped<PlaylistService>();
 builder.Services.AddScoped<ScreenService>();
 builder.Services.AddScoped<GroupService>();
-builder.Services.AddSingleton<IScreenNotifier, NoOpScreenNotifier>();
+builder.Services.AddSingleton<IScreenNotifier, PostgresScreenNotifier>();
+builder.Services.AddSingleton<ScreenEventHub>();
+builder.Services.AddSingleton<ScreenEventListener>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ScreenEventListener>());
 builder.Services.AddSignagePlayerApi();
 builder.Services.AddSignageAdminUi();
 builder.Services.AddProblemDetails();
@@ -42,6 +48,11 @@ var app = builder.Build();
 await app.Services.InitializeDatabaseAsync().ConfigureAwait(false);
 await app.Services.BootstrapAdminAsync().ConfigureAwait(false);
 await app.Services.SeedDemoIfRequestedAsync().ConfigureAwait(false);
+
+if (forwardedHeaders)
+{
+    app.UseForwardedHeaders();
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -72,11 +83,7 @@ app.UseAuthorization();
 
 app.MapSignageHealthChecks();
 app.MapSignagePlayerApi();
-app.MapGet("/screen", (IWebHostEnvironment env, HttpContext http) =>
-{
-    http.Response.Headers.CacheControl = "no-cache";
-    return Results.File(env.WebRootFileProvider.GetFileInfo("screen/index.html").CreateReadStream(), "text/html; charset=utf-8");
-}).ExcludeFromDescription();
+app.MapGet("/screen", PlayerShell.Serve).ExcludeFromDescription();
 app.MapGet("/", () => Results.Redirect("/admin")).ExcludeFromDescription();
 app.MapRazorPages();
 

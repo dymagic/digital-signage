@@ -13,6 +13,20 @@ public sealed class SignageOptions
 
     /// <summary>Optional first admin, created at start-up only when there are no users (R-51).</summary>
     public BootstrapOptions Bootstrap { get; set; } = new();
+
+    /// <summary>Trust X-Forwarded-For/-Proto from a reverse proxy or load balancer (R-30: the observed IP).</summary>
+    public ForwardedHeadersSettings ForwardedHeaders { get; set; } = new();
+}
+
+public sealed class ForwardedHeadersSettings
+{
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// Comma-separated CIDRs of the proxies, e.g. <c>10.0.0.0/8,172.16.0.0/12</c>. Empty: the nearest hop is trusted
+    /// whatever its address, which is only safe when the app can't be reached except through the proxy.
+    /// </summary>
+    public string? KnownNetworks { get; set; }
 }
 
 public sealed class BootstrapOptions

@@ -1,24 +1,58 @@
-// Keeps the manifest fresh (PLAYER_SPEC §9): a poll every 60 s with If-None-Match, so unchanged manifests cost a 304.
-// WP-10 adds the SSE push; this poll stays as the fallback. Errors never interrupt playback.
+// Keeps the manifest fresh (PLAYER_SPEC §9, R-25): server-sent events say when to fetch it, and a poll every 60 s with
+// If-None-Match is the fallback (an unchanged manifest costs a 304). Errors never interrupt playback.
 import { config, ms } from './config.js';
 import { Unauthorized } from './api.js';
 
-const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
-
 /**
- * Polls `url` until stopped. Calls onManifest(manifest) for every new version, onUnauthorized() on 401/403
- * (then stops), onNotFound() on 404 if given (then stops; otherwise 404 counts as an error and is retried), and
- * onOnline(boolean) when reachability changes.
+ * Fetches `url` now and whenever told to, at least every 60 s, until stopped. Calls onManifest(manifest) for every new
+ * version, onUnauthorized() on 401/403 (then stops), onNotFound() on 404 if given (then stops; otherwise 404 counts as
+ * an error and is retried), and onOnline(boolean) when reachability changes. With `eventsUrl`, an EventSource on it
+ * triggers a fetch on every `manifest-changed` event and on every (re)connect, since events may have been missed.
  */
-export function pollManifest(url, { onManifest, onUnauthorized, onNotFound, onOnline }) {
+export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNotFound, onOnline }) {
     let etag = null;
     let stopped = false;
     let online = null;
+    let wake = null;
+    let events = null;
     const setOnline = (value) => {
         if (value !== online) {
             online = value;
             onOnline?.(value);
         }
+    };
+    const fetchNow = () => wake?.();
+    const pause = (duration) => new Promise((resolve) => {
+        const timer = setTimeout(done, duration);
+        function done() {
+            clearTimeout(timer);
+            wake = null;
+            resolve();
+        }
+        wake = done;
+    });
+    const stop = () => {
+        stopped = true;
+        events?.close();
+        events = null;
+        wake?.();
+    };
+
+    const connectEvents = () => {
+        if (!eventsUrl || stopped) {
+            return;
+        }
+        events = new EventSource(eventsUrl);
+        events.addEventListener('open', fetchNow);
+        events.addEventListener('manifest-changed', fetchNow);
+        events.addEventListener('error', () => {
+            // EventSource reconnects by itself after a network error, but gives up after a non-200 answer (a proxy's
+            // 502 during a restart, or a 401 that the manifest fetch will notice). Start a new one after a pause.
+            if (events?.readyState === EventSource.CLOSED) {
+                events = null;
+                setTimeout(connectEvents, ms(config.retryAfterErrorMs));
+            }
+        });
     };
 
     const loop = async () => {
@@ -29,7 +63,7 @@ export function pollManifest(url, { onManifest, onUnauthorized, onNotFound, onOn
                     throw new Unauthorized();
                 }
                 if (response.status === 404 && onNotFound) {
-                    stopped = true;
+                    stop();
                     onNotFound();
                     return;
                 }
@@ -40,18 +74,19 @@ export function pollManifest(url, { onManifest, onUnauthorized, onNotFound, onOn
                     throw new Error(`manifest ${response.status}`);
                 }
                 setOnline(true);
-                await sleep(ms(config.manifestPollMs));
+                await pause(ms(config.manifestPollMs));
             } catch (error) {
                 if (error instanceof Unauthorized) {
-                    stopped = true;
+                    stop();
                     onUnauthorized?.();
                     return;
                 }
                 setOnline(false);
-                await sleep(ms(config.retryAfterErrorMs));
+                await pause(ms(config.retryAfterErrorMs));
             }
         }
     };
+    connectEvents();
     loop();
-    return { stop() { stopped = true; } };
+    return { stop, fetchNow };
 }

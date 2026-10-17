@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Signage.Web.Features.Pairing;
+using Signage.Web.Features.Hosting;
 using Signage.Web.Features.Users;
 
 namespace Signage.Web.Features.Player;
@@ -20,6 +21,7 @@ public static class PlayerApi
         services.AddScoped<PairingService>();
         services.AddScoped<ScreenAccessService>();
         services.AddScoped<ManifestService>();
+        services.AddScoped<HeartbeatService>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ScreenAuthenticationHandler>(ScreenAuthenticationHandler.SchemeName, null);
         services.AddAuthorizationBuilder().AddPolicy(ScreenPolicy, p => p
             .AddAuthenticationSchemes(ScreenAuthenticationHandler.SchemeName)
@@ -82,8 +84,20 @@ public static class PlayerApi
         // The screen's manifest (R-13, R-24, R-25). Supports If-None-Match so the 60 s poll is cheap.
         api.MapGet("/manifest", async (HttpContext http, ManifestService manifests, CancellationToken ct) =>
         {
-            var manifest = await manifests.BuildAsync(http.User.ScreenId(), http.Connection.RemoteIpAddress?.ToString(), ct).ConfigureAwait(false);
+            var manifest = await manifests.BuildAsync(http.User.ScreenId(), http.ObservedIp(), ct).ConfigureAwait(false);
             return manifest is null ? Results.Unauthorized() : ManifestResult(http, manifest);
+        }).RequireAuthorization(ScreenPolicy);
+
+        // R-25: pushes "fetch your manifest" (and later identify) to the screen.
+        api.MapGet("/events", PlayerEvents.StreamAsync).RequireAuthorization(ScreenPolicy);
+
+        // R-33: last seen, observed IP, user agent and player version; problems are logged.
+        api.MapPost("/heartbeat", async (HeartbeatRequest request, HttpContext http, HeartbeatService heartbeats, CancellationToken ct) =>
+        {
+            NoStore(http);
+            await heartbeats.RecordAsync(http.User.ScreenId(), request, http.ObservedIp(),
+                http.Request.Headers.UserAgent.ToString(), ct).ConfigureAwait(false);
+            return Results.NoContent();
         }).RequireAuthorization(ScreenPolicy);
 
         // R-13: an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;

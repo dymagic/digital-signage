@@ -38,6 +38,7 @@ export const config = Object.freeze({
     // Connectivity (PLAYER_SPEC §9)
     manifestPollMs: 60_000,
     retryAfterErrorMs: 5000,
+    heartbeatMs: 30_000,
     manifestCacheKey: 'signage.manifest',
 
     // Daily reload (PLAYER_SPEC §9, ADR-0008). Real time, never scaled.

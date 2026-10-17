@@ -35,6 +35,25 @@ async function reloadIfServerAnswers() {
     }
 }
 
+/**
+ * Reloads at the carousel's next transition, or now if it doesn't transition (one slide, empty, single video); only
+ * when the server answers 2xx right before (PLAYER_SPEC §9). Used for a new app version (R-26).
+ */
+export function reloadSoon(carousel, beforeReload) {
+    const reload = async () => {
+        if (await serverAnswers()) {
+            beforeReload?.();
+            location.reload();
+            await new Promise(() => {}); // hold the carousel until the page goes
+        }
+    };
+    if (carousel.isCycling) {
+        carousel.runBeforeNextTransition(reload);
+    } else {
+        reload();
+    }
+}
+
 /** Starts the once-a-minute check. getTimeZone() returns the system time zone from the current manifest. */
 export function startDailyReload(carousel, getTimeZone) {
     let scheduled = false;

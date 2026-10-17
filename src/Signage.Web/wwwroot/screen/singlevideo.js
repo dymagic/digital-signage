@@ -3,6 +3,7 @@
 // progress for 8 s) is tried again after a calm pause with a fresh element; the last good picture stays until the new
 // one plays. Every layer ever created is tracked, so replaced and failed ones are always released (ADR-0008).
 import { config, ms } from './config.js';
+import { reportProblem } from './problems.js';
 
 export class SingleVideo {
     /** @param {HTMLElement} stage */
@@ -61,7 +62,7 @@ export class SingleVideo {
             if (entry.failedAt === null && this.entries.has(entry)) {
                 entry.failedAt = performance.now();
                 clearInterval(entry.watchdog);
-                console.warn(`Single video failed (${reason}): ${url}`); // reported in the heartbeat from WP-10
+                reportProblem('single-video', null, `${reason}: ${url}`);
             }
         };
         video.addEventListener('error', () => fail('error'));
@@ -75,17 +76,19 @@ export class SingleVideo {
                     }
                 }
             }, ms(config.singleVideoFadeMs));
-            let lastTime = -1;
-            let lastProgressAt = performance.now();
-            entry.watchdog = setInterval(() => {
-                if (video.currentTime !== lastTime) {
-                    lastTime = video.currentTime;
-                    lastProgressAt = performance.now();
-                } else if (performance.now() - lastProgressAt > config.videoStallMs) {
-                    fail('stalled');
-                }
-            }, 500);
         }, { once: true });
+        // No progress for 8 s counts as a failure: from the start (a server that accepts the connection but never sends
+        // data) and while playing (a stream that hangs).
+        let lastTime = -1;
+        let lastProgressAt = performance.now();
+        entry.watchdog = setInterval(() => {
+            if (video.currentTime !== lastTime) {
+                lastTime = video.currentTime;
+                lastProgressAt = performance.now();
+            } else if (performance.now() - lastProgressAt > config.videoStallMs) {
+                fail(lastTime <= 0 ? 'no data' : 'stalled');
+            }
+        }, 500);
         video.src = url;
         this.stage.append(layer);
         video.play().catch((error) => fail(`play() failed: ${error?.name ?? error}`));
