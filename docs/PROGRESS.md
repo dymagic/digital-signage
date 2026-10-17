@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-08 Player core — branch `wp-08-player-core` — status In review (round 1 requested)
+- Package: WP-08 Player core — branch `wp-08-player-core` — status In review (round 2 requested)
 - Plan: manifest endpoint (ETag/304, schedule filtered client-side, expired slides dropped) + admin preview manifest;
   player ES modules in `wwwroot/screen/` (carousel, slides, schedule, storage, connection, pairing, empty, reload);
   demo seed; WP-06/WP-03/WP-07 follow-ups (see BACKLOG). Tests: unit (base style parity, resolver), integration
@@ -23,7 +23,8 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
   cached playback before the token exchange; reload no longer stuck; seed under advisory lock; weak ETag; preview 404
   message; pairing tests (race interceptor, earlier code). E2E tests added for every finding (each fails on the
   pre-fix player, checked); PLAYER_SPEC §2/§9/§10 updated.
-- Next step: full self-check, request round 2.
+- Self-check green: build 0 warnings, `dotnet test` 428 passed, E2E 38 (8 opt-in spike skips).
+- Next step: handle the review round 2 verdict (docs/reviews/WP-08-review-2.md).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
