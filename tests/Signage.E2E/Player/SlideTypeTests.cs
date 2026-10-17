@@ -47,16 +47,27 @@ public class SlideTypeTests(BrowserFixture fixture) : PlayerTest(fixture)
         var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
 
         var requests = 0;
-        var device = await OpenDeviceAsync(token, timeScale: 0.5, ctx =>
+        var device = await OpenDeviceAsync(token, timeScale: 0.5, async ctx =>
         {
             ctx.Request += (_, r) => { if (r.Url.Contains($"gone-", StringComparison.Ordinal) && r.Url.Contains(tag, StringComparison.Ordinal)) Interlocked.Increment(ref requests); };
-            return Task.CompletedTask;
+            await ctx.Clock.InstallAsync();
         });
 
         await ExpectModeAsync(device, "empty");
         await Expect(device.GetByTestId("empty-name")).ToHaveTextAsync($"Broken {tag}");
-        await device.WaitForTimeoutAsync(4000); // the retry comes after 5 s at this scale
-        Assert.InRange(requests, 2, 4); // one pass over both slides, not a tight loop
+        // Stop the page clock, then move it by hand: the retry is due 5 s (at this scale) after the failed pass.
+        await device.Clock.PauseAtAsync(DateTimeOffset.FromUnixTimeMilliseconds((long)await device.EvaluateAsync<double>("() => Date.now()") + 10).UtcDateTime);
+        var afterPass = requests;
+        await device.Clock.RunForAsync(4000);
+        await device.WaitForTimeoutAsync(500); // real time for any request to show up
+        Assert.Equal(afterPass, requests); // no tight loop
+        Assert.InRange(afterPass, 2, 4);
+        await device.Clock.RunForAsync(1500);
+        for (var i = 0; i < 50 && requests == afterPass; i++)
+        {
+            await Task.Delay(100, TestContext.Current.CancellationToken); // real time for the retry's requests
+        }
+        Assert.True(requests > afterPass, "it retries after 5 s");
         await device.Context.CloseAsync();
     }
 }

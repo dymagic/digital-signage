@@ -14,7 +14,7 @@ import { showEmpty, hideEmpty } from './empty.js';
 
 const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-const sameContent = (a, b) => a.type === b.type && a.url === b.url && a.html === b.html && a.playAudio === b.playAudio;
+const sameContent = (a, b) => a.id === b.id && a.type === b.type && a.url === b.url && a.html === b.html && a.playAudio === b.playAudio;
 
 export class Carousel {
     /** @param {HTMLElement} stage */
@@ -95,7 +95,19 @@ export class Carousel {
             }
 
             if (list.length === 1 && list[0].id === this.current.slide.id) {
-                // One playable slide: keep showing it, no transition to itself, no progress bar.
+                // One playable slide: keep showing it, no transition to itself, no progress bar. If it was edited, the new
+                // version slides in over the old one once it is ready (PLAYER_SPEC §2).
+                if (!sameContent(list[0], this.current.slide)) {
+                    const edited = this.prepare(list[0]);
+                    if (await this.isReady(edited)) {
+                        await this.transition(edited);
+                    } else {
+                        this.release(edited.layer); // the old version stays; try the new one again later
+                        await this.idle(ms(config.nothingShowableRetryMs));
+                        continue;
+                    }
+                }
+                this.current.slide = list[0]; // e.g. a new duration
                 this.hideProgress();
                 document.body.dataset.mode = 'player';
                 await this.idle(config.staticRecheckMs);
@@ -113,8 +125,18 @@ export class Carousel {
                 this.beforeTransition = null;
                 await task();
             }
-            await this.advance(incoming);
+            if (!(await this.advance(incoming)) && this.isStale()) {
+                // The current slide has expired or was removed, and nothing else could be shown: don't keep it (R-03).
+                this.showEmptyState();
+                await this.idle(ms(config.nothingShowableRetryMs));
+            }
         }
+    }
+
+    /** True when the slide on screen has left a non-empty sequence (expired or removed). */
+    isStale() {
+        const list = playable(this.manifest, Date.now());
+        return this.current !== null && list.length > 0 && !list.some((s) => s.id === this.current.slide.id);
     }
 
     /** Nothing on screen yet: shows the first slide of the list that can be shown. False if none could. */
@@ -141,21 +163,22 @@ export class Carousel {
             if (this.pending) {
                 candidate = this.adoptPending(candidate);
                 if (!candidate) {
-                    return;
+                    return false;
                 }
             }
             if (isActive(candidate.slide, Date.now()) && (await this.isReady(candidate))) {
                 await this.transition(candidate);
-                return;
+                return true;
             }
             this.release(candidate.layer);
             const list = playable(this.manifest, Date.now());
             if (attempt >= list.length) {
-                return;
+                return false;
             }
             const next = this.pickNext(list);
             candidate = next.id === this.current.slide.id ? null : this.prepare(next);
         }
+        return false;
     }
 
     /** Applies the pending manifest; returns the slide to show next (the prepared one if it still is) or null. */

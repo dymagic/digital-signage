@@ -35,7 +35,10 @@
   skipped when its turn comes: the slide after it is prepared straight away, without a second dwell on the current
   slide. If nothing else can be shown, the current slide stays for another round. If no slide can be shown at all
   (e.g. every image host unreachable), the player shows the empty state (§10) and tries again after 10 s.
-- With only one playable slide: show it and do not transition to itself. A single video loops.
+- With only one playable slide: show it and do not transition to itself. A single video loops. If a new manifest
+  changes that slide's content, the new version is prepared and slides in over the old one once it is ready (the
+  normal transition); a slide that has expired or left the sequence is not kept on screen when nothing else can be
+  shown (empty state instead).
 
 ## 3. Progress bar (R-21)
 

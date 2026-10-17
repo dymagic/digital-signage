@@ -155,6 +155,37 @@ public class CarouselTests(BrowserFixture fixture) : PlayerTest(fixture)
     }
 
     [Fact]
+    public async Task An_edit_to_the_only_slide_of_a_screen_shows_up_without_a_reload()
+    {
+        var (_, token, ids) = await ScreenWithSlidesAsync(("Notice", 10, "#1e293b"));
+        // From the second manifest poll on (every 6 s at this scale) the slide has new HTML, as after an edit (R-25).
+        var polls = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 0.1, ctx => ctx.RouteAsync("**/api/player/manifest", async route =>
+        {
+            var headers = route.Request.Headers.Where(h => !h.Key.Equals("if-none-match", StringComparison.OrdinalIgnoreCase)).ToDictionary();
+            var response = await route.FetchAsync(new() { Headers = headers });
+            var manifest = JsonNode.Parse(await response.TextAsync())!.AsObject();
+            if (Interlocked.Increment(ref polls) > 1)
+            {
+                manifest["slides"]![0]!["html"] = "<h1 data-edited>Edited notice</h1>";
+            }
+            await route.FulfillAsync(new() { Status = 200, ContentType = "application/json", Body = manifest.ToJsonString() });
+        }));
+        await WaitForActivationsAsync(device, 1);
+        await device.EvaluateAsync("() => { window.__marker = 'same page'; }");
+
+        var played = await WaitForActivationsAsync(device, 2, timeoutMs: 30_000);
+
+        Assert.Equal([ids[0].ToString(), ids[0].ToString()], played);
+        var active = device.Locator(".slide[data-state=active] iframe");
+        Assert.Contains("Edited notice", await active.GetAttributeAsync("srcdoc"), StringComparison.Ordinal);
+        Assert.Equal("same page", await device.EvaluateAsync<string>("() => window.__marker"));
+        await device.WaitForTimeoutAsync(1500); // and it settles: no further swaps for an unchanged slide
+        Assert.Equal(2, await ActivationCountAsync(device));
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
     public async Task An_admin_previews_the_screen_in_their_own_browser()
     {
         var (screenId, _, ids) = await ScreenWithSlidesAsync(("Preview A", 1, "#1d4ed8"), ("Preview B", 1, "#be123c"));
