@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-06 Pairing & screen tokens — branch `wp-06-pairing` — status In progress
+- Package: WP-06 Pairing & screen tokens — branch `wp-06-pairing` — status In review (round 1 requested)
 - Plan: `Features/Pairing`: `PairingCode` (6 chars, unambiguous alphabet, shown XXX-XXX), `ScreenTokens`
   (256-bit random, SHA-256 hex at rest), `PairingService` (create request w/ device secret hash, unique among
   active codes, poll + one-time delivery that mints the token at delivery time so no plaintext is stored, claim
@@ -23,7 +23,8 @@ Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the revi
 - Done: PairingCode + ScreenTokens (unit-tested), PairingService (start/poll/claim/deliver), ScreenAccessService (address token, revoke, lookup), ScreenToken auth handler (cookie, 401 deletes it), PlayerApi (pairing, poll, session, minimal manifest), per-IP rate limits, AppInfo.
 - Half-done: —
 - Done (2): admin Pair page (new/existing/re-pair), screen detail device section (revoke, re-pair, one-time screen address), player shell /screen with config/strings/api/pairing/player modules, no-cache for player files, strings; WP-05 NIT (nullable names).
-- Next step: integration tests (pairing flow, expiry, one-time delivery, reuse, rate limits, session, manifest 401 + cookie deletion, role split), E2E pairing + revoke, ADR-0007.
+- Done (3): tests, ADR-0007, docs. Self-check: build clean, 367 tests green, E2E 12/12.
+- Next step: handle review round 1 verdict (docs/reviews/WP-06-review-1.md).
 - Last checkpoint: (this commit)
 
 
