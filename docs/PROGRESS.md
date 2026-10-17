@@ -7,7 +7,22 @@
 Milestone 1: in progress (WP-00–WP-03 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-04 Playlists._
+- Package: WP-04 Playlists — branch `wp-04-playlists` — status In progress
+- Plan: `Data/PositionMaintenance` (SQL ROW_NUMBER renumbering for playlist_slides, screen_slides per
+  placement, screen_playlists, group_playlists); `Features/Playlists/PlaylistService` (list with counts,
+  get with entries, create/update with unique-name + xmin, add/remove/move entry = dense rewrite + playlist
+  version bump, usage, delete + renumber affected screens/groups); SlideService.DeleteAsync renumbers too.
+  Pages `/admin/playlists` (list), `create`, `{id}` (details form + entries partial `_PlaylistEntries` driven
+  by htmx page handlers Add/Remove/Move with version; without JS the same forms post and redirect),
+  `{id}/delete`. Drag & drop in `wwwroot/admin/reorder.js` (native HTML5 DnD, no library) plus up/down
+  buttons. Handlers are Razor page handlers, so MustChangePasswordFilter applies (WP-02 follow-up).
+  WP-03 follow-ups: dense renumber on slide delete, E2E wait fix, NITs 5–9.
+- Risks: htmx antiforgery header; drag & drop in Playwright (use DragToAsync).
+- Done: —
+- Half-done: —
+- Next step: PositionMaintenance + PlaylistService with integration tests.
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
