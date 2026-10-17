@@ -100,7 +100,7 @@ strategies (PLAYER_SPEC §4). Use short, openly licensed sample MP4s served from
 **Output:** `docs/adr/000X-video-lifecycle.md` with the data, the recommendation and the decision;
 harness code kept but not shipped. The reviewer checks the method, not polish.
 
-### WP-08 Player core — `In review`
+### WP-08 Player core — `Done`
 Manifest endpoint with ETag, the player shell, carousel engine, transition per PLAYER_SPEC §2,
 progress bar, Image/WebPage/Html slides, preloading, the 3-layer cap, empty state, localStorage
 manifest cache and offline cycling, schedule re-check on the client, admin preview mode
@@ -129,6 +129,11 @@ skip.
 **Accept:** E2E — the video doesn't play until fully in view (`currentTime` stays 0 during the transition);
 the next slide starts on `ended`; a broken URL is skipped; single video mode loops with no progress bar;
 the mode switch applies live. R-07 (player side), R-14, R-22.
+*From WP-08 review round 3:* (MINOR) add an E2E test for "the slide on screen expired or was removed and nothing
+else loads → empty state" (`carousel.js` `isStale`); (NIT) make the one-slide "settles" check in
+`CarouselTests.An_edit_to_the_only_slide…` wait past a repeat manifest poll; (NIT) guard both empty-state fallbacks in
+`carousel.js` with `!this.stopped` so a stop can't draw over pairing or the preview message; (NIT) mention the
+expired/removed exception in PLAYER_SPEC §2 "Skipping".
 
 ### WP-10 Live updates, heartbeat & status — `Todo`
 SSE endpoint, Postgres LISTEN/NOTIFY notifier + listener background service, affected-screen

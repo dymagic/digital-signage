@@ -7,28 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-08 Player core — branch `wp-08-player-core` — status In review (round 3 requested)
-- Plan: manifest endpoint (ETag/304, schedule filtered client-side, expired slides dropped) + admin preview manifest;
-  player ES modules in `wwwroot/screen/` (carousel, slides, schedule, storage, connection, pairing, empty, reload);
-  demo seed; WP-06/WP-03/WP-07 follow-ups (see BACKLOG). Tests: unit (base style parity, resolver), integration
-  (`Player/ManifestTests`, `DemoSeedTests`), E2E `Player/CarouselTests`, `ClockTests` (Playwright Clock API),
-  `SlideTypeTests` (testmedia).
-- Done: server (7cee47a), player (ad4b840), clock E2E, Image/WebPage E2E, ADR-0008 NITs, ARCHITECTURE §4/§5/§6.
-- Self-check green: build 0 warnings, `dotnet test` 417 passed, `scripts/test-e2e.sh` 33 (8 opt-in spike skips).
-- Known flake (not WP-08 code): `dotnet test` on the host twice crashed the E2E module at start with "Internal CLR
-  error (0x80131506)" before any test ran (all its tests skip on the host); reruns pass and the module alone passed
-  6/6. If it recurs, capture a dump (`DOTNET_DbgEnableMiniDump=1`) and file it.
-- Round 1: CHANGES_REQUIRED (4 MAJOR, 4 MINOR, 3 NIT). Fixed in code: shadow only while animating; carousel loop
-  (no second dwell after a replaced/skipped/expired slide, empty state + 10 s retry when nothing can be shown);
-  cached playback before the token exchange; reload no longer stuck; seed under advisory lock; weak ETag; preview 404
-  message; pairing tests (race interceptor, earlier code). E2E tests added for every finding (each fails on the
-  pre-fix player, checked); PLAYER_SPEC §2/§9/§10 updated.
-- Self-check green: build 0 warnings, `dotnet test` 428 passed, E2E 38 (8 opt-in spike skips).
-- Round 2: CHANGES_REQUIRED (1 MAJOR: edits to a one-slide screen never shown; 3 NIT). Fixed: edited single slide
-  slides in once ready; id in sameContent; expired current slide falls back to the empty state; calm-retry test on the
-  Playwright clock. New E2E test fails on the round-2 carousel (checked).
-- Next step: handle the review round 3 verdict (docs/reviews/WP-08-review-3.md).
-- Last checkpoint: (this commit)
+_(none: next is WP-09 Video & single video mode)_
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -50,6 +29,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-05 — screens + groups with admin/editor split per handler, composition lists (htmx, versioned, focus kept), resolved sequence page == resolver, IScreenNotifier (no-op) wired into all features, app-managed screen version; 3 review rounds, 1 NIT deferred to WP-06 — 20d1742
 - WP-06 — pairing (codes, one-time token minted at delivery, re-pair, revoke, cancelling pending claims), screen address + token exchange with retry, HttpOnly screen cookie auth, rate limits, player pairing screen; ADR-0007; APPROVE round 2 (1 MINOR + 2 NIT deferred to WP-08) — 2999e75
 - WP-07 — spike: release strategy (fresh <video>, pause/removeAttribute src/load/remove, release before preparing), daily reload confirmed by the PO, soak spec for WP-13; ADR-0008; 4 rounds (PO approved round 4), 2 NIT deferred to WP-08 — a11619e
+- WP-08 — player core: manifest (ETag/304, weak match) + admin preview, ES-module player (carousel with no double dwell, skipping, 3-layer cap, shadow only while animating, progress bar, empty state, offline cache incl. token boot, client schedule re-check, daily reload), demo seed under advisory lock, WP-03/06/07 follow-ups; 3 rounds, 1 MINOR + 3 NIT deferred to WP-09 — 40dff75
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
