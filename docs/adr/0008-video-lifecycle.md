@@ -28,7 +28,7 @@ Why not reuse: it saved nothing measurable against release (more PSS, in fact), 
 element, so a late `ended`/`error` event from the previous `src` can land on the next slide. Fresh elements keep
 each slide's listeners and timers scoped to its own element.
 
-**Safety net: a daily reload** (user-visible; confirmed by the product owner on 2026-10-17). Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
+**Safety net: a daily reload** (user-visible; confirmed by the product owner on 2026-10-17, and again with the corrected growth figure below). Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
 videos add about 0.03 MB each. A mix of images and videos still grows: +147 MB from transition 200 to 1000 and
 +104 MB from 1000 to 1800 (two equal 800-transition spans; the first sample is before warm-up and the last was taken
 after the loop had stopped, so both are left out). That is about 0.18 and then 0.13 MB per transition, roughly
