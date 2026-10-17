@@ -40,7 +40,7 @@ package owns it, ADR-0004).
 setup is unreachable once a user exists; a deactivated user can't log in and their existing cookie is
 invalidated (security stamp). R-50, R-51, R-52, R-53, R-64.
 
-### WP-03 Slide library — `Todo`
+### WP-03 Slide library — `In review`
 Slide CRUD for all 4 types, validation (absolute http/https URLs, required fields per type),
 the duration override, the schedule (entered in the system TZ, stored UTC), enable/disable, the
 play-audio flag with a help text, the WebPage framing note, a thumbnail/preview in the list (an

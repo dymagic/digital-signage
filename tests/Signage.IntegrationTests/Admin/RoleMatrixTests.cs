@@ -10,6 +10,7 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
 {
     private AdminApp _app = null!;
     private Guid _editorId;
+    private Guid _slideId;
 
     public static TheoryData<string, bool> Pages => new()
     {
@@ -20,6 +21,10 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
         { "/admin/users/create", false },
         { "/admin/users/{editor}", false },
         { "/admin/settings", false },
+        { "/admin/slides", true },
+        { "/admin/slides/create?type=Image", true },
+        { "/admin/slides/{slide}", true },
+        { "/admin/slides/{slide}/delete", true },
     };
 
     public async ValueTask InitializeAsync()
@@ -27,6 +32,13 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
         _app = await AdminApp.StartAsync(postgres);
         await _app.CreateAdminAsync();
         _editorId = await _app.CreateUserAsync(AdminApp.EditorEmail, UserRole.Editor);
+        var slide = new Slide { Title = "Matrix slide", Type = SlideType.Html, Html = "<p>x</p>" };
+        await _app.Factory.WithDbAsync(async db =>
+        {
+            db.Slides.Add(slide);
+            await db.SaveChangesAsync();
+        });
+        _slideId = slide.Id;
     }
 
     public ValueTask DisposeAsync() => _app.DisposeAsync();
@@ -173,5 +185,7 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
         Assert.Contains("href=\"/admin/settings\"", adminHtml, StringComparison.Ordinal);
     }
 
-    private string Resolve(string path) => path.Replace("{editor}", _editorId.ToString(), StringComparison.Ordinal);
+    private string Resolve(string path) => path
+        .Replace("{editor}", _editorId.ToString(), StringComparison.Ordinal)
+        .Replace("{slide}", _slideId.ToString(), StringComparison.Ordinal);
 }

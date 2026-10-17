@@ -34,6 +34,32 @@ public class TimestampTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Updates_always_overwrite_UpdatedAt_while_inserts_keep_an_explicit_one()
+    {
+        var time = new FakeTimeProvider(new DateTimeOffset(2026, 10, 16, 8, 0, 0, TimeSpan.Zero));
+        await using var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync(), timeProvider: time);
+        var explicitTime = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var slide = new Slide { Title = "t", Type = SlideType.Html, Html = "x", UpdatedAt = explicitTime };
+        await factory.WithDbAsync(async db =>
+        {
+            db.Slides.Add(slide);
+            await db.SaveChangesAsync();
+        });
+        Assert.Equal(explicitTime, (await factory.WithDbAsync(db => db.Slides.AsNoTracking().SingleAsync())).UpdatedAt);
+
+        time.Advance(TimeSpan.FromHours(1));
+        await factory.WithDbAsync(async db =>
+        {
+            var tracked = await db.Slides.SingleAsync();
+            tracked.Title = "changed";
+            tracked.UpdatedAt = explicitTime; // ignored: updates always get "now"
+            await db.SaveChangesAsync();
+        });
+
+        Assert.Equal(time.GetUtcNow(), (await factory.WithDbAsync(db => db.Slides.AsNoTracking().SingleAsync())).UpdatedAt);
+    }
+
+    [Fact]
     public async Task An_explicit_created_time_is_kept()
     {
         await using var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync());

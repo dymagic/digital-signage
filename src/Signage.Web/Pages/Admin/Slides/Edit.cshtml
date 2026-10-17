@@ -1,0 +1,32 @@
+@page "/admin/slides/{id:guid}"
+@model Signage.Web.Pages.Admin.Slides.EditModel
+@{
+    ViewData["Title"] = Model.Input.Title;
+    ViewData["Section"] = "Slides";
+}
+<div class="page-head">
+    <h1>@L[$"Slides.Type.{Model.Type}"]: @Model.SavedTitle</h1>
+    <a class="button danger" asp-page="Delete" asp-route-id="@Model.Id">@L["Common.Delete"]</a>
+</div>
+@if (TempData["Warning"] is string warning)
+{
+    <p class="notice notice-info" role="status">@L[warning]</p>
+}
+<div class="split">
+    <form method="post" class="form">
+        <input type="hidden" asp-for="Version" />
+        <partial name="_SlideForm" model="Model" />
+        <div class="form-actions">
+            <button type="submit" class="primary">@L["Common.Save"]</button>
+            <a asp-page="Index">@L["Slides.BackToLibrary"]</a>
+        </div>
+    </form>
+    @if (Model.Saved is not null)
+    {
+        <aside class="preview-pane">
+            <h2>@L["Slides.Preview"]</h2>
+            <partial name="_SlidePreview" model="Model.Saved" />
+            <p class="hint">@L["Slides.PreviewHint"]</p>
+        </aside>
+    }
+</div>

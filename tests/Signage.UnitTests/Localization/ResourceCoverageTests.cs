@@ -59,6 +59,20 @@ public partial class ResourceCoverageTests
     }
 
     [Fact]
+    public void Slide_type_texts_exist_for_every_type()
+    {
+        foreach (var type in Enum.GetValues<Signage.Web.Domain.SlideType>())
+        {
+            Assert.Contains($"Slides.Type.{type}", ResourceKeys);
+            Assert.Contains($"Slides.New.{type}", ResourceKeys);
+            if (type != Signage.Web.Domain.SlideType.Html)
+            {
+                Assert.Contains($"Slides.Hint.Url.{type}", ResourceKeys);
+            }
+        }
+    }
+
+    [Fact]
     public void The_shared_resource_is_found_at_runtime()
     {
         var name = typeof(SharedResource).Assembly.GetManifestResourceNames();

@@ -1,0 +1,19 @@
+@model Slide
+@* Small, inert previews. Html slides use the same sandbox as the player: scripts yes, same-origin never (R-05). *@
+<div class="slide-preview" aria-hidden="true">
+    @switch (Model.Type)
+    {
+        case SlideType.Image:
+            <img src="@Model.Url" alt="" loading="lazy" referrerpolicy="no-referrer" />
+            break;
+        case SlideType.Video:
+            <video src="@(Model.Url)#t=0.1" preload="metadata" muted playsinline></video>
+            break;
+        case SlideType.WebPage:
+            <iframe src="@Model.Url" sandbox="allow-scripts allow-same-origin allow-forms" referrerpolicy="no-referrer" loading="lazy" tabindex="-1" title=""></iframe>
+            break;
+        case SlideType.Html:
+            <iframe srcdoc="@Model.Html" sandbox="allow-scripts" loading="lazy" tabindex="-1" title=""></iframe>
+            break;
+    }
+</div>

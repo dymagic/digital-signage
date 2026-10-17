@@ -21,14 +21,17 @@
   <data name="Common.Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
   <data name="Common.Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
-  <data name="Common.Saved" xml:space="preserve">
-    <value>Changes saved.</value>
-  </data>
   <data name="Common.Save" xml:space="preserve">
     <value>Save</value>
+  </data>
+  <data name="Common.Saved" xml:space="preserve">
+    <value>Changes saved.</value>
   </data>
   <data name="Error.Back" xml:space="preserve">
     <value>Back to the admin</value>
@@ -83,6 +86,9 @@
   </data>
   <data name="Nav.Settings" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="Nav.Slides" xml:space="preserve">
+    <value>Slides</value>
   </data>
   <data name="Nav.Users" xml:space="preserve">
     <value>Users</value>
@@ -144,6 +150,219 @@
   <data name="Setup.Title" xml:space="preserve">
     <value>Set up Signage</value>
   </data>
+  <data name="Slides.BackToLibrary" xml:space="preserve">
+    <value>Back to the slide library</value>
+  </data>
+  <data name="Slides.Column.Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Slides.Create" xml:space="preserve">
+    <value>Create slide</value>
+  </data>
+  <data name="Slides.Created" xml:space="preserve">
+    <value>Slide created.</value>
+  </data>
+  <data name="Slides.Delete.Confirm" xml:space="preserve">
+    <value>Delete slide</value>
+  </data>
+  <data name="Slides.Delete.InUse" xml:space="preserve">
+    <value>This slide is in use. Deleting it also removes it from everything below.</value>
+  </data>
+  <data name="Slides.Delete.NotInUse" xml:space="preserve">
+    <value>This slide isn't used in any playlist or screen.</value>
+  </data>
+  <data name="Slides.Delete.Playlists" xml:space="preserve">
+    <value>Playlists:</value>
+  </data>
+  <data name="Slides.Delete.Screens" xml:space="preserve">
+    <value>Screens (added directly):</value>
+  </data>
+  <data name="Slides.Delete.Title" xml:space="preserve">
+    <value>Delete slide</value>
+  </data>
+  <data name="Slides.Deleted" xml:space="preserve">
+    <value>Slide deleted.</value>
+  </data>
+  <data name="Slides.Disable" xml:space="preserve">
+    <value>Click to disable</value>
+  </data>
+  <data name="Slides.Disabled" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="Slides.DisabledStatus" xml:space="preserve">
+    <value>Slide disabled. Screens skip it until you turn it on again.</value>
+  </data>
+  <data name="Slides.Duration.Default" xml:space="preserve">
+    <value>Default ({0} s)</value>
+  </data>
+  <data name="Slides.Duration.Seconds" xml:space="preserve">
+    <value>{0} s</value>
+  </data>
+  <data name="Slides.Duration.Video" xml:space="preserve">
+    <value>Until the video ends</value>
+  </data>
+  <data name="Slides.Empty" xml:space="preserve">
+    <value>No slides yet. Create one with the buttons above.</value>
+  </data>
+  <data name="Slides.Enable" xml:space="preserve">
+    <value>Click to enable</value>
+  </data>
+  <data name="Slides.Enabled" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="Slides.EnabledStatus" xml:space="preserve">
+    <value>Slide enabled.</value>
+  </data>
+  <data name="Slides.Error.DurationRange" xml:space="preserve">
+    <value>Enter a duration between 1 and 3600 seconds, or leave it empty to use the default.</value>
+  </data>
+  <data name="Slides.Error.HtmlRequired" xml:space="preserve">
+    <value>Enter the HTML to show.</value>
+  </data>
+  <data name="Slides.Error.HtmlTooLong" xml:space="preserve">
+    <value>The HTML is too long (at most 200,000 characters).</value>
+  </data>
+  <data name="Slides.Error.TimeDoesNotExist" xml:space="preserve">
+    <value>That time doesn't exist in this time zone (the clocks skip it when summer time starts).</value>
+  </data>
+  <data name="Slides.Error.TitleRequired" xml:space="preserve">
+    <value>Enter a title.</value>
+  </data>
+  <data name="Slides.Error.TitleTooLong" xml:space="preserve">
+    <value>The title can be at most 200 characters.</value>
+  </data>
+  <data name="Slides.Error.UntilBeforeFrom" xml:space="preserve">
+    <value>"Active until" must be after "Active from".</value>
+  </data>
+  <data name="Slides.Error.UrlInvalid" xml:space="preserve">
+    <value>Enter a full address starting with http:// or https://.</value>
+  </data>
+  <data name="Slides.Error.UrlRequired" xml:space="preserve">
+    <value>Enter the address (URL).</value>
+  </data>
+  <data name="Slides.Field.ActiveFrom" xml:space="preserve">
+    <value>Active from</value>
+  </data>
+  <data name="Slides.Field.ActiveUntil" xml:space="preserve">
+    <value>Active until</value>
+  </data>
+  <data name="Slides.Field.Duration" xml:space="preserve">
+    <value>Duration (seconds)</value>
+  </data>
+  <data name="Slides.Field.Html" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="Slides.Field.IsEnabled" xml:space="preserve">
+    <value>Enabled (screens show this slide)</value>
+  </data>
+  <data name="Slides.Field.PlayAudio" xml:space="preserve">
+    <value>Play audio</value>
+  </data>
+  <data name="Slides.Field.Title" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Slides.Field.Url" xml:space="preserve">
+    <value>Address (URL)</value>
+  </data>
+  <data name="Slides.Hint.Duration" xml:space="preserve">
+    <value>Leave empty to use the default duration from Settings.</value>
+  </data>
+  <data name="Slides.Hint.Framing" xml:space="preserve">
+    <value>Some websites refuse to be shown inside another page (X-Frame-Options or Content-Security-Policy). They then appear blank on the screens. Check the preview after saving.</value>
+  </data>
+  <data name="Slides.Hint.Html" xml:space="preserve">
+    <value>Shown full-screen in a sandbox: scripts run, but they can't reach the player, cookies or the admin. The background is black unless you set one.</value>
+  </data>
+  <data name="Slides.Hint.PlayAudio" xml:space="preserve">
+    <value>Videos are muted by default. With sound on, most browsers only play the video if they were started with an autoplay-with-sound policy (kiosk flags); see the README.</value>
+  </data>
+  <data name="Slides.Hint.Schedule" xml:space="preserve">
+    <value>Optional. Times are in the system time zone ({0}). Outside this window, screens skip the slide.</value>
+  </data>
+  <data name="Slides.Hint.Url.Image" xml:space="preserve">
+    <value>A direct link to a JPEG, PNG, WebP, GIF or SVG image. The image fills the screen.</value>
+  </data>
+  <data name="Slides.Hint.Url.Video" xml:space="preserve">
+    <value>A direct link to an MP4 file. The video plays to the end, then the next slide comes in.</value>
+  </data>
+  <data name="Slides.Hint.Url.WebPage" xml:space="preserve">
+    <value>The page is shown full-screen. Visitors can't interact with it.</value>
+  </data>
+  <data name="Slides.New.Html" xml:space="preserve">
+    <value>New HTML slide</value>
+  </data>
+  <data name="Slides.New.Image" xml:space="preserve">
+    <value>New image slide</value>
+  </data>
+  <data name="Slides.New.Video" xml:space="preserve">
+    <value>New video slide</value>
+  </data>
+  <data name="Slides.New.WebPage" xml:space="preserve">
+    <value>New web page slide</value>
+  </data>
+  <data name="Slides.NewSlide" xml:space="preserve">
+    <value>New slide</value>
+  </data>
+  <data name="Slides.NoMatches" xml:space="preserve">
+    <value>No slides match your search.</value>
+  </data>
+  <data name="Slides.Placeholder.DefaultDuration" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Slides.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Slides.PreviewHint" xml:space="preserve">
+    <value>The preview shows the saved version, not unsaved edits.</value>
+  </data>
+  <data name="Slides.Schedule" xml:space="preserve">
+    <value>Schedule</value>
+  </data>
+  <data name="Slides.Schedule.Always" xml:space="preserve">
+    <value>Always</value>
+  </data>
+  <data name="Slides.Schedule.Between" xml:space="preserve">
+    <value>{0} – {1}</value>
+  </data>
+  <data name="Slides.Schedule.Ended" xml:space="preserve">
+    <value>Ended {0}</value>
+  </data>
+  <data name="Slides.Schedule.From" xml:space="preserve">
+    <value>From {0}</value>
+  </data>
+  <data name="Slides.Schedule.Until" xml:space="preserve">
+    <value>Until {0}</value>
+  </data>
+  <data name="Slides.Search" xml:space="preserve">
+    <value>Search slides by title</value>
+  </data>
+  <data name="Slides.SearchButton" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Slides.Title" xml:space="preserve">
+    <value>Slides</value>
+  </data>
+  <data name="Slides.Type.Html" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="Slides.Type.Image" xml:space="preserve">
+    <value>Image</value>
+  </data>
+  <data name="Slides.Type.Video" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="Slides.Type.WebPage" xml:space="preserve">
+    <value>Web page</value>
+  </data>
+  <data name="Slides.Usage" xml:space="preserve">
+    <value>{0} playlists · {1} screens</value>
+  </data>
+  <data name="Slides.UsedIn" xml:space="preserve">
+    <value>Used in</value>
+  </data>
+  <data name="Slides.Warning.VideoNotMp4" xml:space="preserve">
+    <value>Saved. Note: the video address doesn't end in .mp4. That's fine if the server sends an MP4 file (video/mp4), but other formats may not play on all screens.</value>
+  </data>
   <data name="Users.BackToList" xml:space="preserve">
     <value>Back to users</value>
   </data>
@@ -201,11 +420,11 @@
   <data name="Users.PasswordHint" xml:space="preserve">
     <value>At least {0} characters. A few words in a row make a strong password.</value>
   </data>
-  <data name="Users.ResetPasswordHint" xml:space="preserve">
-    <value>Creates a new temporary password and signs the user out everywhere. They must choose a new password when they next sign in.</value>
-  </data>
   <data name="Users.ResetPassword" xml:space="preserve">
     <value>Reset password</value>
+  </data>
+  <data name="Users.ResetPasswordHint" xml:space="preserve">
+    <value>Creates a new temporary password and signs the user out everywhere. They must choose a new password when they next sign in.</value>
   </data>
   <data name="Users.Role.Admin" xml:space="preserve">
     <value>Admin</value>

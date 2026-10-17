@@ -98,7 +98,9 @@ Rules:
   likewise.
 - A `Url` must be absolute `http(s)`. Video URLs should end in `.mp4` or be served as `video/mp4`.
   Only a warning: don't block, because CDNs vary.
-- `CreatedAt`/`UpdatedAt` are set automatically on save (`TimestampInterceptor`, using `TimeProvider`).
+- `CreatedAt`/`UpdatedAt` are set automatically on save (`TimestampInterceptor`, using `TimeProvider`). On insert an
+  explicit value is kept; on update `UpdatedAt` is always overwritten. Bulk `ExecuteUpdate`/`ExecuteDelete`
+  bypass the interceptor, so code using them sets `UpdatedAt` itself (e.g. `SlideService.SetEnabledAsync`).
 - Link rows (playlist slides, screen slides, assignments, memberships) cascade-delete with either side.
   A pairing request's claimed screen is set to null when the screen is deleted.
 - Schedules are half-open: a slide is active from `ActiveFromUtc` (inclusive) until `ActiveUntilUtc`
