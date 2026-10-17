@@ -7,17 +7,14 @@
 Milestone 1: in progress (WP-00–WP-06 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-07 Spike: video lifecycle & memory — branch `wp-07-video-spike` — status In progress
+- Package: WP-07 Spike: video lifecycle & memory — branch `wp-07-video-spike` — status In review (round 1 requested)
 - Plan: generate H.264 test media in a container (`scripts/generate-test-media.sh`, linuxserver/ffmpeg:9.0.2), serve it
   and the harness from nginx (`testmedia` service in docker-compose.e2e.yml), harness in
   `tests/Signage.E2E/spikes/video-lifecycle/` with 4 strategies (release / remove / keep / reuse), runner
   `tests/Signage.E2E/Spikes/VideoLifecycleSpike.cs` (240 transitions, samples every 20: JS heap after GC, nodes,
   browser PSS from /proc, videos in DOM, media players created/destroyed via CDP Media). Then ADR-0008 with data.
-- Done: media script; testmedia service; codec probe (Playwright Chromium plays H.264+AAC MP4, see
-  artifacts/e2e/spike/codecs.json); harness + runner written and compiling. NOT yet run.
-- Half-done: the measurement has never been run; the harness may need debugging.
-- Next step: `SIGNAGE_E2E_SPIKE=1 scripts/test-e2e.sh -trait "Category=Spike"`, inspect artifacts/e2e/spike/*.csv,
-  write docs/adr/0008-video-lifecycle.md (data, Pi notes from literature, decision), self-check, review.
+- Done: media, harness, runner, measurements (240 x 4 strategies; 1200 release vs images-only), ADR-0008, PLAYER_SPEC §4.
+- Next step: handle review round 1 verdict (docs/reviews/WP-07-review-1.md).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
