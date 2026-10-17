@@ -16,9 +16,9 @@ Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the revi
   `Forbid()` checks) and editor htmx lists. Follow-ups from WP-02 r4 + WP-04 (focus after swap, HX-Redirect when
   parent gone, stale-details test, must-change on htmx test, slide delete bumps versions).
 - Risks: handler-level authorization on mixed pages (tests per handler).
-- Done: —
+- Done: screen app-managed version (+ migration), IPositioned/OrderedList, IScreenNotifier (NoOp) + AffectedScreens, ScreenService, GroupService; slides/playlists/settings notify affected screens; slide delete bumps playlist/screen versions.
 - Half-done: —
-- Next step: screen version migration, IPositioned/OrderedList, notifier, services.
+- Next step: pages (screens list/create/detail/delete, groups list/create/detail/delete) with handler-level admin checks; then tests.
 - Last checkpoint: (this commit)
 
 

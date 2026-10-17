@@ -255,11 +255,10 @@ namespace Signage.Web.Data.Migrations
                         .HasColumnType("character varying(512)")
                         .HasColumnName("user_agent");
 
-                    b.Property<uint>("Version")
+                    b.Property<int>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("pk_screens");

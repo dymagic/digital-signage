@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Signage.Web.Data;
 using Signage.Web.Domain;
+using Signage.Web.Features.Events;
 
 namespace Signage.Web.Features.Slides;
 
@@ -14,7 +15,7 @@ public sealed record SlideUsage(IReadOnlyList<string> Playlists, IReadOnlyList<s
 }
 
 /// <summary>The shared slide library (R-01–R-07). Editors and admins.</summary>
-public sealed class SlideService(SignageDbContext db, TimeProvider time)
+public sealed class SlideService(SignageDbContext db, TimeProvider time, IScreenNotifier notifier)
 {
     public async Task<IReadOnlyList<SlideListItem>> ListAsync(string? search, CancellationToken ct)
     {
@@ -68,6 +69,7 @@ public sealed class SlideService(SignageDbContext db, TimeProvider time)
         {
             return OperationResult.Fail(CommonErrors.Concurrency);
         }
+        await NotifyAsync(id, ct).ConfigureAwait(false);
         return OperationResult.Ok;
     }
 
@@ -79,7 +81,13 @@ public sealed class SlideService(SignageDbContext db, TimeProvider time)
         var updated = await db.Slides.Where(s => s.Id == id)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsEnabled, enabled).SetProperty(x => x.UpdatedAt, now), ct)
             .ConfigureAwait(false);
-        return updated == 0 ? OperationResult.Fail(CommonErrors.NotFound) : OperationResult.Ok;
+        if (updated == 0)
+        {
+            return OperationResult.Fail(CommonErrors.NotFound);
+        }
+
+        await NotifyAsync(id, ct).ConfigureAwait(false);
+        return OperationResult.Ok;
     }
 
     public async Task<SlideUsage> GetUsageAsync(Guid id, CancellationToken ct)
@@ -103,6 +111,7 @@ public sealed class SlideService(SignageDbContext db, TimeProvider time)
             await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
             var playlistIds = await db.PlaylistSlides.Where(ps => ps.SlideId == id).Select(ps => ps.PlaylistId).Distinct().ToListAsync(ct).ConfigureAwait(false);
             var screenIds = await db.ScreenSlides.Where(ss => ss.SlideId == id).Select(ss => ss.ScreenId).Distinct().ToListAsync(ct).ConfigureAwait(false);
+            var affected = await AffectedScreens.OfSlideAsync(db, id, ct).ConfigureAwait(false);
             var deleted = await db.Slides.Where(s => s.Id == id).ExecuteDeleteAsync(ct).ConfigureAwait(false);
             if (deleted == 0)
             {
@@ -111,10 +120,19 @@ public sealed class SlideService(SignageDbContext db, TimeProvider time)
 
             await db.RenumberPlaylistsAsync(playlistIds, ct).ConfigureAwait(false);
             await db.RenumberScreenSlidesAsync(screenIds, ct).ConfigureAwait(false);
+
+            // The lists changed under any open editor: move their versions on so a stale form gets a conflict.
+            var now = time.GetUtcNow();
+            await db.Playlists.Where(p => playlistIds.Contains(p.Id)).ExecuteUpdateAsync(s => s.SetProperty(p => p.UpdatedAt, now), ct).ConfigureAwait(false);
+            await db.Screens.Where(s => screenIds.Contains(s.Id)).ExecuteUpdateAsync(s => s.SetProperty(x => x.Version, x => x.Version + 1), ct).ConfigureAwait(false);
             await tx.CommitAsync(ct).ConfigureAwait(false);
+            await notifier.ScreensChangedAsync(affected, ct).ConfigureAwait(false);
             return OperationResult.Ok;
         }).ConfigureAwait(false);
     }
+
+    private async Task NotifyAsync(Guid slideId, CancellationToken ct) =>
+        await notifier.ScreensChangedAsync(await AffectedScreens.OfSlideAsync(db, slideId, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
 
     private static void Apply(Slide slide, ValidSlide valid)
     {

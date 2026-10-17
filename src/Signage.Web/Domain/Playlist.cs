@@ -16,7 +16,7 @@ public class Playlist : IHasCreatedAt, IHasUpdatedAt
 }
 
 /// <summary>A slide's place in a playlist. The same slide may appear more than once.</summary>
-public class PlaylistSlide
+public class PlaylistSlide : IPositioned
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public Guid PlaylistId { get; set; }

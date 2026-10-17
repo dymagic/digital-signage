@@ -26,7 +26,7 @@ public class ScreenGroupMember
     public ScreenGroup Group { get; set; } = null!;
 }
 
-public class GroupPlaylist
+public class GroupPlaylist : IPositioned
 {
     public Guid GroupId { get; set; }
     public Guid PlaylistId { get; set; }

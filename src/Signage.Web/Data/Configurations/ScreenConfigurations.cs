@@ -17,7 +17,7 @@ internal sealed class ScreenConfiguration : IEntityTypeConfiguration<Screen>
         builder.Property(s => s.LastIp).HasMaxLength(Limits.Ip);
         builder.Property(s => s.PlayerVersion).HasMaxLength(Limits.ShortText);
         builder.Property(s => s.UserAgent).HasMaxLength(Limits.UserAgent);
-        builder.Property(s => s.Version).IsRowVersion();
+        builder.Property(s => s.Version).IsConcurrencyToken();
         builder.HasIndex(s => s.Name).IsUnique();
         builder.HasIndex(s => s.TokenHash).IsUnique().HasFilter("token_hash IS NOT NULL");
     }

@@ -19,8 +19,11 @@ public class Screen : IHasCreatedAt
     public string? UserAgent { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>Optimistic concurrency token (PostgreSQL <c>xmin</c>).</summary>
-    public uint Version { get; set; }
+    /// <summary>
+    /// Optimistic concurrency token for edits by people. App-managed (not <c>xmin</c>): heartbeats and pairing
+    /// also write this row, and they must never make an admin's or editor's form fail as a conflict (ADR-0004).
+    /// </summary>
+    public int Version { get; set; }
 
     public List<ScreenSlide> Slides { get; set; } = [];
     public List<ScreenPlaylist> Playlists { get; set; } = [];
@@ -28,7 +31,7 @@ public class Screen : IHasCreatedAt
 }
 
 /// <summary>A slide attached directly to a screen, before or after everything else.</summary>
-public class ScreenSlide
+public class ScreenSlide : IPositioned
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public Guid ScreenId { get; set; }
@@ -43,7 +46,7 @@ public class ScreenSlide
 }
 
 /// <summary>A playlist assigned directly to a screen.</summary>
-public class ScreenPlaylist
+public class ScreenPlaylist : IPositioned
 {
     public Guid ScreenId { get; set; }
     public Guid PlaylistId { get; set; }
