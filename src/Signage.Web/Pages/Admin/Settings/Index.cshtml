@@ -1,0 +1,27 @@
+@page
+@model Signage.Web.Pages.Admin.Settings.IndexModel
+@using Signage.Web.Features.Settings
+@{
+    ViewData["Title"] = L["Settings.Title"];
+    ViewData["Section"] = "Settings";
+}
+<h1>@L["Settings.Title"]</h1>
+<form method="post" class="form">
+    <partial name="_ValidationSummary" />
+    <input type="hidden" asp-for="Input.Version" />
+    <label asp-for="Input.DefaultSlideDurationSeconds"></label>
+    <input asp-for="Input.DefaultSlideDurationSeconds" type="number" min="@SettingsService.MinDuration" max="@SettingsService.MaxDuration" />
+    <span class="hint">@L["Settings.DurationHint"]</span>
+    <span asp-validation-for="Input.DefaultSlideDurationSeconds" class="field-error"></span>
+    <label asp-for="Input.TimeZoneId"></label>
+    <select asp-for="Input.TimeZoneId" asp-items="@(new SelectList(SettingsService.TimeZoneIds))"></select>
+    <span class="hint">@L["Settings.TimeZoneHint"]</span>
+    <label class="checkbox">
+        <input asp-for="Input.ShowInfoOverlay" />
+        @L["Settings.Field.ShowInfoOverlay"]
+    </label>
+    <span class="hint">@L["Settings.ShowInfoOverlayHint"]</span>
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Common.Save"]</button>
+    </div>
+</form>

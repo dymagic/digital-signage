@@ -18,6 +18,9 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
 
     protected IBrowserContext Context => _context ?? throw new InvalidOperationException("Context not created.");
 
+    /// <summary>When true, the test starts signed in as the E2E admin.</summary>
+    protected virtual bool SignedInAsAdmin => false;
+
     public virtual async ValueTask InitializeAsync()
     {
         BaseUrl = E2EEnvironment.RequireBaseUrl();
@@ -25,6 +28,7 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
         {
             BaseURL = BaseUrl.ToString(),
             ViewportSize = new() { Width = 1920, Height = 1080 },
+            StorageState = SignedInAsAdmin ? await fixture.Admin.StorageStateAsync() : null,
         });
         await _context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true });
         Page = await _context.NewPageAsync();
@@ -59,6 +63,14 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
 
         await _context.DisposeAsync();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>Saves a full-page screenshot to <c>artifacts/e2e/screens/</c> for humans (README, reviews).</summary>
+    protected async Task SaveScreenshotAsync(string name)
+    {
+        var dir = Path.Combine(E2EEnvironment.ArtifactsDir, "screens");
+        Directory.CreateDirectory(dir);
+        await Page.ScreenshotAsync(new() { Path = Path.Combine(dir, $"{name}.png"), FullPage = true });
     }
 
     private static string Sanitize(string value)

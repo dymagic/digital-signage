@@ -31,10 +31,11 @@ disabled, empty, repeated slide).
 **Accept:** resolver tests cover every R-12 rule; the migration applies on an empty DB in integration tests. R-02, R-03, R-04, R-12.
 *Follow-ups from WP-00 review:* (a) make the host dev loop work: publish db 5432 on 127.0.0.1 and align the dev password with compose, or document an override; (b) add the dotnet-ef local tool manifest and re-verify the CLAUDE.md command line; (c) E2E: dispose pages via `await using` contexts, capture trace/screenshot to `artifacts/e2e/` on failure; (d) use a Stopwatch instead of `DateTimeOffset.UtcNow` in `BrowserFixture`; (e) make Npgsql GSS opt-out detection less fragile (parse the connection string); (f) fix the run-and-verify comment "app and db healthy?" (the app has no HEALTHCHECK).
 
-### WP-02 Authentication & users — `Todo`
+### WP-02 Authentication & users — `In review`
 Cookie auth, login/logout, lockout, first-run setup page, bootstrap via env vars, forced password
 change, user management (admins only), role policies, antiforgery, the admin layout shell with
-navigation and the i18n plumbing (resx + localizers).
+navigation and the i18n plumbing (resx + localizers). Also the global Settings page (admin only; no other
+package owns it, ADR-0004).
 **Accept:** integration tests for every role/endpoint permission in the PROJECT_BRIEF §3 matrix;
 setup is unreachable once a user exists; a deactivated user can't log in and their existing cookie is
 invalidated (security stamp). R-50, R-51, R-52, R-53, R-64.
@@ -52,6 +53,9 @@ filter.
 Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
 duplicate slides allowed, "used by" info (screens/groups).
 **Accept:** reorder persists densely; concurrent edit gets a friendly conflict message. R-08.
+*From WP-02 review:* `MustChangePasswordFilter` is a Razor *page* filter. Admin endpoints mapped outside Razor
+Pages (e.g. minimal-API htmx endpoints) must enforce the forced password change too, so move the check into
+an authorization requirement or middleware when the first such endpoint appears.
 
 ### WP-05 Screens, groups & composition — `Todo`
 Screen CRUD (admin), mode + single video URL (admin), group CRUD + membership + sort order
@@ -115,6 +119,8 @@ no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`
 it). R-60, R-61, R-62, R-65.
 *Follow-up from WP-01 review:* document that compose publishes Postgres on `127.0.0.1:55432` for the
 host dev loop and how to change it (`SIGNAGE_DB_PORT`) or remove it.
+*From WP-02 (ADR-0004):* the security note recommends HTTPS via a reverse proxy when the network isn't
+trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
 
 ### WP-13 Milestone hardening & acceptance — `Todo`
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute

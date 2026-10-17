@@ -15,6 +15,10 @@ public sealed class BrowserFixture : IAsyncLifetime
 
     public IBrowser Browser => _browser ?? throw new InvalidOperationException("E2E environment not configured.");
 
+    public AdminLogin Admin { get; }
+
+    public BrowserFixture() => Admin = new AdminLogin(this);
+
     public async ValueTask InitializeAsync()
     {
         if (E2EEnvironment.BaseUrl is not { } baseUrl)
@@ -29,6 +33,7 @@ public sealed class BrowserFixture : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
+        Admin.Dispose();
         if (_browser is not null)
         {
             await _browser.DisposeAsync();

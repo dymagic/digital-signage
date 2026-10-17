@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Name" xml:space="preserve">
+    <value>Signage</value>
+  </data>
+  <data name="Common.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Common.Saved" xml:space="preserve">
+    <value>Changes saved.</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Error.Back" xml:space="preserve">
+    <value>Back to the admin</value>
+  </data>
+  <data name="Error.Body" xml:space="preserve">
+    <value>Something went wrong on our side. Try again, and if it keeps happening, check the server log.</value>
+  </data>
+  <data name="Error.Concurrency" xml:space="preserve">
+    <value>Someone else changed this in the meantime. Reload the page to see their changes, then try again.</value>
+  </data>
+  <data name="Error.NotFound" xml:space="preserve">
+    <value>That item no longer exists.</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>Request ID:</value>
+  </data>
+  <data name="Error.Title" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="Forbidden.Body" xml:space="preserve">
+    <value>Your account doesn't have permission to open this page. Ask an admin if you need access.</value>
+  </data>
+  <data name="Forbidden.Title" xml:space="preserve">
+    <value>No access</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Home.Welcome" xml:space="preserve">
+    <value>Welcome, {0}.</value>
+  </data>
+  <data name="Login.Error.Failed" xml:space="preserve">
+    <value>Sign-in failed. Check your email and password, or try again later.</value>
+  </data>
+  <data name="Login.Submit" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Login.Title" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Nav.ChangePassword" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Nav.Label" xml:space="preserve">
+    <value>Main</value>
+  </data>
+  <data name="Nav.Logout" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Nav.Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Password.Changed" xml:space="preserve">
+    <value>Your password has been changed.</value>
+  </data>
+  <data name="Password.Field.Current" xml:space="preserve">
+    <value>Current password</value>
+  </data>
+  <data name="Password.Field.New" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="Password.MustChange" xml:space="preserve">
+    <value>Choose your own password before you continue.</value>
+  </data>
+  <data name="Password.Submit" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="Password.Title" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="Settings.DurationHint" xml:space="preserve">
+    <value>Used for every slide that doesn't set its own duration. Videos always play to the end.</value>
+  </data>
+  <data name="Settings.Error.Duration" xml:space="preserve">
+    <value>Enter a duration between 1 and 3600 seconds.</value>
+  </data>
+  <data name="Settings.Error.TimeZone" xml:space="preserve">
+    <value>Choose a time zone from the list.</value>
+  </data>
+  <data name="Settings.Field.DefaultDuration" xml:space="preserve">
+    <value>Default slide duration (seconds)</value>
+  </data>
+  <data name="Settings.Field.ShowInfoOverlay" xml:space="preserve">
+    <value>Show each screen's name and IP address on the screen</value>
+  </data>
+  <data name="Settings.Field.TimeZone" xml:space="preserve">
+    <value>Time zone</value>
+  </data>
+  <data name="Settings.ShowInfoOverlayHint" xml:space="preserve">
+    <value>A small line at the bottom of every screen. Handy while installing screens.</value>
+  </data>
+  <data name="Settings.TimeZoneHint" xml:space="preserve">
+    <value>Slide schedules are entered and shown in this time zone. Screen clocks use it too.</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Setup.Error.AlreadyDone" xml:space="preserve">
+    <value>Setup has already been completed.</value>
+  </data>
+  <data name="Setup.Intro" xml:space="preserve">
+    <value>Welcome. Create the first admin account to get started. You can add more users afterwards.</value>
+  </data>
+  <data name="Setup.Submit" xml:space="preserve">
+    <value>Create admin account</value>
+  </data>
+  <data name="Setup.Title" xml:space="preserve">
+    <value>Set up Signage</value>
+  </data>
+  <data name="Users.BackToList" xml:space="preserve">
+    <value>Back to users</value>
+  </data>
+  <data name="Users.Create" xml:space="preserve">
+    <value>Add user</value>
+  </data>
+  <data name="Users.Edit" xml:space="preserve">
+    <value>Edit user</value>
+  </data>
+  <data name="Users.Error.CannotChangeSelf" xml:space="preserve">
+    <value>You can't change your own role or deactivate yourself. Ask another admin.</value>
+  </data>
+  <data name="Users.Error.EmailTaken" xml:space="preserve">
+    <value>A user with this email already exists.</value>
+  </data>
+  <data name="Users.Error.InvalidEmail" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="Users.Error.LastAdmin" xml:space="preserve">
+    <value>This is the last active admin. Make someone else an admin first.</value>
+  </data>
+  <data name="Users.Error.PasswordTooLong" xml:space="preserve">
+    <value>The password is too long.</value>
+  </data>
+  <data name="Users.Error.PasswordTooShort" xml:space="preserve">
+    <value>The password must be at least 10 characters long.</value>
+  </data>
+  <data name="Users.Error.SamePassword" xml:space="preserve">
+    <value>The new password must be different from the current one.</value>
+  </data>
+  <data name="Users.Error.WrongCurrentPassword" xml:space="preserve">
+    <value>The current password is wrong.</value>
+  </data>
+  <data name="Users.Field.ConfirmPassword" xml:space="preserve">
+    <value>Repeat password</value>
+  </data>
+  <data name="Users.Field.DisplayName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Users.Field.Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Users.Field.IsActive" xml:space="preserve">
+    <value>Active (can sign in)</value>
+  </data>
+  <data name="Users.Field.Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Users.Field.Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="Users.Field.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Users.PasswordHint" xml:space="preserve">
+    <value>At least {0} characters. A few words in a row make a strong password.</value>
+  </data>
+  <data name="Users.ResetPasswordHint" xml:space="preserve">
+    <value>Creates a new temporary password and signs the user out everywhere. They must choose a new password when they next sign in.</value>
+  </data>
+  <data name="Users.ResetPassword" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="Users.Role.Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Users.Role.Editor" xml:space="preserve">
+    <value>Editor</value>
+  </data>
+  <data name="Users.RoleHint" xml:space="preserve">
+    <value>Editors manage slides and playlists and assign them to screens. Admins can also manage screens, groups, users and settings.</value>
+  </data>
+  <data name="Users.SelfHint" xml:space="preserve">
+    <value>You can't change your own role or deactivate yourself.</value>
+  </data>
+  <data name="Users.Status.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Users.Status.Inactive" xml:space="preserve">
+    <value>Deactivated</value>
+  </data>
+  <data name="Users.Status.MustChange" xml:space="preserve">
+    <value>Must change password</value>
+  </data>
+  <data name="Users.TemporaryPassword.Intro" xml:space="preserve">
+    <value>Give the user this temporary password. They must choose their own when they sign in:</value>
+  </data>
+  <data name="Users.TemporaryPassword.Once" xml:space="preserve">
+    <value>It is shown only now. If it gets lost, reset the password again.</value>
+  </data>
+  <data name="Users.Title" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Validation.MaxLength" xml:space="preserve">
+    <value>{0} can be at most {1} characters.</value>
+  </data>
+  <data name="Validation.MustBeNumber" xml:space="preserve">
+    <value>Enter a number.</value>
+  </data>
+  <data name="Validation.PasswordsDiffer" xml:space="preserve">
+    <value>The passwords don't match.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>{0} is required.</value>
+  </data>
+  <data name="Validation.ValueInvalid" xml:space="preserve">
+    <value>The value '{0}' is not valid.</value>
+  </data>
+</root>

@@ -1,0 +1,18 @@
+@page
+@model Signage.Web.Pages.Admin.LoginModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = L["Login.Title"];
+}
+<h1>@L["Login.Title"]</h1>
+<form method="post">
+    <partial name="_ValidationSummary" />
+    <input type="hidden" asp-for="ReturnUrl" />
+    <label asp-for="Input.Email"></label>
+    <input asp-for="Input.Email" type="email" autocomplete="username" autofocus />
+    <span asp-validation-for="Input.Email" class="field-error"></span>
+    <label asp-for="Input.Password"></label>
+    <input asp-for="Input.Password" autocomplete="current-password" />
+    <span asp-validation-for="Input.Password" class="field-error"></span>
+    <button type="submit" class="primary">@L["Login.Submit"]</button>
+</form>

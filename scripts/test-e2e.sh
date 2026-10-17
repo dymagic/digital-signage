@@ -14,7 +14,10 @@ export PLAYWRIGHT_VERSION E2E_UID="$(id -u)" E2E_GID="$(id -g)"
 
 compose=(docker compose -p signage-e2e -f docker-compose.yml -f docker-compose.e2e.yml --profile e2e)
 
-cleanup() { "${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true; }
+cleanup() {
+  "${compose[@]}" logs --no-color app > artifacts/e2e/app.log 2>&1 || true
+  "${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 
 mkdir -p artifacts/e2e
@@ -25,7 +28,7 @@ set +e
 status=$?
 set -e
 if [[ $status -ne 0 ]]; then
-  echo "E2E failed (exit $status). App log tail:" >&2
-  "${compose[@]}" logs app --tail=80 >&2 || true
+  echo "E2E failed (exit $status). Full app log: artifacts/e2e/app.log. Tail:" >&2
+  "${compose[@]}" logs app --tail=40 >&2 || true
 fi
 exit $status

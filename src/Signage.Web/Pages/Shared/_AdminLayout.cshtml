@@ -1,0 +1,45 @@
+@using Microsoft.AspNetCore.Antiforgery
+@using Signage.Web.Features.Users
+@inject IAntiforgery Antiforgery
+@{
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+    var isAdmin = User.IsInRole(nameof(UserRole.Admin));
+    var section = ViewData["Section"] as string;
+    string Current(string name) => section == name ? "page" : "false";
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · @L["App.Name"]</title>
+    <link rel="stylesheet" href="~/admin/admin.css" asp-append-version="true" />
+    <script src="~/lib/htmx/htmx.min.js" asp-append-version="true" defer></script>
+</head>
+<body hx-headers='{"@tokens.HeaderName": "@tokens.RequestToken"}'>
+    <header class="topbar">
+        <a class="brand" href="~/admin">@L["App.Name"]</a>
+        <nav class="nav" aria-label="@L["Nav.Label"]">
+            <a href="~/admin" aria-current="@Current("Home")">@L["Nav.Home"]</a>
+            @if (isAdmin)
+            {
+                <a href="~/admin/users" aria-current="@Current("Users")">@L["Nav.Users"]</a>
+                <a href="~/admin/settings" aria-current="@Current("Settings")">@L["Nav.Settings"]</a>
+            }
+        </nav>
+        <div class="account">
+            <a href="~/admin/account/password" title="@L["Nav.ChangePassword"]">@User.Identity?.Name</a>
+            <form method="post" action="~/admin/logout" asp-antiforgery="true">
+                <button type="submit" class="link">@L["Nav.Logout"]</button>
+            </form>
+        </div>
+    </header>
+    <main class="content">
+        @if (TempData["Status"] is string status)
+        {
+            <p class="notice notice-success" role="status">@L[status]</p>
+        }
+        @RenderBody()
+    </main>
+</body>
+</html>

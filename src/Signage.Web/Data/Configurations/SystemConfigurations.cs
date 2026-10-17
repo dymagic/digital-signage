@@ -15,7 +15,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash).HasMaxLength(Limits.Description);
         builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(Limits.Enum);
         builder.Property(u => u.SecurityStamp).HasMaxLength(Limits.ShortText);
-        builder.Property(u => u.Version).IsRowVersion();
+        builder.Property(u => u.Version).IsConcurrencyToken();
         builder.HasIndex(u => u.NormalizedEmail).IsUnique();
     }
 }
@@ -32,5 +32,14 @@ internal sealed class SystemSettingsConfiguration : IEntityTypeConfiguration<Sys
             t.HasCheckConstraint("ck_system_settings_singleton", $"id = {SystemSettings.SingletonId}");
             t.HasCheckConstraint("ck_system_settings_duration_positive", "default_slide_duration_seconds > 0");
         });
+    }
+}
+
+internal sealed class UserLockoutConfiguration : IEntityTypeConfiguration<UserLockout>
+{
+    public void Configure(EntityTypeBuilder<UserLockout> builder)
+    {
+        builder.HasKey(l => l.UserId);
+        builder.HasOne<User>().WithOne().HasForeignKey<UserLockout>(l => l.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }

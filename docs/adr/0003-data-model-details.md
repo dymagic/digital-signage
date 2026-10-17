@@ -39,11 +39,12 @@ exists.
 - Npgsql doesn't generate the reverse of a collation in `Down`, so `InitialCreate.Down` drops it by
   hand. Migrations that add collations or extensions must do the same. An integration test reverts
   and re-applies the whole chain.
-- Optimistic concurrency uses `xmin` on every human-edited root: User, Slide, Playlist, Screen,
-  ScreenGroup, SystemSettings.
+- Optimistic concurrency uses `xmin` on every human-edited root: Slide, Playlist, Screen,
+  ScreenGroup, SystemSettings. (User uses an app-managed `version` column instead, ADR-0004.)
 - Start-up: migrate (when enabled) and then `INSERT … ON CONFLICT DO NOTHING` the settings row.
-  EF Core's migration lock makes concurrent replica start-ups safe, and an integration test starts two
-  at once. With migrations switched off and pending migrations, the app refuses to start with a clear
+  A session-level PostgreSQL advisory lock around the whole start-up makes concurrent replica start-ups safe
+  (amended in WP-02: EF Core's own migration lock let two replicas apply the same second migration). An
+  integration test starts two at once. With migrations switched off and pending migrations, the app refuses to start with a clear
   message instead of failing later on a missing table. If the database is unreachable at start-up,
   the process exits so the orchestrator can retry.
 - The data-protection key ring is stored in `data_protection_keys`. The keys are not encrypted at rest

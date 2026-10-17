@@ -7,7 +7,28 @@
 Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-02 Authentication & users._
+- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In review (round 4 requested, product owner approved a 4th round)
+- Plan: `Features/Users` (UserAccounts service: create/verify+lockout/change/reset/role/active with
+  last-admin guard; PasswordHasher<User> + own lockout on TimeProvider — ADR-0004 deviates from
+  AddIdentityCore), cookie auth (`signage.auth`, HttpOnly, SameSite=Lax, Secure=SameAsRequest),
+  per-request principal validation against DB (security stamp, active, role, must-change),
+  policies RequireAdmin/RequireEditor, must-change page filter, first-run Setup (advisory lock),
+  bootstrap env vars in DatabaseInitializer path, Settings page (admin; default duration, overlay,
+  time zone) because no other package owns it. Razor Pages under /admin, lowercase URLs, layout shell,
+  admin.css, SharedResource.resx + IStringLocalizer<SharedResource> with keys + unit test that every
+  L["key"] used exists. E2E compose bootstraps an admin; E2E login + forced-change smoke.
+- Risks: htmx antiforgery header later; Secure cookie flag vs plain-HTTP LAN deployments (ADR).
+- Done: UserAccounts (lockout on TimeProvider, first admin w/ advisory lock, create/reset/update with last-admin + self guards), cookie auth with per-request DB validation, policies, must-change filter, bootstrap, SettingsService, pages (login, logout, setup, forbidden, home, password, users list/create/edit, settings, error), layout + admin.css, SharedResource.resx (80 keys). Builds clean.
+- Half-done: —
+- Done (2): 70+ integration tests for role matrix, sign-in/lockout/cookie flags, setup (+ concurrent), session invalidation, user admin, bootstrap, settings — all green.
+- Done (3): resx coverage + password policy unit tests; E2E admin (bootstrap + forced change, shared storage state); fixed atomic lockout + duplicate antiforgery token; ADR-0004. Self-check: build clean, 153 tests green, E2E 3x green.
+- Round 1: CHANGES_REQUIRED (2 MAJOR lockout race + editor POST tests, 4 MINOR, 2 NIT); all fixed in 1a13703 (NIT 8 noted under WP-04).
+- Round 2: CHANGES_REQUIRED (2 BLOCKER: stale hash write-back, xmin bumps by sign-ins; 1 MINOR; 1 NIT); fixed in 10dfd46. Round 3 is the last before escalation.
+- Round 3: CHANGES_REQUIRED (2 BLOCKER via the user's own change-password path: change can undo an admin reset; change bumps xmin and blocks deactivation; 1 MINOR tests rely on Task.Delay; 1 NIT). I agree with all findings.
+- Product owner approved fixing and a 4th round (2026-10-17). Fixed in e41ddfb.
+- Next step: handle review round 4 verdict (docs/reviews/WP-02-review-4.md).
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -25,7 +46,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-01 — EF model (UUIDv7, snake_case, ICU ci names, xmin), InitialCreate (reversible), start-up initializer, DP keys in DB, timestamp interceptor, SequenceResolver + 41 unit tests; APPROVE round 2 (2 NIT deferred to WP-03) — 740ebf1
 
 ## Open questions for the product owner
-_(none)_
+- (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
 
 ## Notes
 - The shell is zsh and `grep` is aliased to ugrep: use `command grep` in scripts. Quote `-?`.

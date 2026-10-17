@@ -9,7 +9,7 @@ namespace Signage.Web.Data;
 /// <summary>
 /// Runs at start-up: applies pending migrations (unless switched off, R-60) and makes sure the single
 /// <see cref="SystemSettings"/> row exists. Both steps are safe when several replicas start at once:
-/// EF Core serialises migrations with a database lock, and the settings insert is ON CONFLICT DO NOTHING.
+/// a PostgreSQL advisory lock serialises the whole initialisation, and the settings insert is ON CONFLICT DO NOTHING.
 /// If the database is unreachable, start-up fails and the orchestrator restarts the container.
 /// </summary>
 internal sealed partial class DatabaseInitializer(
@@ -18,7 +18,33 @@ internal sealed partial class DatabaseInitializer(
     TimeProvider time,
     ILogger<DatabaseInitializer> logger)
 {
+    // Any constant unique to this app; serialises start-up work across replicas.
+    private const long StartupLockKey = 0x5167_6E61_6765_0002;
+
     public async Task InitializeAsync(CancellationToken cancellationToken)
+    {
+        // One replica at a time: a session-level advisory lock on a connection held open for the whole run.
+        // (EF Core's own migration lock didn't prevent a double-apply with two pending migrations.)
+        await db.Database.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_lock({StartupLockKey})", cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await InitializeLockedAsync(cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_unlock({StartupLockKey})", CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task InitializeLockedAsync(CancellationToken cancellationToken)
     {
         if (options.Value.MigrateOnStartup)
         {

@@ -1,0 +1,45 @@
+@page "/admin/users/{id:guid}"
+@model Signage.Web.Pages.Admin.Users.EditModel
+@{
+    ViewData["Title"] = L["Users.Edit"];
+    ViewData["Section"] = "Users";
+}
+<h1>@L["Users.Edit"]: @Model.Email</h1>
+@if (Model.TemporaryPassword is not null)
+{
+    <partial name="_TemporaryPassword" model="Model.TemporaryPassword" />
+}
+<form method="post" class="form">
+    <partial name="_ValidationSummary" />
+    <input type="hidden" asp-for="Input.Version" />
+    <label asp-for="Input.DisplayName"></label>
+    <input asp-for="Input.DisplayName" autocomplete="off" />
+    <span asp-validation-for="Input.DisplayName" class="field-error"></span>
+    <label asp-for="Input.Role"></label>
+    <select asp-for="Input.Role" disabled="@Model.IsSelf">
+        <option value="@UserRole.Editor">@L["Users.Role.Editor"]</option>
+        <option value="@UserRole.Admin">@L["Users.Role.Admin"]</option>
+    </select>
+    <label class="checkbox">
+        <input asp-for="Input.IsActive" disabled="@Model.IsSelf" />
+        @L["Users.Field.IsActive"]
+    </label>
+    @if (Model.IsSelf)
+    {
+        <input type="hidden" asp-for="Input.Role" />
+        <input type="hidden" asp-for="Input.IsActive" />
+        <span class="hint">@L["Users.SelfHint"]</span>
+    }
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Common.Save"]</button>
+        <a asp-page="Index">@L["Common.Cancel"]</a>
+    </div>
+</form>
+
+<section class="panel">
+    <h2>@L["Users.ResetPassword"]</h2>
+    <p>@L["Users.ResetPasswordHint"]</p>
+    <form method="post" asp-page-handler="ResetPassword">
+        <button type="submit">@L["Users.ResetPassword"]</button>
+    </form>
+</section>
