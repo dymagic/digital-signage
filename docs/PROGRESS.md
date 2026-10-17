@@ -7,7 +7,24 @@
 Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-06 Pairing & screen tokens._
+- Package: WP-06 Pairing & screen tokens — branch `wp-06-pairing` — status In progress
+- Plan: `Features/Pairing`: `PairingCode` (6 chars, unambiguous alphabet, shown XXX-XXX), `ScreenTokens`
+  (256-bit random, SHA-256 hex at rest), `PairingService` (create request w/ device secret hash, unique among
+  active codes, poll + one-time delivery that mints the token at delivery time so no plaintext is stored, claim
+  for new or existing unpaired screen, expiry 15 min, cleanup), `ScreenAccess` (pre-configured URL token =
+  new token shown once, revoke). Screen auth scheme `ScreenToken` (HttpOnly cookie `signage.screen`, path
+  /api/player), minimal APIs `/api/player/pairing`, `/pairing/{id}`, `/session`, `/manifest` (minimal for now;
+  WP-08 extends) with rate limits (per IP). Admin pages: `/admin/screens/pair`, screen detail admin actions
+  (revoke, re-pair, create screen address). Player: `wwwroot/screen/` index.html + ES modules (config, api,
+  strings, pairing, player) with pairing screen, token exchange from `?token=` (stripped), paired placeholder.
+  ADR-0007: HttpOnly cookie instead of localStorage (R-40 wording), token minted at delivery, rate limits.
+  Follow-up from WP-05: Name inputs nullable.
+- Risks: rate limits are per replica; E2E needs timeScale for the revoke check.
+- Done: —
+- Half-done: —
+- Next step: PairingCode/ScreenTokens with unit tests, PairingService, screen auth, endpoints.
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
