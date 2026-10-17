@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Signage.IntegrationTests.Infrastructure;
+using Signage.Web.Data;
 using Signage.Web.Domain;
 using Signage.Web.Features.Events;
 using Signage.Web.Features.Pairing;
@@ -16,12 +17,17 @@ namespace Signage.IntegrationTests.Player;
 public sealed partial class PairingTests(PostgresFixture postgres) : IAsyncLifetime
 {
     private readonly RecordingScreenNotifier _notifier = new();
+    private readonly ClaimRaceInterceptor _claimRace = new();
     private AdminApp _app = null!;
     private AdminSession _admin = null!;
 
     public async ValueTask InitializeAsync()
     {
-        _app = await AdminApp.StartAsync(postgres, configureServices: s => s.Replace(ServiceDescriptor.Singleton<IScreenNotifier>(_notifier)));
+        _app = await AdminApp.StartAsync(postgres, configureServices: s =>
+        {
+            s.Replace(ServiceDescriptor.Singleton<IScreenNotifier>(_notifier));
+            s.ConfigureDbContext<SignageDbContext>((_, o) => o.AddInterceptors(_claimRace));
+        });
         await _app.CreateAdminAsync();
         _admin = await _app.SignedInAsync(AdminApp.AdminEmail);
     }
@@ -485,6 +491,37 @@ public sealed partial class PairingTests(PostgresFixture postgres) : IAsyncLifet
         Assert.Contains("Paired since 2026-10-16 10:00 (Europe/Copenhagen)", html, StringComparison.Ordinal); // 08:00Z
         Assert.Contains("data-confirm=\"Revoke this screen's access?", html, StringComparison.Ordinal);
         device.Dispose();
+    }
+
+    [Fact]
+    public async Task A_claim_that_loses_a_race_does_not_cancel_the_screens_earlier_claim()
+    {
+        var screen = await AddScreenAsync("Raced TV");
+        using var first = new PlayerClient(_app.Factory);
+        using var second = new PlayerClient(_app.Factory);
+        var firstPairing = await first.StartPairingAsync();
+        var secondPairing = await second.StartPairingAsync();
+        (await ClaimExistingAsync(firstPairing.Code, screen)).Dispose();
+
+        _claimRace.Arm(PairingCode.Normalize(secondPairing.Code)!); // someone else claims the second code first
+        (await ClaimExistingAsync(secondPairing.Code, screen, repairLink: true)).Dispose();
+
+        Assert.Equal("paired", await first.PollStatusAsync(firstPairing));
+    }
+
+    [Fact]
+    public async Task A_devices_earlier_code_still_pairs_it_after_a_newer_code_was_shown()
+    {
+        using var device = new PlayerClient(_app.Factory);
+        var older = await device.StartPairingAsync();
+        _app.Time.Advance(TimeSpan.FromMinutes(14)); // the player shows a fresh code a minute before the old one expires
+        var newer = await device.StartPairingAsync();
+
+        using var claim = await ClaimNewAsync(older.Code, "Last-minute TV");
+
+        Assert.Equal(HttpStatusCode.Redirect, claim.StatusCode);
+        Assert.Equal("paired", await device.PollStatusAsync(older));
+        Assert.Equal("pending", await device.PollStatusAsync(newer));
     }
 
     private async Task<Guid> AddScreenAsync(string name)

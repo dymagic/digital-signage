@@ -188,6 +188,8 @@ public sealed partial class PairingService(SignageDbContext db, TimeProvider tim
 
         // Only the newest claim for a screen may deliver. Earlier claims are cancelled only now that this one has
         // succeeded, so losing a race doesn't cost the screen its earlier claim.
+        // Two admins claiming two different codes for one screen at the same instant can cancel each other; that is rare and
+        // harmless (neither device pairs, and either admin simply claims again).
         await CancelPendingClaimsAsync(db, screenId, now, ct, except: request.Value).ConfigureAwait(false);
         return OperationResult.Ok;
     }

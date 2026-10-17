@@ -39,16 +39,22 @@ async function reloadIfServerAnswers() {
 export function startDailyReload(carousel, getTimeZone) {
     let scheduled = false;
     setInterval(() => {
-        if (scheduled || !isDue(performance.now() - startedAt, localHour(getTimeZone()))) {
+        if (!isDue(performance.now() - startedAt, localHour(getTimeZone()))) {
             return;
         }
         if (carousel.isCycling) {
-            scheduled = true;
-            carousel.runBeforeNextTransition(async () => {
-                scheduled = false;
-                await reloadIfServerAnswers();
-            });
+            if (!scheduled) {
+                scheduled = true;
+                carousel.runBeforeNextTransition(async () => {
+                    scheduled = false;
+                    await reloadIfServerAnswers();
+                });
+            }
         } else {
+            // Static (one slide or empty), possibly after the reload was handed to a carousel that has stopped cycling
+            // since: take it back and reload at the check.
+            scheduled = false;
+            carousel.runBeforeNextTransition(null);
             reloadIfServerAnswers();
         }
     }, config.dailyReload.checkEveryMs);

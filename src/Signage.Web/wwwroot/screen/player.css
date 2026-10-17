@@ -25,10 +25,11 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none; }
 }
 .slide[data-state="entering"] {
     transform: translateX(100%);
-    box-shadow: var(--transition-shadow);
     z-index: 2;
 }
+/* The shadow belongs to the transition only: a prepared slide waiting off-screen must cast nothing into view. */
 .slide.animating {
+    box-shadow: var(--transition-shadow);
     transition: transform var(--transition-ms) var(--transition-easing);
     will-change: transform;
 }

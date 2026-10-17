@@ -18,7 +18,12 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
 - Known flake (not WP-08 code): `dotnet test` on the host twice crashed the E2E module at start with "Internal CLR
   error (0x80131506)" before any test ran (all its tests skip on the host); reruns pass and the module alone passed
   6/6. If it recurs, capture a dump (`DOTNET_DbgEnableMiniDump=1`) and file it.
-- Next step: handle the review round 1 verdict (docs/reviews/WP-08-review-1.md).
+- Round 1: CHANGES_REQUIRED (4 MAJOR, 4 MINOR, 3 NIT). Fixed in code: shadow only while animating; carousel loop
+  (no second dwell after a replaced/skipped/expired slide, empty state + 10 s retry when nothing can be shown);
+  cached playback before the token exchange; reload no longer stuck; seed under advisory lock; weak ETag; preview 404
+  message; pairing tests (race interceptor, earlier code). Half-done: E2E tests for these (ClockTests, CarouselTests,
+  SlideTypeTests).
+- Next step: write those E2E tests, full self-check, request round 2.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

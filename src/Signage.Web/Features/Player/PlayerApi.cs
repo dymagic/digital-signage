@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 using Signage.Web.Features.Pairing;
 using Signage.Web.Features.Users;
 
@@ -107,10 +109,15 @@ public static class PlayerApi
         var (body, etag) = ManifestService.Serialize(manifest);
         http.Response.Headers.CacheControl = "no-cache";
         http.Response.Headers.ETag = etag;
-        return http.Request.Headers.IfNoneMatch.Contains(etag)
+        return Matches(http.Request.Headers.IfNoneMatch, etag)
             ? Results.StatusCode(StatusCodes.Status304NotModified)
             : Results.Bytes(body, "application/json; charset=utf-8");
     }
+
+    // Weak comparison, as If-None-Match requires (RFC 9110 §13.1.2): a compressing proxy turns the tag into W/"…".
+    private static bool Matches(StringValues ifNoneMatch, string etag) =>
+        EntityTagHeaderValue.TryParseList(ifNoneMatch, out var tags)
+        && tags.Any(t => t.Equals(EntityTagHeaderValue.Any) || t.Compare(new EntityTagHeaderValue(etag), useStrongComparison: false));
 
     private static RateLimitPartition<string> FixedWindowPerIp(HttpContext ctx, int permits) =>
         RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",

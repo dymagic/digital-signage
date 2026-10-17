@@ -1,5 +1,5 @@
-// Player entry point (/screen). Boot order (PLAYER_SPEC §9): take a pre-configured token from the address, start
-// playing the cached manifest at once, then keep the manifest fresh. A 401 sends the device to pairing.
+// Player entry point (/screen). Boot order (PLAYER_SPEC §9): start playing the cached manifest at once (also when the
+// server is down), exchange a pre-configured token from the address, then keep the manifest fresh. A 401 sends the device to pairing.
 // /screen?preview={screenId} plays a screen's manifest in an admin's browser (R-13): admin cookie, nothing stored.
 import { config, ms } from './config.js';
 import { exchangeToken } from './api.js';
@@ -81,11 +81,14 @@ function runPreview() {
             carousel.stop();
             showMessage(t('previewSignIn'));
         },
+        onNotFound() {
+            carousel.stop();
+            showMessage(t('previewNotFound'));
+        },
     });
 }
 
 async function runScreen() {
-    await takeTokenFromUrl();
     const carousel = new Carousel(stage);
     let manifest = loadManifest();
     let started = false;
@@ -102,6 +105,8 @@ async function runScreen() {
         start();
     }
 
+    // The exchange may retry for a long time (a kiosk boots before its server); the cached slides play meanwhile (R-24).
+    await takeTokenFromUrl();
     pollManifest('/api/player/manifest', {
         onManifest(fresh) {
             manifest = fresh;

@@ -97,6 +97,22 @@ public sealed class ManifestTests(PostgresFixture postgres) : IAsyncLifetime
         Assert.Equal("no-cache", changed.Headers.CacheControl?.ToString());
     }
 
+    [Theory]
+    [InlineData("W/{0}")]
+    [InlineData("\"other\", {0}")]
+    [InlineData("*")]
+    public async Task If_None_Match_uses_weak_comparison_and_lists(string headerFormat)
+    {
+        using var first = await _device.GetManifestAsync();
+        var etag = first.Headers.ETag!.Tag;
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/player/manifest", UriKind.Relative));
+        request.Headers.TryAddWithoutValidation("If-None-Match", string.Format(System.Globalization.CultureInfo.InvariantCulture, headerFormat, etag));
+        using var response = await _device.Http.SendAsync(request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+    }
+
     [Fact]
     public async Task Editors_and_admins_can_preview_a_screen_with_their_admin_cookie()
     {

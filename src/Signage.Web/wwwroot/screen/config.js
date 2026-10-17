@@ -21,6 +21,7 @@ export const config = Object.freeze({
     maxLayers: 3,
     iframeLoadTimeoutMs: 10_000,
     staticRecheckMs: 1000, // one slide or empty: how often to look for schedule changes
+    nothingShowableRetryMs: 10_000, // no slide could be shown (e.g. every image host unreachable): empty state, then retry
 
     // Stage (PLAYER_SPEC §1)
     cursorHideMs: 3000,

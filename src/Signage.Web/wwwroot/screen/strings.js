@@ -6,6 +6,7 @@ const texts = {
         pairInstruction: 'In the admin, open Screens → Pair screen and enter this code.',
         adminAddress: 'Admin address',
         previewSignIn: 'Sign in to the admin in this browser to preview this screen.',
+        previewNotFound: 'This screen no longer exists.',
     },
 };
 

@@ -44,6 +44,19 @@ public class DemoSeedTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Replicas_starting_together_on_an_empty_database_seed_once_and_both_start()
+    {
+        var connectionString = await postgres.CreateDatabaseAsync();
+        await using var a = new SignageWebFactory(connectionString, SeedDemo);
+        await using var b = new SignageWebFactory(connectionString, SeedDemo);
+
+        await Task.WhenAll(Task.Run(() => _ = a.Server), Task.Run(() => _ = b.Server)); // throws if either start-up fails
+
+        Assert.Equal(1, await a.WithDbAsync(db => db.Screens.CountAsync()));
+        Assert.Equal(5, await a.WithDbAsync(db => db.Slides.CountAsync()));
+    }
+
+    [Fact]
     public async Task Without_the_setting_outside_development_nothing_is_seeded()
     {
         await using var app = await AdminApp.StartAsync(postgres);

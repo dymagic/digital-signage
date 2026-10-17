@@ -15,6 +15,7 @@ internal static partial class DemoSeeder
 {
     public const string ScreenName = "Demo screen";
     public const string PlaylistName = "Welcome (demo)";
+    private const long SeedLockKey = 0x5167_6E61_6765_0003;
 
     public static async Task SeedDemoIfRequestedAsync(this IServiceProvider services, CancellationToken ct = default)
     {
@@ -29,32 +30,47 @@ internal static partial class DemoSeeder
             }
 
             var db = scope.ServiceProvider.GetRequiredService<SignageDbContext>();
-            if (await db.Slides.AnyAsync(ct).ConfigureAwait(false) || await db.Screens.AnyAsync(s => s.Name == ScreenName, ct).ConfigureAwait(false))
+            var seeded = await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
             {
-                return;
-            }
-
-            var playlist = new Playlist { Name = PlaylistName, Description = "Sample content created by SIGNAGE__SEEDDEMO. Delete it whenever you like." };
-            Slide[] slides =
-            [
-                Html("Welcome", WelcomeHtml, 12),
-                Image("Aurora seen from the International Space Station (NASA)", "https://images-assets.nasa.gov/image/iss071e564695/iss071e564695~large.jpg"),
-                Html("How it works", HowItWorksHtml, 15),
-                Image("Apollo 11: Buzz Aldrin on the Moon (NASA)", "https://images-assets.nasa.gov/image/as11-40-5875/as11-40-5875~large.jpg"),
-                Html("Clock", ClockHtml, 10),
-            ];
-            for (var i = 0; i < slides.Length; i++)
+                // Replicas starting together on an empty database (R-63): one seeds, the others then see its slides.
+                await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+                await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({SeedLockKey})", ct).ConfigureAwait(false);
+                if (await db.Slides.AnyAsync(ct).ConfigureAwait(false) || await db.Screens.AnyAsync(s => s.Name == ScreenName, ct).ConfigureAwait(false))
+                {
+                    return false;
+                }
+                AddDemo(db);
+                await db.SaveChangesAsync(ct).ConfigureAwait(false);
+                await tx.CommitAsync(ct).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
+            if (seeded)
             {
-                playlist.Slides.Add(new PlaylistSlide { Slide = slides[i], Position = i });
+                var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DemoSeeder));
+                LogSeeded(logger);
             }
-
-            var screen = new Screen { Name = ScreenName, Location = "Created by the demo. Pair a device to it to see the demo playlist." };
-            screen.Playlists.Add(new ScreenPlaylist { Playlist = playlist, Position = 0 });
-            db.Screens.Add(screen);
-            await db.SaveChangesAsync(ct).ConfigureAwait(false);
-            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DemoSeeder));
-            LogSeeded(logger);
         }
+    }
+
+    private static void AddDemo(SignageDbContext db)
+    {
+        var playlist = new Playlist { Name = PlaylistName, Description = "Sample content created by SIGNAGE__SEEDDEMO. Delete it whenever you like." };
+        Slide[] slides =
+        [
+            Html("Welcome", WelcomeHtml, 12),
+            Image("Aurora seen from the International Space Station (NASA)", "https://images-assets.nasa.gov/image/iss071e564695/iss071e564695~large.jpg"),
+            Html("How it works", HowItWorksHtml, 15),
+            Image("Apollo 11: Buzz Aldrin on the Moon (NASA)", "https://images-assets.nasa.gov/image/as11-40-5875/as11-40-5875~large.jpg"),
+            Html("Clock", ClockHtml, 10),
+        ];
+        for (var i = 0; i < slides.Length; i++)
+        {
+            playlist.Slides.Add(new PlaylistSlide { Slide = slides[i], Position = i });
+        }
+
+        var screen = new Screen { Name = ScreenName, Location = "Created by the demo. Pair a device to it to see the demo playlist." };
+        screen.Playlists.Add(new ScreenPlaylist { Playlist = playlist, Position = 0 });
+        db.Screens.Add(screen);
     }
 
     private static Slide Html(string title, string html, int seconds) =>

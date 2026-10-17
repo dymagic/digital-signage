@@ -7,9 +7,10 @@ const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duratio
 
 /**
  * Polls `url` until stopped. Calls onManifest(manifest) for every new version, onUnauthorized() on 401/403
- * (then stops), and onOnline(boolean) when reachability changes.
+ * (then stops), onNotFound() on 404 if given (then stops; otherwise 404 counts as an error and is retried), and
+ * onOnline(boolean) when reachability changes.
  */
-export function pollManifest(url, { onManifest, onUnauthorized, onOnline }) {
+export function pollManifest(url, { onManifest, onUnauthorized, onNotFound, onOnline }) {
     let etag = null;
     let stopped = false;
     let online = null;
@@ -26,6 +27,11 @@ export function pollManifest(url, { onManifest, onUnauthorized, onOnline }) {
                 const response = await fetch(url, { cache: 'no-store', headers: etag ? { 'If-None-Match': etag } : {} });
                 if (response.status === 401 || response.status === 403) {
                     throw new Unauthorized();
+                }
+                if (response.status === 404 && onNotFound) {
+                    stopped = true;
+                    onNotFound();
+                    return;
                 }
                 if (response.ok) {
                     etag = response.headers.get('ETag');
