@@ -7,7 +7,20 @@
 Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-05 Screens, groups & composition._
+- Package: WP-05 Screens, groups & composition — branch `wp-05-screens-groups` — status In progress
+- Plan: Screen gets an app-managed `version` (heartbeats in WP-10 won't conflict); `IPositioned` + shared
+  `OrderedList` helpers; `IScreenNotifier` (+ NoOp) and `AffectedScreens` queries; `ScreenService` (CRUD admin,
+  details/mode/single-video admin, groups membership admin, prepend/append slides + direct playlists editor+,
+  resolved sequence); `GroupService` (CRUD/sort/members admin, group playlists editor+). Pages: screens
+  list/create/detail/delete, groups list/create/detail/delete; detail pages mix admin-only forms (handler-level
+  `Forbid()` checks) and editor htmx lists. Follow-ups from WP-02 r4 + WP-04 (focus after swap, HX-Redirect when
+  parent gone, stale-details test, must-change on htmx test, slide delete bumps versions).
+- Risks: handler-level authorization on mixed pages (tests per handler).
+- Done: —
+- Half-done: —
+- Next step: screen version migration, IPositioned/OrderedList, notifier, services.
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
