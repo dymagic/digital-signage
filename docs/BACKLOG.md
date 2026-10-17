@@ -49,7 +49,7 @@ filter.
 **Accept:** integration tests for validation and TZ conversion; Editor and Admin both allowed. R-01–R-07.
 *Follow-ups from WP-01 review:* note in ARCHITECTURE that bulk `ExecuteUpdate` bypasses `TimestampInterceptor` (set `UpdatedAt` explicitly there); test that updates always overwrite `UpdatedAt` while inserts keep an explicit one.
 
-### WP-04 Playlists — `In progress`
+### WP-04 Playlists — `In review`
 Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
 duplicate slides allowed, "used by" info (screens/groups).
 **Accept:** reorder persists densely; concurrent edit gets a friendly conflict message. R-08.

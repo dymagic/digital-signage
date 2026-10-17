@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-03 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-04 Playlists — branch `wp-04-playlists` — status In progress
+- Package: WP-04 Playlists — branch `wp-04-playlists` — status In review (round 1 requested)
 - Plan: `Data/PositionMaintenance` (SQL ROW_NUMBER renumbering for playlist_slides, screen_slides per
   placement, screen_playlists, group_playlists); `Features/Playlists/PlaylistService` (list with counts,
   get with entries, create/update with unique-name + xmin, add/remove/move entry = dense rewrite + playlist
@@ -20,7 +20,8 @@ Milestone 1: in progress (WP-00–WP-03 done). Project docs, skills and the revi
 - Risks: htmx antiforgery header; drag & drop in Playwright (use DragToAsync).
 - Done: PositionMaintenance, PlaylistService, slide delete renumbering, pages (list, create, edit with htmx entries + drag&drop reorder.js, delete), strings, CSS. Builds.
 - Half-done: —
-- Next step: integration tests (CRUD, dense reorder, duplicates, conflicts, htmx partial vs redirect, delete renumbering), E2E (add, reorder by buttons + drag), WP-03 follow-ups, ADR if needed.
+- Done (2): integration + E2E tests, WP-03 follow-ups, ADR-0006. Self-check: build clean, 273 tests green, E2E 8/8.
+- Next step: handle review round 1 verdict (docs/reviews/WP-04-review-1.md).
 - Last checkpoint: (this commit)
 
 
