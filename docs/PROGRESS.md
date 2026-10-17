@@ -4,30 +4,10 @@
 > does not read this file.
 
 ## Status
-Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
+Milestone 1: in progress (WP-00–WP-06 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-06 Pairing & screen tokens — branch `wp-06-pairing` — status In review (round 2 requested)
-- Plan: `Features/Pairing`: `PairingCode` (6 chars, unambiguous alphabet, shown XXX-XXX), `ScreenTokens`
-  (256-bit random, SHA-256 hex at rest), `PairingService` (create request w/ device secret hash, unique among
-  active codes, poll + one-time delivery that mints the token at delivery time so no plaintext is stored, claim
-  for new or existing unpaired screen, expiry 15 min, cleanup), `ScreenAccess` (pre-configured URL token =
-  new token shown once, revoke). Screen auth scheme `ScreenToken` (HttpOnly cookie `signage.screen`, path
-  /api/player), minimal APIs `/api/player/pairing`, `/pairing/{id}`, `/session`, `/manifest` (minimal for now;
-  WP-08 extends) with rate limits (per IP). Admin pages: `/admin/screens/pair`, screen detail admin actions
-  (revoke, re-pair, create screen address). Player: `wwwroot/screen/` index.html + ES modules (config, api,
-  strings, pairing, player) with pairing screen, token exchange from `?token=` (stripped), paired placeholder.
-  ADR-0007: HttpOnly cookie instead of localStorage (R-40 wording), token minted at delivery, rate limits.
-  Follow-up from WP-05: Name inputs nullable.
-- Risks: rate limits are per replica; E2E needs timeScale for the revoke check.
-- Done: PairingCode + ScreenTokens (unit-tested), PairingService (start/poll/claim/deliver), ScreenAccessService (address token, revoke, lookup), ScreenToken auth handler (cookie, 401 deletes it), PlayerApi (pairing, poll, session, minimal manifest), per-IP rate limits, AppInfo.
-- Half-done: —
-- Done (2): admin Pair page (new/existing/re-pair), screen detail device section (revoke, re-pair, one-time screen address), player shell /screen with config/strings/api/pairing/player modules, no-cache for player files, strings; WP-05 NIT (nullable names).
-- Done (3): tests, ADR-0007, docs. Self-check: build clean, 367 tests green, E2E 12/12.
-- Round 1: CHANGES_REQUIRED (2 MAJOR revoke bypass + kiosk boot, 5 MINOR, 2 NIT); all fixed in a961c11. 382 tests, E2E 13/13.
-- Next step: handle review round 2 verdict (docs/reviews/WP-06-review-2.md).
-- Last checkpoint: (this commit)
-
+_None. Next: WP-07 Spike: video lifecycle & memory._
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -47,6 +27,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-03 — slide library: validator + schedule clock (DST rules), CRUD pages with sandboxed previews, search, toggle, delete-in-use; ADR-0005; APPROVE round 1 (4 MINOR + 5 NIT deferred to WP-04/WP-08/WP-12) — d6c6a9e
 - WP-04 — playlists: CRUD, ordered entries via htmx page handlers (dense, versioned, oob version), native drag & drop, delete renumbering; ADR-0006; APPROVE round 1 (3 MINOR + 1 NIT deferred to WP-05) — fe33f04
 - WP-05 — screens + groups with admin/editor split per handler, composition lists (htmx, versioned, focus kept), resolved sequence page == resolver, IScreenNotifier (no-op) wired into all features, app-managed screen version; 3 review rounds, 1 NIT deferred to WP-06 — 20d1742
+- WP-06 — pairing (codes, one-time token minted at delivery, re-pair, revoke, cancelling pending claims), screen address + token exchange with retry, HttpOnly screen cookie auth, rate limits, player pairing screen; ADR-0007; APPROVE round 2 (1 MINOR + 2 NIT deferred to WP-08) — 2999e75
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.

@@ -82,7 +82,7 @@ between loading and saving a screen form doesn't cause a conflict. Optional NITs
 ADR sentence placement, rename `ConcurrentSignInTests` (it now covers password changes too), and make
 `GatedPasswordHasher.Gate.Dispose` release a waiting thread.
 
-### WP-06 Pairing & screen tokens — `In review`
+### WP-06 Pairing & screen tokens — `Done`
 Pairing request API, the pairing screen in the player, the admin "Pair screen" page (enter code → new
 or existing unpaired screen), token issuing as an HttpOnly cookie, one-time delivery, the
 pre-configured URL + `/api/player/session` exchange, revoke/re-pair, rate limiting on pairing
@@ -106,6 +106,10 @@ progress bar, Image/WebPage/Html slides, preloading, the 3-layer cap, empty stat
 manifest cache and offline cycling, schedule re-check on the client, admin preview mode
 (`/screen?preview=`), test hooks (`data-state`, `timeScale`). A demo seed (a sample playlist with public
 domain images + an HTML clock slide), applied only in Development or with `SIGNAGE__SEEDDEMO=true`.
+*From WP-06 review round 2:* (MINOR) the device stops polling a code 60 s before it expires but the server accepts
+claims until expiry: keep polling the old code until a new one is shown, or stop accepting claims in the last
+minute; (NIT) do the token write and `CancelPendingClaimsAsync` in one transaction in revoke and screen address;
+(NIT) cancel a screen's earlier claims only after this claim succeeded.
 *From WP-03 review:* the admin Html preview should use the player's base stylesheet for srcdoc (PLAYER_SPEC §5),
 so admin preview and screen match. Share one helper for the srcdoc wrapper.
 **Accept:** E2E — order follows the resolved sequence; the outgoing slide's transform stays
