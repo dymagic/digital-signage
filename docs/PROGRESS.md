@@ -21,9 +21,9 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
 - Round 1: CHANGES_REQUIRED (4 MAJOR, 4 MINOR, 3 NIT). Fixed in code: shadow only while animating; carousel loop
   (no second dwell after a replaced/skipped/expired slide, empty state + 10 s retry when nothing can be shown);
   cached playback before the token exchange; reload no longer stuck; seed under advisory lock; weak ETag; preview 404
-  message; pairing tests (race interceptor, earlier code). Half-done: E2E tests for these (ClockTests, CarouselTests,
-  SlideTypeTests).
-- Next step: write those E2E tests, full self-check, request round 2.
+  message; pairing tests (race interceptor, earlier code). E2E tests added for every finding (each fails on the
+  pre-fix player, checked); PLAYER_SPEC §2/§9/§10 updated.
+- Next step: full self-check, request round 2.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

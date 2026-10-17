@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Playwright;
 using Signage.E2E.Infrastructure;
 using static Microsoft.Playwright.Assertions;
@@ -31,6 +32,10 @@ public class CarouselTests(BrowserFixture fixture) : PlayerTest(fixture)
         var (_, token, _) = await ScreenWithSlidesAsync(("White", 2, "#ffffff"), ("Black", 2, "#000000"));
         var device = await OpenDeviceAsync(token, timeScale: 1);
         await WaitForActivationsAsync(device, 1);
+
+        // While the white slide shows, the next one waits off-screen and must cast no shadow into view (PLAYER_SPEC §2).
+        await device.WaitForFunctionAsync("() => document.querySelector('.slide[data-state=entering]')");
+        Assert.Equal("none", await device.EvaluateAsync<string>("() => getComputedStyle(document.querySelector('.slide[data-state=entering]')).boxShadow"));
 
         // Sample every animation frame of the next transition, in the page.
         var samples = await device.EvaluateAsync<JsonElement>("""
@@ -160,5 +165,60 @@ public class CarouselTests(BrowserFixture fixture) : PlayerTest(fixture)
         await Expect(Page.Locator("body")).ToHaveAttributeAsync("data-preview", "true");
         var played = await WaitForActivationsAsync(Page, 3);
         Assert.Equal([ids[0].ToString(), ids[1].ToString(), ids[0].ToString()], played.Take(3));
+    }
+
+    [Fact]
+    public async Task A_new_manifest_during_a_slide_takes_effect_at_the_next_transition_without_lengthening_the_slide()
+    {
+        var (_, token, ids) = await ScreenWithSlidesAsync(("Red", 20, "#7f1d1d"), ("Green", 20, "#14532d"), ("Blue", 20, "#1e3a8a"));
+        // Every other manifest (polled every 6 s at this scale) drops "Green", so the prepared next slide keeps changing.
+        var polls = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 0.1, ctx => ctx.RouteAsync("**/api/player/manifest", async route =>
+        {
+            var headers = route.Request.Headers.Where(h => !h.Key.Equals("if-none-match", StringComparison.OrdinalIgnoreCase)).ToDictionary();
+            var response = await route.FetchAsync(new() { Headers = headers });
+            var manifest = JsonNode.Parse(await response.TextAsync())!.AsObject();
+            if (Interlocked.Increment(ref polls) % 2 == 0)
+            {
+                var slides = manifest["slides"]!.AsArray();
+                slides.Remove(slides.First(s => (string?)s!["id"] == ids[1].ToString()));
+            }
+            await route.FulfillAsync(new() { Status = 200, ContentType = "application/json", Body = manifest.ToJsonString() });
+        }));
+
+        var played = await WaitForActivationsAsync(device, 14);
+
+        Assert.True(polls >= 3, $"only {polls} manifest polls");
+        Assert.Contains(ids[1].ToString(), played); // with Green
+        Assert.Contains(played.Zip(played.Skip(1)), p => p.First == ids[0].ToString() && p.Second == ids[2].ToString()); // and without
+        // 2 s per slide plus a 90 ms transition; a second dwell on the same slide would take over 4 s.
+        var gap = await LongestGapAsync(device);
+        Assert.True(gap < 3000, $"a slide stayed {gap:F0} ms");
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_kiosk_opened_with_its_screen_address_plays_its_cache_while_the_server_is_unreachable()
+    {
+        var (_, token, ids) = await ScreenWithSlidesAsync(("East", 2, "#155e75"), ("West", 2, "#9a3412"));
+        var device = await OpenDeviceAsync(token, timeScale: 0.25);
+        await WaitForActivationsAsync(device, 2);
+
+        // Power cut: the kiosk restarts with its configured address while the server is still down (R-24, R-41).
+        await device.Context.RouteAsync("**/api/player/**", route => route.AbortAsync("connectionrefused"));
+        await device.GotoAsync($"/screen?test=1&timeScale=0.25&token={token}");
+
+        await ExpectModeAsync(device, "player");
+        var played = await WaitForActivationsAsync(device, 3);
+        Assert.Subset(ids.Select(i => i.ToString()).ToHashSet(), played.ToHashSet());
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task Previewing_a_screen_that_no_longer_exists_says_so()
+    {
+        await Page.GotoAsync($"/screen?preview={Guid.NewGuid()}");
+
+        await Expect(Page.Locator(".message")).ToHaveTextAsync("This screen no longer exists.");
     }
 }

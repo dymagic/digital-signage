@@ -81,6 +81,16 @@ public abstract class PlayerTest(BrowserFixture fixture) : E2ETest(fixture)
         return await device.EvaluateAsync<string[]>("() => window.__activations.map(a => a.id)");
     }
 
+    /// <summary>Activation times (ms, page clock) of the recorded activations, in order.</summary>
+    protected static Task<double[]> ActivationTimesAsync(IPage device) => device.EvaluateAsync<double[]>("() => window.__activations.map(a => a.t)");
+
+    /// <summary>The longest time between two consecutive activations after the first <paramref name="skip"/>.</summary>
+    protected static async Task<double> LongestGapAsync(IPage device, int skip = 0)
+    {
+        var times = (await ActivationTimesAsync(device)).Skip(skip).ToArray();
+        return times.Zip(times.Skip(1), (a, b) => b - a).Max();
+    }
+
     protected static Task<int> ActivationCountAsync(IPage device) => device.EvaluateAsync<int>("() => window.__activations.length");
 
     protected static async Task ExpectModeAsync(IPage device, string mode) =>

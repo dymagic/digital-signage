@@ -1,4 +1,5 @@
 using Signage.E2E.Infrastructure;
+using static Microsoft.Playwright.Assertions;
 
 namespace Signage.E2E.Player;
 
@@ -22,6 +23,9 @@ public class SlideTypeTests(BrowserFixture fixture) : PlayerTest(fixture)
 
         Assert.DoesNotContain(broken.ToString(), played);
         Assert.Equal([image.ToString(), webPage.ToString(), image.ToString(), webPage.ToString(), image.ToString()], played.Take(5));
+        // 1 s per slide plus a 450 ms transition: skipping the broken image must not show the previous slide twice as long.
+        var gap = await LongestGapAsync(device);
+        Assert.True(gap < 2200, $"a slide stayed {gap:F0} ms");
         Assert.True(await device.EvaluateAsync<bool>($$"""
             async () => {
                 while (document.querySelector('.slide[data-state=active]')?.dataset.slideId !== '{{image}}') await new Promise(r => setTimeout(r, 50));
@@ -29,6 +33,30 @@ public class SlideTypeTests(BrowserFixture fixture) : PlayerTest(fixture)
                 return img.complete && img.naturalWidth > 0;
             }
             """), "the image is decoded when it is shown");
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_screen_whose_slides_all_fail_to_load_shows_the_empty_state_and_retries_calmly()
+    {
+        var tag = Tag();
+        var media = E2EEnvironment.MediaBaseUrl;
+        await AdminActions.CreateUrlSlideAsync(Page, "Image", $"Gone A {tag}", new Uri(media, $"/media/gone-a-{tag}.png"), 2);
+        await AdminActions.CreateUrlSlideAsync(Page, "Image", $"Gone B {tag}", new Uri(media, $"/media/gone-b-{tag}.png"), 2);
+        await EmptyScreenAsync($"Broken {tag}", $"Broken {tag}", [$"Gone A {tag}", $"Gone B {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+
+        var requests = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 0.5, ctx =>
+        {
+            ctx.Request += (_, r) => { if (r.Url.Contains($"gone-", StringComparison.Ordinal) && r.Url.Contains(tag, StringComparison.Ordinal)) Interlocked.Increment(ref requests); };
+            return Task.CompletedTask;
+        });
+
+        await ExpectModeAsync(device, "empty");
+        await Expect(device.GetByTestId("empty-name")).ToHaveTextAsync($"Broken {tag}");
+        await device.WaitForTimeoutAsync(4000); // the retry comes after 5 s at this scale
+        Assert.InRange(requests, 2, 4); // one pass over both slides, not a tight loop
         await device.Context.CloseAsync();
     }
 }

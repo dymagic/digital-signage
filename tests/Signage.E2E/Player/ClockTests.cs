@@ -21,24 +21,26 @@ public class ClockTests(BrowserFixture fixture) : PlayerTest(fixture)
     public async Task An_offline_screen_stops_showing_a_slide_when_its_schedule_ends()
     {
         var tag = Tag();
-        var stayA = await AdminActions.CreateHtmlSlideAsync(Page, $"Stays A {tag}", 2);
-        var stayB = await AdminActions.CreateHtmlSlideAsync(Page, $"Stays B {tag}", 2);
+        var before = await AdminActions.CreateHtmlSlideAsync(Page, $"Long {tag}", 40);
         var ends = await AdminActions.CreateHtmlSlideAsync(Page, $"Ends {tag}", 2, activeUntilLocal: "2030-01-02T10:02");
-        await EmptyScreenAsync($"Schedule {tag}", $"Schedule {tag}", [$"Stays A {tag}", $"Ends {tag}", $"Stays B {tag}"]);
+        var after = await AdminActions.CreateHtmlSlideAsync(Page, $"Short {tag}", 2);
+        await EmptyScreenAsync($"Schedule {tag}", $"Schedule {tag}", [$"Long {tag}", $"Ends {tag}", $"Short {tag}"]);
         var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
 
-        var device = await OpenDeviceAsync(token, timeScale: 0.25, ctx => InstallClock(ctx, DeviceStart));
-        var first = await WaitForActivationsAsync(device, 4);
-        Assert.Contains(ends.ToString(), first);
+        var device = await OpenDeviceAsync(token, timeScale: 0.1, ctx => InstallClock(ctx, DeviceStart));
+        Assert.Equal([before.ToString(), ends.ToString(), after.ToString()], (await WaitForActivationsAsync(device, 3)).Take(3));
 
+        // "Long" is on screen again (4 s at this scale) and "Ends" is already prepared as the next slide.
+        var count = (await WaitForActivationsAsync(device, 4)).Length;
+        Assert.Equal(before.ToString(), (await WaitForActivationsAsync(device, count)).Last());
+
+        // The server goes away and the clock passes the end of the window while "Long" is showing (R-03, R-24).
         await device.Context.RouteAsync("**/api/player/**", route => route.AbortAsync("connectionrefused"));
-        await device.Clock.FastForwardAsync("03:00"); // 10:03: the window has ended, and the server can't be asked
-        var before = await ActivationCountAsync(device);
-        var after = (await WaitForActivationsAsync(device, before + 4)).Skip(before + 1).ToList(); // the slide on screen may finish
+        await device.Clock.FastForwardAsync("03:00");
+        var played = (await WaitForActivationsAsync(device, count + 4)).Skip(count).ToList();
 
-        Assert.DoesNotContain(ends.ToString(), after);
-        Assert.Contains(stayA.ToString(), after);
-        Assert.Contains(stayB.ToString(), after);
+        Assert.Equal(after.ToString(), played[0]); // checked when it would be shown, not when it was prepared
+        Assert.DoesNotContain(ends.ToString(), played);
         await device.Context.CloseAsync();
     }
 
@@ -97,5 +99,33 @@ public class ClockTests(BrowserFixture fixture) : PlayerTest(fixture)
 
         Assert.Equal("same", await device.EvaluateAsync<string>("() => window.__marker"));
         await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_reload_handed_to_a_carousel_that_then_stops_cycling_happens_at_a_later_check()
+    {
+        // The reload module on its own, driven by a stand-in carousel: no player code changes for the test.
+        var context = await Browser.NewContextAsync(new() { BaseURL = BaseUrl.ToString() });
+        await InstallClock(context, DeviceStart);
+        var page = await context.NewPageAsync();
+        await page.GotoAsync("/screen/config.js");
+        await page.EvaluateAsync("""
+            async () => {
+                const { startDailyReload } = await import('/screen/reload.js');
+                window.carousel = { isCycling: true, task: null, runBeforeNextTransition(task) { this.task = task; } };
+                window.__marker = 'same page';
+                startDailyReload(window.carousel, () => 'UTC');
+            }
+            """);
+
+        await page.Clock.FastForwardAsync("26:01:00");
+        Assert.True(await page.EvaluateAsync<bool>("() => typeof window.carousel.task === 'function'"), "the reload waits for a transition");
+
+        // The screen drops to one slide before that transition comes: the next check must reload by itself.
+        await page.EvaluateAsync("() => { window.carousel.isCycling = false; }");
+        var reload = page.WaitForRequestAsync(r => r.IsNavigationRequest, new() { Timeout = 30_000 });
+        await page.Clock.FastForwardAsync("01:01");
+        await reload;
+        await context.CloseAsync();
     }
 }
