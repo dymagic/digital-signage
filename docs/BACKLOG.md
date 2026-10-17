@@ -92,7 +92,7 @@ device returns to pairing. Integration tests for expiry, reuse and rate limits. 
 *From WP-05 review round 3 (NIT):* the `Name` input properties on the screen, group and playlist forms are
 non-nullable but arrive as null when empty; make them `string?` (services already handle null).
 
-### WP-07 Spike: video lifecycle & memory — `In review` *(may run any time after WP-00)*
+### WP-07 Spike: video lifecycle & memory — `Done` *(may run any time after WP-00)*
 Build a throwaway harness page (`tests/Signage.E2E/spikes/`) that cycles videos and images with the
 planned transition and measures memory/decoder behaviour over 200+ transitions under different
 strategies (PLAYER_SPEC §4). Use short, openly licensed sample MP4s served from a local container
@@ -110,6 +110,9 @@ domain images + an HTML clock slide), applied only in Development or with `SIGNA
 next) and the daily reload (PLAYER_SPEC §9, confirmed by the product owner). Its E2E tests use Playwright's Clock API
 (`page.Clock`) to move time forward, not test-only branches in the player (ARCHITECTURE §6): a due reload with the server unreachable (route abort) is postponed, and the
 player keeps cycling; a due reload with the server up happens at a transition; a one-slide screen reloads at the check.
+*From WP-07 review round 4 (NITs):* ADR-0008 should say outright that ~0.4 GB start + ~1.3 GB growth is tight on a
+2 GB Pi and that the reload interval can be shortened in `config.js`; and use PLAYER_SPEC's "2xx immediately before
+reloading" wording instead of "server answers".
 *From WP-06 review round 2:* (MINOR) the device stops polling a code 60 s before it expires but the server accepts
 claims until expiry: keep polling the old code until a new one is shown, or stop accepting claims in the last
 minute; (NIT) do the token write and `CancelPendingClaimsAsync` in one transaction in revoke and screen address;
