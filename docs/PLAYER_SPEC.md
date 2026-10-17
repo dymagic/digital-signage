@@ -117,10 +117,11 @@ screen (R-42).
 - If `appVersion` differs from the loaded player's version: reload the page at the next transition.
 - Daily reload (ADR-0008, confirmed by the product owner on 2026-10-17): a timer checks once a minute. The reload is
   due after 20 h of uptime when the local time (system time zone) is between 02:00 and 05:00, or after 26 h at any
-  time. When due, the player first checks that the server answers (`GET /screen`, no cache). If it doesn't, the
-  reload is postponed to the next check, so an offline screen keeps cycling (R-24) and never lands on the browser's
-  error page. A carousel with two or more slides reloads at its next transition. A screen that doesn't transition
-  (one slide, the empty state, single video mode) reloads at the check. The reload starts from the cached manifest.
+  time. A carousel with two or more slides reloads at its next transition, and a screen that doesn't transition (one
+  slide, the empty state, single video mode) at the next check. *Immediately before reloading* the player requests
+  `GET /screen` (no cache) and reloads only on a 2xx response. Anything else (no answer, timeout, or a proxy's 502
+  during a restart) postpones the reload to the next check, so an offline screen keeps cycling (R-24) and never lands
+  on a browser or proxy error page. The reload starts from the cached manifest.
   It bounds any slow memory growth in long-running browsers. All values live in `config.js`. No daily reload in
   admin preview.
 - Heartbeat every 30 s.

@@ -107,8 +107,8 @@ manifest cache and offline cycling, schedule re-check on the client, admin previ
 (`/screen?preview=`), test hooks (`data-state`, `timeScale`). A demo seed (a sample playlist with public
 domain images + an HTML clock slide), applied only in Development or with `SIGNAGE__SEEDDEMO=true`.
 *From WP-07 (ADR-0008):* implement the video release order (release the covered slide before preparing the one after
-next) and the daily reload (PLAYER_SPEC §9, confirmed by the product owner). Its E2E tests use test-only clock
-values via `?test=1` overrides: a due reload with the server unreachable (route abort) is postponed, and the
+next) and the daily reload (PLAYER_SPEC §9, confirmed by the product owner). Its E2E tests use Playwright's Clock API
+(`page.Clock`) to move time forward, not test-only branches in the player (ARCHITECTURE §6): a due reload with the server unreachable (route abort) is postponed, and the
 player keeps cycling; a due reload with the server up happens at a transition; a one-slide screen reloads at the check.
 *From WP-06 review round 2:* (MINOR) the device stops polling a code 60 s before it expires but the server accepts
 claims until expiry: keep polling the old code until a new one is shown, or stop accepting claims in the last
@@ -158,9 +158,9 @@ Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full s
 soak of the player in E2E (memory stable), and request the **milestone-level** review (the reviewer reviews
 the whole repo, not a diff).
 *From WP-07 (ADR-0008):* the soak runs the shipped player for 30 min with an alternating 3–4 s video / image sequence at
-`?test=1&timeScale=0.05` (images and transitions sped up; videos play at normal speed, so about 1,000–1,400 transitions).
+`?test=1&timeScale=0.05` (images and transitions sped up; videos play at normal speed, so roughly 900 transitions).
 It samples browser PSS from `/proc` every 100 transitions, with tracing off and *without* the CDP Media domain (so the
-measurement doesn't take part). This is a regression guard, not a plateau proof (the daily reload bounds growth). It
+measurement doesn't take part; the spike had it on, which may have added a little to its figures). This is a regression guard, not a plateau proof (the daily reload bounds growth). It
 fails if the growth between the end of the first third and the end is more than 2× the spike's rate for the same
-number of transitions (0.09 MB/transition × 2). Record the numbers in M1_ACCEPTANCE.
+number of transitions (2 × 0.15 MB per transition). Record the numbers in M1_ACCEPTANCE.
 **Accept:** PROJECT_BRIEF §8 is fully satisfied.

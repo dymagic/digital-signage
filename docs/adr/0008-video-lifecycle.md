@@ -29,11 +29,12 @@ element, so a late `ended`/`error` event from the previous `src` can land on the
 each slide's listeners and timers scoped to its own element.
 
 **Safety net: a daily reload** (user-visible; confirmed by the product owner on 2026-10-17). Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
-videos add about 0.03 MB each. A mix of images and videos still grows (about 0.09 MB per transition over 2000
-transitions; +147 MB from transition 200 to 1000 and +104 MB from 1000 to 1800, two equal 800-transition spans, leaving
-out the last sample, which was taken after the loop had stopped). That looks like Chromium's caches filling
-up, but a plateau isn't proven. If the growth were linear, 10 s slides (8,640 transitions a day) would add about
-0.7 GB a day, too much for a Pi left alone for weeks. So the player **reloads itself once a
+videos add about 0.03 MB each. A mix of images and videos still grows: +147 MB from transition 200 to 1000 and
++104 MB from 1000 to 1800 (two equal 800-transition spans; the first sample is before warm-up and the last was taken
+after the loop had stopped, so both are left out). That is about 0.18 and then 0.13 MB per transition, roughly
+**0.15 MB per transition**. It looks like Chromium's caches filling up, but a plateau isn't proven. If the growth were
+linear, 10 s slides (8,640 transitions a day) would add about **1.3 GB a day**. That's too much for a 2 GB Pi left
+alone for weeks, and it is the figure the daily reload must hold down. So the player **reloads itself once a
 day**: after 20 hours of uptime, inside a night window (02:00–05:00 in the system time zone), or after 26 hours
 whatever the time. It reloads only when the server answers at that moment, so an offline screen keeps cycling (R-24)
 instead of landing on the browser's error page. A carousel reloads at a transition, and screens that never
@@ -43,8 +44,8 @@ stays bounded at one day's worth.
 
 ## Consequences
 - Covered videos lose their decoded frames immediately. That's fine: they are covered.
-- WP-13's soak runs the shipped player for 30 minutes (about 1,000–1,400 transitions; videos play at normal speed)
-  as a regression guard: it fails if growth exceeds twice the rate measured here. The daily reload, not the soak,
+- WP-13's soak runs the shipped player for 30 minutes (roughly 900 transitions; videos play at normal speed)
+  as a regression guard: it fails if growth exceeds twice the rate measured here (2 × 0.15 MB per transition). The daily reload, not the soak,
   is what bounds memory. See BACKLOG WP-13.
 - Not measured: whether the next video was ready (`canplay`) before its turn. The harness waits up to 3 s like the
   player will. WP-09 tests the player's behaviour when a video is late or fails.
