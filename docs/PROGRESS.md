@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-05 Screens, groups & composition — branch `wp-05-screens-groups` — status In progress
+- Package: WP-05 Screens, groups & composition — branch `wp-05-screens-groups` — status In review (round 1 requested)
 - Plan: Screen gets an app-managed `version` (heartbeats in WP-10 won't conflict); `IPositioned` + shared
   `OrderedList` helpers; `IScreenNotifier` (+ NoOp) and `AffectedScreens` queries; `ScreenService` (CRUD admin,
   details/mode/single-video admin, groups membership admin, prepend/append slides + direct playlists editor+,
@@ -19,7 +19,8 @@ Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the revi
 - Done: screen app-managed version (+ migration), IPositioned/OrderedList, IScreenNotifier (NoOp) + AffectedScreens, ScreenService, GroupService; slides/playlists/settings notify affected screens; slide delete bumps playlist/screen versions.
 - Half-done: —
 - Done (2): pages screens (list/create/detail with composition + resolved sequence/delete), groups (list/create/detail with playlists/delete), AdminPageModel (RequireAdmin, GoneMeanwhile HX-Redirect), shared _EntryButtons with stable ids, reorder.js generic + focus restore, nav, ~95 strings, coverage test for enum/ternary keys.
-- Next step: integration tests (role split per handler, composition, resolved sequence == resolver, notifier, heartbeat-no-conflict, follow-ups), E2E, docs.
+- Done (3): integration + E2E tests, follow-ups, docs. Self-check: build clean, 320 tests green, E2E 10/10, glossary clean.
+- Next step: handle review round 1 verdict (docs/reviews/WP-05-review-1.md).
 - Last checkpoint: (this commit)
 
 
