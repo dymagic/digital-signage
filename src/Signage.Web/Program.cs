@@ -6,6 +6,7 @@ using Signage.Web.Features.Events;
 using Signage.Web.Features.Groups;
 using Signage.Web.Features.Health;
 using Signage.Web.Features.Playlists;
+using Signage.Web.Features.Player;
 using Signage.Web.Features.Screens;
 using Signage.Web.Features.Settings;
 using Signage.Web.Features.Slides;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<PlaylistService>();
 builder.Services.AddScoped<ScreenService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddSingleton<IScreenNotifier, NoOpScreenNotifier>();
+builder.Services.AddSignagePlayerApi();
 builder.Services.AddSignageAdminUi();
 builder.Services.AddProblemDetails();
 builder.Services.AddSignageHealthChecks();
@@ -52,10 +54,12 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 });
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapSignageHealthChecks();
+app.MapSignagePlayerApi();
 app.MapGet("/", () => Results.Redirect("/admin")).ExcludeFromDescription();
 app.MapRazorPages();
 

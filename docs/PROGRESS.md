@@ -20,9 +20,9 @@ Milestone 1: in progress (WP-00–WP-05 done). Project docs, skills and the revi
   ADR-0007: HttpOnly cookie instead of localStorage (R-40 wording), token minted at delivery, rate limits.
   Follow-up from WP-05: Name inputs nullable.
 - Risks: rate limits are per replica; E2E needs timeScale for the revoke check.
-- Done: —
+- Done: PairingCode + ScreenTokens (unit-tested), PairingService (start/poll/claim/deliver), ScreenAccessService (address token, revoke, lookup), ScreenToken auth handler (cookie, 401 deletes it), PlayerApi (pairing, poll, session, minimal manifest), per-IP rate limits, AppInfo.
 - Half-done: —
-- Next step: PairingCode/ScreenTokens with unit tests, PairingService, screen auth, endpoints.
+- Next step: admin pair page + screen detail actions (revoke, re-pair, screen address); player pairing UI.
 - Last checkpoint: (this commit)
 
 
