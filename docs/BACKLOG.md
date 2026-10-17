@@ -92,7 +92,7 @@ device returns to pairing. Integration tests for expiry, reuse and rate limits. 
 *From WP-05 review round 3 (NIT):* the `Name` input properties on the screen, group and playlist forms are
 non-nullable but arrive as null when empty; make them `string?` (services already handle null).
 
-### WP-07 Spike: video lifecycle & memory — `Todo` *(may run any time after WP-00)*
+### WP-07 Spike: video lifecycle & memory — `In progress` *(may run any time after WP-00)*
 Build a throwaway harness page (`tests/Signage.E2E/spikes/`) that cycles videos and images with the
 planned transition and measures memory/decoder behaviour over 200+ transitions under different
 strategies (PLAYER_SPEC §4). Use short, openly licensed sample MP4s served from a local container

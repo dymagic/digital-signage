@@ -21,8 +21,9 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p artifacts/e2e
+scripts/generate-test-media.sh
 "${compose[@]}" build
-"${compose[@]}" up -d db app
+"${compose[@]}" up -d db app testmedia
 set +e
 "${compose[@]}" run --rm e2e "$@"
 status=$?
