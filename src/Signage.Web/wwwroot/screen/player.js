@@ -7,16 +7,27 @@ import { t } from './strings.js';
 const stage = document.getElementById('stage');
 const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
 
-/** R-41: /screen?token=… is exchanged for the cookie, then removed from the address bar. */
+/**
+ * R-41: /screen?token=… is exchanged for the cookie. Until the server gives a definite answer (a kiosk often
+ * boots before the network or the server is up) the token stays in the address bar and the exchange is retried,
+ * so a reload or a later attempt still has it. Then it is removed from the address bar.
+ */
 async function takeTokenFromUrl() {
     const url = new URL(location.href);
     const token = url.searchParams.get('token');
     if (!token) {
         return;
     }
+    for (;;) {
+        try {
+            await exchangeToken(token); // accepted or unknown: either way we're done with it
+            break;
+        } catch {
+            await sleep(ms(config.retryAfterErrorMs));
+        }
+    }
     url.searchParams.delete('token');
-    history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
-    await exchangeToken(token);
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
 }
 
 function showPaired(manifest) {

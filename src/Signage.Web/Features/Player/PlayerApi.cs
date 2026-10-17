@@ -40,7 +40,8 @@ public static class PlayerApi
         {
             NoStore(http);
             var start = await pairing.StartAsync(ct).ConfigureAwait(false);
-            return Results.Ok(new { code = PairingCode.Format(start.Code), pairingId = start.PairingId, deviceSecret = start.DeviceSecret, expiresAt = start.ExpiresAt });
+            // expiresInSeconds lets the device time the refresh without trusting its own clock.
+            return Results.Ok(new { code = PairingCode.Format(start.Code), pairingId = start.PairingId, deviceSecret = start.DeviceSecret, expiresAt = start.ExpiresAt, expiresInSeconds = (int)start.Lifetime.TotalSeconds });
         }).RequireRateLimiting(PairingStartLimit);
 
         api.MapGet("/pairing/{id:guid}", async (Guid id, PairingService pairing, HttpContext http, TimeProvider time, CancellationToken ct) =>

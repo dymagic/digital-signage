@@ -8,7 +8,7 @@ using Signage.Web.Features.Screens;
 
 namespace Signage.Web.Features.Pairing;
 
-public sealed record PairingStart(Guid PairingId, string Code, string DeviceSecret, DateTimeOffset ExpiresAt);
+public sealed record PairingStart(Guid PairingId, string Code, string DeviceSecret, DateTimeOffset ExpiresAt, TimeSpan Lifetime);
 
 public enum PairingPollStatus
 {
@@ -26,7 +26,7 @@ public sealed record PairingPoll(PairingPollStatus Status, DateTimeOffset? Expir
 /// R-40 pairing. A device asks for a code; an admin claims the code for a screen; the device's next poll receives
 /// the screen token exactly once. The token is minted at that moment, so no usable token is ever stored.
 /// </summary>
-public sealed class PairingService(SignageDbContext db, TimeProvider time, IScreenNotifier notifier)
+public sealed partial class PairingService(SignageDbContext db, TimeProvider time, IScreenNotifier notifier, ILogger<PairingService> logger)
 {
     public static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(15);
 
@@ -48,6 +48,11 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
         }
         while (await db.PairingRequests.AnyAsync(p => p.Code == code && p.ExpiresAt > now && p.TokenDeliveredAt == null, ct).ConfigureAwait(false)
                && ++attempts < 20);
+        if (attempts == 20)
+        {
+            // Practically impossible (25^6 codes); claims then pick the newest request with the code.
+            LogCodeCollision();
+        }
 
         var secret = ScreenTokens.NewSecret();
         var request = new PairingRequest
@@ -59,7 +64,7 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
         };
         db.PairingRequests.Add(request);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return new PairingStart(request.Id, code, secret, request.ExpiresAt);
+        return new PairingStart(request.Id, code, secret, request.ExpiresAt, CodeLifetime);
     }
 
     /// <summary>The device polls. Once claimed, the first poll gets the token; later polls get <see cref="PairingPollStatus.Gone"/>.</summary>
@@ -67,7 +72,7 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
     {
         var request = await db.PairingRequests.AsNoTracking()
             .Where(p => p.Id == pairingId)
-            .Select(p => new { p.DeviceSecretHash, p.ExpiresAt, p.ClaimedScreenId, p.TokenDeliveredAt, ScreenName = p.ClaimedScreen != null ? p.ClaimedScreen.Name : null })
+            .Select(p => new { p.DeviceSecretHash, p.ExpiresAt, p.ClaimedAt, p.ClaimedScreenId, p.TokenDeliveredAt, ScreenName = p.ClaimedScreen != null ? p.ClaimedScreen.Name : null })
             .SingleOrDefaultAsync(ct).ConfigureAwait(false);
         if (request is null || !ScreenTokens.Matches(deviceSecret, request.DeviceSecretHash))
         {
@@ -80,12 +85,20 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
         }
 
         var now = time.GetUtcNow();
+        if (request.ExpiresAt <= now)
+        {
+            // Also after a claim: a token is only handed out while the code is valid, so a device that was away
+            // longer has to pair again (and a revoke in the meantime can't be bypassed).
+            return new PairingPoll(PairingPollStatus.Gone);
+        }
+
         if (request.ClaimedScreenId is { } screenId)
         {
             return await DeliverAsync(pairingId, screenId, request.ScreenName!, now, ct).ConfigureAwait(false);
         }
 
-        return request.ExpiresAt <= now ? new PairingPoll(PairingPollStatus.Gone) : new PairingPoll(PairingPollStatus.Pending, request.ExpiresAt);
+        // Claimed for a screen that was deleted since: nobody can claim this code again, so start over.
+        return request.ClaimedAt is not null ? new PairingPoll(PairingPollStatus.Gone) : new PairingPoll(PairingPollStatus.Pending, request.ExpiresAt);
     }
 
     /// <summary>
@@ -162,8 +175,11 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
             return OperationResult.Fail(PairingErrors.CodeNotFound);
         }
 
-        // Conditional, so two admins typing the same code can't both claim it.
+        // Only the newest claim for a screen may deliver: earlier, still undelivered claims for it are cancelled.
         var now = time.GetUtcNow();
+        await CancelPendingClaimsAsync(db, screenId, now, ct, except: request.Value).ConfigureAwait(false);
+
+        // Conditional, so two admins typing the same code can't both claim it.
         var claimed = await db.PairingRequests
             .Where(p => p.Id == request.Value && p.ClaimedAt == null && p.ExpiresAt > now)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.ClaimedScreenId, screenId).SetProperty(p => p.ClaimedAt, now), ct)
@@ -195,7 +211,7 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
         var delivered = await strategy.ExecuteAsync(async () =>
         {
             await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
-            var marked = await db.PairingRequests.Where(p => p.Id == pairingId && p.TokenDeliveredAt == null)
+            var marked = await db.PairingRequests.Where(p => p.Id == pairingId && p.TokenDeliveredAt == null && p.ClaimedScreenId == screenId && p.ExpiresAt > now)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.TokenDeliveredAt, now), ct).ConfigureAwait(false);
             if (marked != 1)
             {
@@ -217,6 +233,23 @@ public sealed class PairingService(SignageDbContext db, TimeProvider time, IScre
         await notifier.ScreensChangedAsync([screenId], ct).ConfigureAwait(false);
         return new PairingPoll(PairingPollStatus.Paired, Token: token, ScreenName: screenName);
     }
+}
+
+public sealed partial class PairingService
+{
+    /// <summary>
+    /// Cancels claims for this screen whose token hasn't been delivered yet (and expires their codes), so a revoke, a new
+    /// screen address or a newer claim can't be undone by a device that polls later.
+    /// </summary>
+    internal static Task<int> CancelPendingClaimsAsync(SignageDbContext db, Guid screenId, DateTimeOffset now, CancellationToken ct, Guid? except = null) =>
+        db.PairingRequests
+            .Where(p => p.ClaimedScreenId == screenId && p.TokenDeliveredAt == null && p.Id != except)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.ClaimedScreenId, (Guid?)null)
+                .SetProperty(p => p.ExpiresAt, p => p.ExpiresAt < now ? p.ExpiresAt : now), ct);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not find an unused pairing code after 20 attempts; using a duplicate.")]
+    private partial void LogCodeCollision();
 }
 
 /// <summary>Localization keys for pairing errors.</summary>

@@ -329,6 +329,175 @@ public sealed partial class PairingTests(PostgresFixture postgres) : IAsyncLifet
         Assert.True(script.Headers.CacheControl?.NoCache);
     }
 
+    [Fact]
+    public async Task The_device_is_told_how_long_its_code_lives_so_it_doesnt_depend_on_its_own_clock()
+    {
+        using var device = new PlayerClient(_app.Factory);
+
+        using var response = await device.Http.PostAsync(new Uri("/api/player/pairing", UriKind.Relative), null, TestContext.Current.CancellationToken);
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(900, json.RootElement.GetProperty("expiresInSeconds").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_revoke_before_the_device_collects_its_token_cancels_the_pairing()
+    {
+        var screen = await AddScreenAsync("Offline TV");
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+        (await ClaimExistingAsync(pairing.Code, screen)).Dispose();
+
+        // The device is offline; meanwhile the admin revokes.
+        (await _admin.PostFormAsync($"/admin/screens/{screen}", new Dictionary<string, string>(), action: $"/admin/screens/{screen}?handler=Revoke")).Dispose();
+
+        using var poll = await device.PollAsync(pairing);
+        Assert.Equal(HttpStatusCode.Gone, poll.StatusCode);
+        Assert.False(poll.Headers.Contains("Set-Cookie"));
+        Assert.Null(await _app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screen).Select(s => s.TokenHash).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Creating_a_screen_address_cancels_a_pairing_that_was_not_collected_yet()
+    {
+        var screen = await AddScreenAsync("Kiosk");
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+        (await ClaimExistingAsync(pairing.Code, screen)).Dispose();
+
+        (await _admin.PostFormAsync($"/admin/screens/{screen}", new Dictionary<string, string>(), action: $"/admin/screens/{screen}?handler=Address")).Dispose();
+        var addressHash = await _app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screen).Select(s => s.TokenHash).SingleAsync());
+
+        using var poll = await device.PollAsync(pairing);
+        Assert.Equal(HttpStatusCode.Gone, poll.StatusCode);
+        Assert.Equal(addressHash, await _app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screen).Select(s => s.TokenHash).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task A_claimed_code_must_be_collected_before_it_expires()
+    {
+        var screen = await AddScreenAsync("Slow TV");
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+        (await ClaimExistingAsync(pairing.Code, screen)).Dispose();
+
+        _app.Time.Advance(PairingService.CodeLifetime);
+
+        using var poll = await device.PollAsync(pairing);
+        Assert.Equal(HttpStatusCode.Gone, poll.StatusCode);
+        Assert.Null(await _app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screen).Select(s => s.TokenHash).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Only_the_newest_claim_for_a_screen_delivers_a_token()
+    {
+        var screen = await AddScreenAsync("Contested TV");
+        using var first = new PlayerClient(_app.Factory);
+        using var second = new PlayerClient(_app.Factory);
+        var firstPairing = await first.StartPairingAsync();
+        var secondPairing = await second.StartPairingAsync();
+
+        (await ClaimExistingAsync(firstPairing.Code, screen)).Dispose();
+        (await ClaimExistingAsync(secondPairing.Code, screen, repairLink: true)).Dispose();
+
+        Assert.Equal("expired", await first.PollStatusAsync(firstPairing));
+        Assert.Equal("paired", await second.PollStatusAsync(secondPairing));
+    }
+
+    [Fact]
+    public async Task A_device_whose_claimed_screen_was_deleted_starts_over_with_a_new_code()
+    {
+        var screen = await AddScreenAsync("Doomed TV");
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+        (await ClaimExistingAsync(pairing.Code, screen)).Dispose();
+
+        await _app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screen).ExecuteDeleteAsync());
+
+        Assert.Equal("expired", await device.PollStatusAsync(pairing));
+    }
+
+    [Fact]
+    public async Task Parallel_polls_deliver_the_token_exactly_once()
+    {
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+        (await ClaimNewAsync(pairing.Code)).Dispose();
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => device.PollAsync(pairing)));
+
+        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.OK);
+        Assert.All(responses.Where(r => r.StatusCode != HttpStatusCode.OK), r => Assert.Equal(HttpStatusCode.Gone, r.StatusCode));
+        Assert.Single(responses, r => r.Headers.Contains("Set-Cookie"));
+        foreach (var r in responses)
+        {
+            r.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task Parallel_claims_of_one_code_succeed_exactly_once()
+    {
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+
+        var claims = await Task.WhenAll(Enumerable.Range(0, 6).Select(async i =>
+        {
+            await using var scope = _app.Factory.Services.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<PairingService>();
+            return (await service.ClaimForNewScreenAsync(pairing.Code, $"Screen {i}", TestContext.Current.CancellationToken)).Result.Succeeded;
+        }));
+
+        Assert.Single(claims, ok => ok);
+        Assert.Equal(1, await _app.Factory.WithDbAsync(db => db.Screens.CountAsync()));
+    }
+
+    [Fact]
+    public async Task Polling_and_the_token_exchange_are_rate_limited_too()
+    {
+        using var device = new PlayerClient(_app.Factory);
+        var pairing = await device.StartPairingAsync();
+        for (var i = 0; i < 60; i++)
+        {
+            (await device.PollAsync(pairing)).Dispose();
+        }
+        using var tooManyPolls = await device.PollAsync(pairing);
+
+        using var other = new PlayerClient(_app.Factory);
+        for (var i = 0; i < 9; i++) // start pairing above used one permit of the shared 10/min budget
+        {
+            (await other.ExchangeAsync(ScreenTokens.NewSecret())).Dispose();
+        }
+        using var tooManyExchanges = await other.ExchangeAsync(ScreenTokens.NewSecret());
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, tooManyPolls.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, tooManyExchanges.StatusCode);
+    }
+
+    [Fact]
+    public async Task Paired_since_is_shown_in_the_system_time_zone()
+    {
+        await _app.Factory.WithDbAsync(db => db.SystemSettings.ExecuteUpdateAsync(s => s.SetProperty(x => x.TimeZoneId, "Europe/Copenhagen")));
+        var (device, screenId) = await PairNewDeviceAsync();
+
+        var html = WebUtility.HtmlDecode(await _admin.GetHtmlAsync($"/admin/screens/{screenId}"));
+
+        Assert.Contains("Paired since 2026-10-16 10:00 (Europe/Copenhagen)", html, StringComparison.Ordinal); // 08:00Z
+        Assert.Contains("data-confirm=\"Revoke this screen's access?", html, StringComparison.Ordinal);
+        device.Dispose();
+    }
+
+    private async Task<Guid> AddScreenAsync(string name)
+    {
+        var screen = new Screen { Name = name };
+        await _app.Factory.WithDbAsync(async db =>
+        {
+            db.Screens.Add(screen);
+            await db.SaveChangesAsync();
+        });
+        return screen.Id;
+    }
+
     [GeneratedRegex("""data-testid="screen-address">([^<]+)<""")]
     private static partial Regex AddressRegex();
 }

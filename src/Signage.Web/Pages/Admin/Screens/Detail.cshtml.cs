@@ -47,6 +47,13 @@ public class DetailModel(
 
     public int DefaultDuration { get; private set; }
 
+    /// <summary>The system time zone (Settings), for times shown on this page.</summary>
+    public string TimeZoneId { get; private set; } = "UTC";
+
+    public string ToLocal(DateTimeOffset utc) =>
+        Signage.Web.Features.Slides.ScheduleClock.ToWallClock(utc, Signage.Web.Features.Slides.ScheduleClock.Resolve(TimeZoneId))
+            .ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
     /// <summary>R-41: the pre-configured address, shown once right after it was created; never stored.</summary>
     public string? ScreenAddress { get; private set; }
 
@@ -216,7 +223,9 @@ public class DetailModel(
 
         Version = Screen.Version;
         Sequence = await screens.ResolveAsync(Id, time.GetUtcNow(), ct) ?? [];
-        DefaultDuration = (await settings.GetAsync(ct)).DefaultSlideDurationSeconds;
+        var current = await settings.GetAsync(ct);
+        DefaultDuration = current.DefaultSlideDurationSeconds;
+        TimeZoneId = current.TimeZoneId;
         AvailableSlides = await playlists.SlidesForPickerAsync(ct);
         AvailablePlaylists = await playlists.ListAsync(ct);
         AllGroups = IsAdmin ? await groups.ListAsync(ct) : [];

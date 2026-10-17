@@ -60,7 +60,7 @@
             <h2>@L["Pairing.Section"]</h2>
             @if (screen.TokenHash is not null)
             {
-                <p>@L["Pairing.PairedSince", screen.PairedAt?.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) + " UTC"]</p>
+                <p>@L["Pairing.PairedSince", screen.PairedAt is { } paired ? Model.ToLocal(paired) : "", Model.TimeZoneId]</p>
             }
             else
             {
@@ -80,9 +80,9 @@
                     <a class="button" asp-page="Pair" asp-route-screenId="@(screen.TokenHash is null ? Model.Id : null)" asp-route-repair="@(screen.TokenHash is null ? null : Model.Id)">@L[screen.TokenHash is null ? "Pairing.Pair" : "Pairing.Repair"]</a>
                     @if (screen.TokenHash is not null)
                     {
-                        <form method="post" asp-page-handler="Revoke"><button type="submit" class="danger">@L["Pairing.Revoke"]</button></form>
+                        <form method="post" asp-page-handler="Revoke" data-confirm="@L["Pairing.Revoke.Confirm"]"><button type="submit" class="danger">@L["Pairing.Revoke"]</button></form>
                     }
-                    <form method="post" asp-page-handler="Address"><button type="submit">@L["Pairing.Address.Create"]</button></form>
+                    <form method="post" asp-page-handler="Address" data-confirm="@L[screen.TokenHash is null ? "Pairing.Address.Confirm" : "Pairing.Address.ConfirmReplace"]"><button type="submit">@L["Pairing.Address.Create"]</button></form>
                 </div>
                 <p class="hint">@L["Pairing.Address.Hint"]</p>
             }

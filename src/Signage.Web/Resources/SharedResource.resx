@@ -201,6 +201,12 @@
   <data name="Nav.Users" xml:space="preserve">
     <value>Users</value>
   </data>
+  <data name="Pairing.Address.Confirm" xml:space="preserve">
+    <value>Create a screen address for this screen?</value>
+  </data>
+  <data name="Pairing.Address.ConfirmReplace" xml:space="preserve">
+    <value>Create a new screen address? The device paired now stops working.</value>
+  </data>
   <data name="Pairing.Address.Create" xml:space="preserve">
     <value>Create screen address</value>
   </data>
@@ -241,7 +247,7 @@
     <value>Pair a device</value>
   </data>
   <data name="Pairing.PairedSince" xml:space="preserve">
-    <value>Paired since {0}</value>
+    <value>Paired since {0} ({1})</value>
   </data>
   <data name="Pairing.Repair" xml:space="preserve">
     <value>Re-pair</value>
@@ -251,6 +257,9 @@
   </data>
   <data name="Pairing.Revoke" xml:space="preserve">
     <value>Revoke</value>
+  </data>
+  <data name="Pairing.Revoke.Confirm" xml:space="preserve">
+    <value>Revoke this screen's access? Its device goes back to the pairing screen.</value>
   </data>
   <data name="Pairing.Revoked" xml:space="preserve">
     <value>Access revoked. The device goes back to the pairing screen.</value>

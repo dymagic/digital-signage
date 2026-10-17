@@ -23,6 +23,8 @@ public sealed class ScreenAccessService(SignageDbContext db, TimeProvider time, 
             return null;
         }
 
+        await PairingService.CancelPendingClaimsAsync(db, screenId, now, ct).ConfigureAwait(false);
+
         await notifier.ScreensChangedAsync([screenId], ct).ConfigureAwait(false);
         return token;
     }
@@ -37,6 +39,8 @@ public sealed class ScreenAccessService(SignageDbContext db, TimeProvider time, 
             return OperationResult.Fail(CommonErrors.NotFound);
         }
 
+        // A device that was claimed but hasn't collected its token yet must not get one after the revoke.
+        await PairingService.CancelPendingClaimsAsync(db, screenId, time.GetUtcNow(), ct).ConfigureAwait(false);
         await notifier.ScreensChangedAsync([screenId], ct).ConfigureAwait(false);
         return OperationResult.Ok;
     }

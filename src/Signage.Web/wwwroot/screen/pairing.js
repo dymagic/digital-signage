@@ -38,8 +38,10 @@ export async function pairDevice(stage) {
         }
 
         render(stage, request.code);
-        const refreshAt = new Date(request.expiresAt).getTime() - config.pairingRefreshBeforeExpiryMs;
-        while (Date.now() < refreshAt) {
+        // Timed from the server's "expires in", on the monotonic clock: a wrong device clock can't break pairing.
+        const lifetimeMs = request.expiresInSeconds * 1000;
+        const refreshAt = performance.now() + Math.max(lifetimeMs - config.pairingRefreshBeforeExpiryMs, lifetimeMs / 2);
+        while (performance.now() < refreshAt) {
             await sleep(ms(config.pairingPollMs));
             let result;
             try {

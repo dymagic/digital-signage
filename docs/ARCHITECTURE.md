@@ -84,7 +84,7 @@ ScreenGroup     Id, Name(unique ci), Description?, SortOrder, Version
 ScreenGroupMember  ScreenId, GroupId
 GroupPlaylist   GroupId, PlaylistId, Position
 
-PairingRequest  Id, Code(indexed; uniqueness among active codes enforced in WP-06), DeviceSecretHash, CreatedAt, ExpiresAt,
+PairingRequest  Id, Code(indexed; unique among active codes, best effort: 20 tries), DeviceSecretHash, CreatedAt, ExpiresAt,
                 ClaimedScreenId?, ClaimedAt?, TokenDeliveredAt?
 SystemSettings  (single row) DefaultSlideDurationSeconds=10, ShowInfoOverlay=false,
                 TimeZoneId="UTC" (IANA), UpdatedAt, Version; row created at start-up

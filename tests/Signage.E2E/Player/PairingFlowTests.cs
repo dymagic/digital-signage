@@ -41,6 +41,7 @@ public class PairingFlowTests(BrowserFixture fixture) : E2ETest(fixture)
         await Expect(device.GetByTestId("screen-name")).ToHaveTextAsync(name);
 
         await Page.ReloadAsync();
+        Page.Dialog += (_, dialog) => _ = dialog.AcceptAsync(); // "Revoke this screen's access?"
         await Page.GetByRole(AriaRole.Button, new() { Name = "Revoke" }).ClickAsync();
         await Expect(Page.GetByText("Access revoked.")).ToBeVisibleAsync();
 
@@ -56,6 +57,7 @@ public class PairingFlowTests(BrowserFixture fixture) : E2ETest(fixture)
         await Page.GotoAsync("/admin/screens/create");
         await Page.GetByLabel("Name").FillAsync(name);
         await Page.GetByRole(AriaRole.Button, new() { Name = "New screen" }).ClickAsync();
+        Page.Dialog += (_, dialog) => _ = dialog.AcceptAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Create screen address" }).ClickAsync();
         var address = await Page.GetByTestId("screen-address").InnerTextAsync();
         var token = new Uri(address).Query.Split("token=")[1];
@@ -67,6 +69,39 @@ public class PairingFlowTests(BrowserFixture fixture) : E2ETest(fixture)
         await Expect(device.GetByTestId("screen-name")).ToHaveTextAsync(name);
         Assert.DoesNotContain("token=", device.Url, StringComparison.Ordinal);
         Assert.Contains("timeScale=0.05", device.Url, StringComparison.Ordinal);
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_kiosk_that_boots_before_the_server_answers_keeps_its_token_and_pairs_later()
+    {
+        var name = $"Late {Guid.NewGuid():N}"[..12];
+        await Page.GotoAsync("/admin/screens/create");
+        await Page.GetByLabel("Name").FillAsync(name);
+        await Page.GetByRole(AriaRole.Button, new() { Name = "New screen" }).ClickAsync();
+        Page.Dialog += (_, dialog) => _ = dialog.AcceptAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Create screen address" }).ClickAsync();
+        var token = new Uri(await Page.GetByTestId("screen-address").InnerTextAsync()).Query.Split("token=")[1];
+
+        var device = await NewDeviceAsync();
+        var failures = 0;
+        await device.RouteAsync("**/api/player/session", async route =>
+        {
+            if (Interlocked.Increment(ref failures) <= 2)
+            {
+                await route.AbortAsync("connectionrefused"); // the server isn't reachable yet
+            }
+            else
+            {
+                await route.ContinueAsync();
+            }
+        });
+        await device.GotoAsync($"{DeviceUrl}&token={token}");
+
+        await Expect(device.Locator("body")).ToHaveAttributeAsync("data-mode", "player", new() { Timeout = 15_000 });
+        await Expect(device.GetByTestId("screen-name")).ToHaveTextAsync(name);
+        Assert.True(failures >= 3);
+        Assert.DoesNotContain("token=", device.Url, StringComparison.Ordinal);
         await device.Context.CloseAsync();
     }
 }

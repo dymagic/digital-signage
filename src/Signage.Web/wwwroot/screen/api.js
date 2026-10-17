@@ -25,14 +25,24 @@ export async function pollPairing(pairingId, deviceSecret) {
     return json(response);
 }
 
-/** Exchanges a pre-configured token (from /screen?token=…) for the cookie. */
+/**
+ * Exchanges a pre-configured token (from /screen?token=…) for the cookie.
+ * Resolves to true (accepted) or false (unknown token); throws when the server can't be reached or fails,
+ * so the caller can retry instead of losing the token.
+ */
 export async function exchangeToken(token) {
     const response = await fetch('/api/player/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
     });
-    return response.ok;
+    if (response.ok) {
+        return true;
+    }
+    if (response.status === 401) {
+        return false;
+    }
+    throw new Error(`session ${response.status}`);
 }
 
 export async function getManifest() {

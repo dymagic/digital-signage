@@ -10,7 +10,7 @@ public sealed class PlayerClient : IDisposable
 {
     private readonly HttpClient _client;
 
-    public PlayerClient(SignageWebFactory factory, string remoteIp = "")
+    public PlayerClient(SignageWebFactory factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
     }
