@@ -1,0 +1,30 @@
+@page "/admin/playlists/{id:guid}/delete"
+@model Signage.Web.Pages.Admin.Playlists.DeleteModel
+@{
+    ViewData["Title"] = L["Playlists.Delete.Title"];
+    ViewData["Section"] = "Playlists";
+}
+<h1>@L["Playlists.Delete.Title"]: @Model.Playlist!.Name</h1>
+@if (Model.Usage!.InUse)
+{
+    <div class="notice notice-error" role="alert">
+        <p>@L["Playlists.Delete.InUse"]</p>
+        @if (Model.Usage.Screens.Count > 0)
+        {
+            <p>@L["Playlists.UsedBy.Screens"] @string.Join(", ", Model.Usage.Screens)</p>
+        }
+        @if (Model.Usage.Groups.Count > 0)
+        {
+            <p>@L["Playlists.UsedBy.Groups"] @string.Join(", ", Model.Usage.Groups)</p>
+        }
+    </div>
+}
+else
+{
+    <p>@L["Playlists.Delete.NotInUse"]</p>
+}
+<p class="muted">@L["Playlists.Delete.SlidesKept"]</p>
+<form method="post" class="form-actions">
+    <button type="submit" class="danger">@L["Playlists.Delete.Confirm"]</button>
+    <a asp-page="Edit" asp-route-id="@Model.Id">@L["Common.Cancel"]</a>
+</form>

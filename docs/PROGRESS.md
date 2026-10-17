@@ -18,9 +18,9 @@ Milestone 1: in progress (WP-00–WP-03 done). Project docs, skills and the revi
   buttons. Handlers are Razor page handlers, so MustChangePasswordFilter applies (WP-02 follow-up).
   WP-03 follow-ups: dense renumber on slide delete, E2E wait fix, NITs 5–9.
 - Risks: htmx antiforgery header; drag & drop in Playwright (use DragToAsync).
-- Done: —
+- Done: PositionMaintenance, PlaylistService, slide delete renumbering, pages (list, create, edit with htmx entries + drag&drop reorder.js, delete), strings, CSS. Builds.
 - Half-done: —
-- Next step: PositionMaintenance + PlaylistService with integration tests.
+- Next step: integration tests (CRUD, dense reorder, duplicates, conflicts, htmx partial vs redirect, delete renumbering), E2E (add, reorder by buttons + drag), WP-03 follow-ups, ADR if needed.
 - Last checkpoint: (this commit)
 
 

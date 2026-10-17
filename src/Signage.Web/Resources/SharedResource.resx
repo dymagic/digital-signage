@@ -84,6 +84,9 @@
   <data name="Nav.Logout" xml:space="preserve">
     <value>Sign out</value>
   </data>
+  <data name="Nav.Playlists" xml:space="preserve">
+    <value>Playlists</value>
+  </data>
   <data name="Nav.Settings" xml:space="preserve">
     <value>Settings</value>
   </data>
@@ -110,6 +113,111 @@
   </data>
   <data name="Password.Title" xml:space="preserve">
     <value>Change password</value>
+  </data>
+  <data name="Playlists.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Playlists.AddHint" xml:space="preserve">
+    <value>A slide can appear more than once in the same playlist.</value>
+  </data>
+  <data name="Playlists.AddSlide" xml:space="preserve">
+    <value>Add a slide</value>
+  </data>
+  <data name="Playlists.BackToList" xml:space="preserve">
+    <value>Back to playlists</value>
+  </data>
+  <data name="Playlists.ChooseSlide" xml:space="preserve">
+    <value>Choose a slide…</value>
+  </data>
+  <data name="Playlists.Column.Slides" xml:space="preserve">
+    <value>Slides</value>
+  </data>
+  <data name="Playlists.Column.UsedBy" xml:space="preserve">
+    <value>Used by</value>
+  </data>
+  <data name="Playlists.Create" xml:space="preserve">
+    <value>New playlist</value>
+  </data>
+  <data name="Playlists.Created" xml:space="preserve">
+    <value>Playlist created. Now add slides to it.</value>
+  </data>
+  <data name="Playlists.Delete.Confirm" xml:space="preserve">
+    <value>Delete playlist</value>
+  </data>
+  <data name="Playlists.Delete.InUse" xml:space="preserve">
+    <value>This playlist is in use. Deleting it also removes it from these screens and groups.</value>
+  </data>
+  <data name="Playlists.Delete.NotInUse" xml:space="preserve">
+    <value>This playlist isn't assigned to any screen or group.</value>
+  </data>
+  <data name="Playlists.Delete.SlidesKept" xml:space="preserve">
+    <value>The slides themselves stay in the slide library.</value>
+  </data>
+  <data name="Playlists.Delete.Title" xml:space="preserve">
+    <value>Delete playlist</value>
+  </data>
+  <data name="Playlists.Deleted" xml:space="preserve">
+    <value>Playlist deleted.</value>
+  </data>
+  <data name="Playlists.DragHint" xml:space="preserve">
+    <value>Drag to reorder</value>
+  </data>
+  <data name="Playlists.Empty" xml:space="preserve">
+    <value>No playlists yet. A playlist is an ordered list of slides that you can assign to screens and groups.</value>
+  </data>
+  <data name="Playlists.Error.DescriptionTooLong" xml:space="preserve">
+    <value>The description can be at most 1000 characters.</value>
+  </data>
+  <data name="Playlists.Error.NameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="Playlists.Error.NameTaken" xml:space="preserve">
+    <value>A playlist with this name already exists.</value>
+  </data>
+  <data name="Playlists.Error.NameTooLong" xml:space="preserve">
+    <value>The name can be at most 100 characters.</value>
+  </data>
+  <data name="Playlists.Field.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Playlists.Field.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Playlists.MoveDown" xml:space="preserve">
+    <value>Move "{0}" down</value>
+  </data>
+  <data name="Playlists.MoveUp" xml:space="preserve">
+    <value>Move "{0}" up</value>
+  </data>
+  <data name="Playlists.NoSlides" xml:space="preserve">
+    <value>This playlist has no slides yet. Add one below.</value>
+  </data>
+  <data name="Playlists.Playlist" xml:space="preserve">
+    <value>Playlist</value>
+  </data>
+  <data name="Playlists.Remove" xml:space="preserve">
+    <value>Remove "{0}" from the playlist</value>
+  </data>
+  <data name="Playlists.Slides" xml:space="preserve">
+    <value>Slides in order</value>
+  </data>
+  <data name="Playlists.Title" xml:space="preserve">
+    <value>Playlists</value>
+  </data>
+  <data name="Playlists.UsedBy" xml:space="preserve">
+    <value>Used by</value>
+  </data>
+  <data name="Playlists.UsedBy.Groups" xml:space="preserve">
+    <value>Screen groups:</value>
+  </data>
+  <data name="Playlists.UsedBy.Nothing" xml:space="preserve">
+    <value>Not assigned to any screen or group yet.</value>
+  </data>
+  <data name="Playlists.UsedBy.Screens" xml:space="preserve">
+    <value>Screens:</value>
+  </data>
+  <data name="Playlists.UsedByCounts" xml:space="preserve">
+    <value>{0} screens · {1} groups</value>
   </data>
   <data name="Settings.DurationHint" xml:space="preserve">
     <value>Used for every slide that doesn't set its own duration. Videos always play to the end.</value>
