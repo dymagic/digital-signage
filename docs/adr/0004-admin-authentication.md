@@ -37,8 +37,14 @@ For revocation: validate the security stamp periodically (Identity's default is 
 - The counter and lockout live in their own table, `user_lockouts`, not on `users`. Sign-ins therefore
   never change the user row: they can't bump its concurrency token (`xmin`), which would let someone
   holding a leaked password make an admin's deactivation fail as a conflict, and they never write the
-  password hash back. A rehash after a hasher upgrade is conditional on the hash being unchanged. An
-  admin's password reset is unconditional (no version check), so it always wins. Every sign-in failure (unknown email, wrong password, locked, deactivated)
+  password hash back. A rehash after a hasher upgrade is conditional on the hash being unchanged.
+- The user's own password change is also conditional: it writes only if the stored hash is still the one it
+  just verified. An admin's password reset is unconditional (no version check). Together that means a reset
+  always wins, whatever the user (or someone holding their password) does at the same moment.
+- The concurrency token for admin edits of a user is an app-managed `version` column, not `xmin`. Only admin
+  edits and resets increment it. The user's own sign-ins and password changes never do, so they can't make an
+  admin's deactivation or role change fail as a conflict. Other entities keep `xmin` (ADR-0003). Their rows are
+  written only by human edits. Every sign-in failure (unknown email, wrong password, locked, deactivated)
   shows the same message, and unknown and locked accounts still pay for a (dummy) hash, so neither the
   response nor its timing reveals whether an account exists or is locked.
 - Passwords need 10–128 characters and have no composition rules (NIST 800-63B style). Temporary

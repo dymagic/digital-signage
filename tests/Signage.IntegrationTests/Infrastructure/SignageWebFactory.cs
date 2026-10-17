@@ -10,7 +10,8 @@ namespace Signage.IntegrationTests.Infrastructure;
 public sealed class SignageWebFactory(
     string connectionString,
     IReadOnlyDictionary<string, string?>? settings = null,
-    TimeProvider? timeProvider = null) : WebApplicationFactory<Program>
+    TimeProvider? timeProvider = null,
+    Action<IServiceCollection>? configureServices = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -24,6 +25,11 @@ public sealed class SignageWebFactory(
         if (timeProvider is not null)
         {
             builder.ConfigureServices(services => services.Replace(ServiceDescriptor.Singleton(timeProvider)));
+        }
+
+        if (configureServices is not null)
+        {
+            builder.ConfigureServices(configureServices);
         }
     }
 

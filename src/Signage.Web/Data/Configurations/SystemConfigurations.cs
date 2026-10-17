@@ -15,7 +15,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash).HasMaxLength(Limits.Description);
         builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(Limits.Enum);
         builder.Property(u => u.SecurityStamp).HasMaxLength(Limits.ShortText);
-        builder.Property(u => u.Version).IsRowVersion();
+        builder.Property(u => u.Version).IsConcurrencyToken();
         builder.HasIndex(u => u.NormalizedEmail).IsUnique();
     }
 }

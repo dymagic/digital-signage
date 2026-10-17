@@ -559,11 +559,10 @@ namespace Signage.Web.Data.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("security_stamp");
 
-                    b.Property<uint>("Version")
+                    b.Property<int>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("pk_users");

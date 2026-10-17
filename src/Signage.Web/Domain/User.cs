@@ -20,6 +20,10 @@ public class User : IHasCreatedAt
 
     public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>Optimistic concurrency token (PostgreSQL <c>xmin</c>).</summary>
-    public uint Version { get; set; }
+    /// <summary>
+    /// Optimistic concurrency token for admin edits. App-managed (not <c>xmin</c>): only admin edits and resets
+    /// increment it, so the user's own sign-ins and password changes can never make an admin's edit fail as a
+    /// conflict (ADR-0004).
+    /// </summary>
+    public int Version { get; set; }
 }

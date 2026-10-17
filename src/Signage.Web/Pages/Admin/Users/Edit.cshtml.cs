@@ -96,6 +96,6 @@ public class EditModel(UserAccounts accounts, SignageDbContext db, IStringLocali
         [Display(Name = "Users.Field.IsActive")]
         public bool IsActive { get; set; }
 
-        public uint Version { get; set; }
+        public int Version { get; set; }
     }
 }

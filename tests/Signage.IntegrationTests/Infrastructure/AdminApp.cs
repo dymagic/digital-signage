@@ -23,10 +23,10 @@ public sealed class AdminApp : IAsyncDisposable
 
     public FakeTimeProvider Time { get; }
 
-    public static async Task<AdminApp> StartAsync(PostgresFixture postgres, IReadOnlyDictionary<string, string?>? settings = null)
+    public static async Task<AdminApp> StartAsync(PostgresFixture postgres, IReadOnlyDictionary<string, string?>? settings = null, Action<IServiceCollection>? configureServices = null)
     {
         var time = new FakeTimeProvider(new DateTimeOffset(2026, 10, 16, 8, 0, 0, TimeSpan.Zero));
-        var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync(), settings, time);
+        var factory = new SignageWebFactory(await postgres.CreateDatabaseAsync(), settings, time, configureServices);
         _ = factory.Server;
         return new AdminApp(factory, time);
     }

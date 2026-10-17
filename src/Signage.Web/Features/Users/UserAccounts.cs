@@ -148,12 +148,21 @@ public sealed partial class UserAccounts(
             return OperationResult.Fail(AccountErrors.WrongCurrentPassword);
         }
 
+        // Write only if the hash is still the one we just verified: if an admin reset the password meanwhile,
+        // the reset wins and this change is refused. The admin edit version is deliberately not touched.
+        var verifiedHash = user.PasswordHash;
         var newHash = hasher.HashPassword(user, newPassword);
         var newStamp = NewStamp();
-        await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(s => s
+        var updated = await db.Users.Where(u => u.Id == userId && u.PasswordHash == verifiedHash).ExecuteUpdateAsync(s => s
             .SetProperty(u => u.PasswordHash, newHash)
             .SetProperty(u => u.MustChangePassword, false)
             .SetProperty(u => u.SecurityStamp, newStamp), ct).ConfigureAwait(false);
+        if (updated == 0)
+        {
+            LogPasswordChangeRejected(user.Email, "password changed or reset meanwhile");
+            return OperationResult.Fail(CommonErrors.Concurrency);
+        }
+
         LogPasswordChanged(user.Email);
         return OperationResult.Ok;
     }
@@ -243,7 +252,8 @@ public sealed partial class UserAccounts(
         var updated = await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(s => s
             .SetProperty(u => u.PasswordHash, hash)
             .SetProperty(u => u.MustChangePassword, true)
-            .SetProperty(u => u.SecurityStamp, stamp), ct).ConfigureAwait(false);
+            .SetProperty(u => u.SecurityStamp, stamp)
+            .SetProperty(u => u.Version, u => u.Version + 1), ct).ConfigureAwait(false);
         if (updated == 0)
         {
             return (OperationResult.Fail(CommonErrors.NotFound), null);
@@ -259,7 +269,7 @@ public sealed partial class UserAccounts(
     /// cookie stops working at once. Admins can't change their own role or deactivate themselves, and the
     /// last active admin can't be demoted or deactivated.
     /// </summary>
-    public async Task<OperationResult> UpdateAsync(Guid userId, string displayName, UserRole role, bool isActive, uint version, Guid actingUserId, CancellationToken ct)
+    public async Task<OperationResult> UpdateAsync(Guid userId, string displayName, UserRole role, bool isActive, int version, Guid actingUserId, CancellationToken ct)
     {
         var strategy = db.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
@@ -289,6 +299,7 @@ public sealed partial class UserAccounts(
             user.DisplayName = displayName.Trim();
             user.Role = role;
             user.IsActive = isActive;
+            user.Version++;
             if (accessChanged)
             {
                 user.SecurityStamp = NewStamp();

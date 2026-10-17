@@ -202,7 +202,18 @@ public sealed partial class UserAdminTests(PostgresFixture postgres) : IAsyncLif
     {
         var editorId = await _app.CreateUserAsync();
         var stale = await _app.GetUserAsync(editorId);
-        await _app.Factory.WithDbAsync(db => db.Users.Where(u => u.Id == editorId).ExecuteUpdateAsync(s => s.SetProperty(u => u.DisplayName, "Changed elsewhere")));
+
+        // Another admin saves the same user first.
+        using (var other = await _admin.PostFormAsync($"/admin/users/{editorId}", new Dictionary<string, string>
+        {
+            ["Input.DisplayName"] = "Changed elsewhere",
+            ["Input.Role"] = "Editor",
+            ["Input.IsActive"] = "true",
+            ["Input.Version"] = stale.Version.ToString(CultureInfo.InvariantCulture),
+        }))
+        {
+            Assert.Equal("/admin/users", AdminSession.Location(other));
+        }
 
         using var response = await _admin.PostFormAsync($"/admin/users/{editorId}", new Dictionary<string, string>
         {
