@@ -7,7 +7,18 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_(none: next is WP-10 Live updates, heartbeat & status)_
+- Package: WP-10 Live updates, heartbeat & status — branch `wp-10-live-updates` — status In progress
+- Plan: server: `PostgresScreenNotifier` (pg_notify on `signage_events`, chunked payloads), `ScreenEventHub` (per-replica
+  SSE subscribers by screen), `ScreenEventListener` (BackgroundService, LISTEN, reconnect + "all changed" after a gap),
+  `GET /api/player/events` (SSE, keep-alive 15 s), `POST /api/player/heartbeat` (ExecuteUpdate of LastSeen/IP/UA/version,
+  no version bump; problems logged), status columns in the screens list with htmx refresh (online = heartbeat < 90 s),
+  `/screen` injects the app version, forwarded headers from config. Player: EventSource with recreate after a closed
+  stream, fetch on event and on open, heartbeat every 30 s with problems (video/single-video failures), appVersion
+  reload at the next transition. WP-09 follow-ups.
+- Tests: integration (notifier → SSE on two app instances, heartbeat fields + no conflict, offline after 90 s with fake
+  time, forwarded headers, events auth), E2E (edit reaches the screen within 5 s, appVersion reload).
+- Next step: notifier, hub, listener, SSE endpoint.
+- Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
