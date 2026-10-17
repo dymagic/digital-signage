@@ -25,9 +25,25 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
     [InlineData("remove")]
     [InlineData("keep")]
     [InlineData("reuse")]
-    public async Task Measure(string strategy)
+    public Task Measure(string strategy)
     {
-        Assert.SkipUnless(E2EEnvironment.SpikeEnabled, "Spike: set SIGNAGE_E2E_SPIKE=1.");
+        Assert.SkipUnless(E2EEnvironment.SpikeEnabled && Environment.GetEnvironmentVariable("SIGNAGE_E2E_SPIKE_LONG") != "1", "Spike: set SIGNAGE_E2E_SPIKE=1.");
+        return RunAsync(strategy, Transitions, SampleEvery, imagesOnly: false);
+    }
+
+    /// <summary>Does the growth level off? release vs. an images-only baseline over a long run (SIGNAGE_E2E_SPIKE_LONG=1).</summary>
+    [Theory]
+    [InlineData("release", false)]
+    [InlineData("release", true)]
+    public Task MeasureLong(string strategy, bool imagesOnly)
+    {
+        Assert.SkipUnless(E2EEnvironment.SpikeEnabled && Environment.GetEnvironmentVariable("SIGNAGE_E2E_SPIKE_LONG") == "1", "Long spike: set SIGNAGE_E2E_SPIKE_LONG=1.");
+        return RunAsync(strategy, 1200, 100, imagesOnly);
+    }
+
+    private async Task RunAsync(string strategy, int transitions, int sampleEvery, bool imagesOnly)
+    {
+        var label = imagesOnly ? "images-only" : $"{strategy}{(transitions == Transitions ? "" : $"-{transitions}")}";
         var cdp = await Context.NewCDPSessionAsync(Page);
         await cdp.SendAsync("Performance.enable");
         await cdp.SendAsync("Media.enable");
@@ -52,12 +68,12 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
         };
 
         var media = new Uri(E2EEnvironment.MediaBaseUrl, "/media/").ToString();
-        await Page.GotoAsync(new Uri(E2EEnvironment.MediaBaseUrl, $"/spikes/video-lifecycle/harness.html?strategy={strategy}&transitions={Transitions}&media={Uri.EscapeDataString(media)}").ToString());
+        await Page.GotoAsync(new Uri(E2EEnvironment.MediaBaseUrl, $"/spikes/video-lifecycle/harness.html?strategy={strategy}&transitions={transitions}&imagesOnly={(imagesOnly ? 1 : 0)}&media={Uri.EscapeDataString(media)}").ToString());
 
         var samples = new List<Sample> { await SampleAsync(cdp, 0, created, destroyed) };
-        for (var checkpoint = SampleEvery; checkpoint <= Transitions; checkpoint += SampleEvery)
+        for (var checkpoint = sampleEvery; checkpoint <= transitions; checkpoint += sampleEvery)
         {
-            await Page.WaitForFunctionAsync($"() => window.spike && (window.spike.transitions >= {checkpoint} || window.spike.done)", null, new() { Timeout = 180_000, PollingInterval = 200 });
+            await Page.WaitForFunctionAsync($"() => window.spike && (window.spike.transitions >= {checkpoint} || window.spike.done)", null, new() { Timeout = 600_000, PollingInterval = 200 });
             samples.Add(await SampleAsync(cdp, checkpoint, created, destroyed));
         }
 
@@ -65,8 +81,8 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
         var maxLayers = await Page.EvaluateAsync<int>("() => window.spike.maxLayers");
         var dir = Path.Combine(E2EEnvironment.ArtifactsDir, "spike");
         Directory.CreateDirectory(dir);
-        await File.WriteAllTextAsync(Path.Combine(dir, $"video-{strategy}.json"),
-            JsonSerializer.Serialize(new { strategy, transitions = Transitions, maxLayers, errors, mediaEvents, samples }, Indented), TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(dir, $"video-{label}.json"),
+            JsonSerializer.Serialize(new { strategy, imagesOnly, transitions, maxLayers, errors, mediaEvents, samples }, Indented), TestContext.Current.CancellationToken);
 
         var csv = new StringBuilder("transitions,jsHeapMb,nodes,documents,browserPssMb,videosInDom,videoElementsCreated,playersCreated,playersDestroyed\n");
         foreach (var s in samples)
@@ -74,8 +90,8 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
             csv.AppendLine(string.Create(CultureInfo.InvariantCulture,
                 $"{s.Transitions},{s.JsHeapMb:F1},{s.Nodes},{s.Documents},{s.BrowserPssMb:F0},{s.VideosInDom},{s.VideoElementsCreated},{s.PlayersCreated},{s.PlayersDestroyed}"));
         }
-        await File.WriteAllTextAsync(Path.Combine(dir, $"video-{strategy}.csv"), csv.ToString(), TestContext.Current.CancellationToken);
-        TestContext.Current.SendDiagnosticMessage($"{strategy}\n{csv}");
+        await File.WriteAllTextAsync(Path.Combine(dir, $"video-{label}.csv"), csv.ToString(), TestContext.Current.CancellationToken);
+        TestContext.Current.SendDiagnosticMessage($"{label}\n{csv}");
         Assert.Empty(errors);
     }
 

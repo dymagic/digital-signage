@@ -41,6 +41,7 @@ services:
       SIGNAGE_E2E_ADMIN_BOOTSTRAP_PASSWORD: e2e-bootstrap-password
       SIGNAGE_E2E_MEDIA_BASEURL: http://testmedia
       SIGNAGE_E2E_SPIKE: ${SIGNAGE_E2E_SPIKE:-}
+      SIGNAGE_E2E_SPIKE_LONG: ${SIGNAGE_E2E_SPIKE_LONG:-}
     volumes:
       - ./artifacts/e2e:/artifacts
     depends_on:

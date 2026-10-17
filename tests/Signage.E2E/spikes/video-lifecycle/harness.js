@@ -8,7 +8,8 @@ const imageMs = Number(params.get('imageMs') ?? 300);
 const playbackRate = Number(params.get('playbackRate') ?? 4); // plays 3-4 s clips in < 1 s; the decoder still runs
 document.documentElement.style.setProperty('--transition-ms', `${transitionMs}ms`);
 
-const sequence = [
+const imagesOnly = params.get('imagesOnly') === '1'; // baseline: same loop without any video
+const fullSequence = [
     { type: 'video', src: 'clip-a-h264.mp4' },
     { type: 'image', src: 'image-testsrc2.png' },
     { type: 'video', src: 'clip-b-h264.mp4' },
@@ -16,6 +17,7 @@ const sequence = [
     { type: 'video', src: 'clip-c-h264.mp4' },
     { type: 'image', src: 'image-mandelbrot.png' },
 ];
+const sequence = imagesOnly ? fullSequence.filter((s) => s.type === 'image') : fullSequence;
 
 const stage = document.getElementById('stage');
 const state = (window.spike = { strategy, transitions: 0, done: false, errors: [], videoElementsCreated: 0, maxLayers: 0 });
