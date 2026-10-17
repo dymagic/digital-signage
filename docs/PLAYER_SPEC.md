@@ -115,10 +115,14 @@ screen (R-42).
   transition. Continue from the slide after the current one's id if it still exists, otherwise
   start from the beginning. Mode changes and overlay toggles apply immediately.
 - If `appVersion` differs from the loaded player's version: reload the page at the next transition.
-- Daily reload (ADR-0008): after 20 h of uptime, reload at the next transition between 02:00 and 05:00 in the system
-  time zone, or at the next transition after 26 h whatever the time. The reload starts from the cached manifest. It
-  bounds any slow memory growth in long-running browsers. All three values live in `config.js`. No daily reload
-  in admin preview.
+- Daily reload (ADR-0008, *proposed: awaiting product-owner confirmation*): a timer checks once a minute. The reload is
+  due after 20 h of uptime when the local time (system time zone) is between 02:00 and 05:00, or after 26 h at any
+  time. When due, the player first checks that the server answers (`GET /screen`, no cache). If it doesn't, the
+  reload is postponed to the next check, so an offline screen keeps cycling (R-24) and never lands on the browser's
+  error page. A carousel with two or more slides reloads at its next transition. A screen that doesn't transition
+  (one slide, the empty state, single video mode) reloads at the check. The reload starts from the cached manifest.
+  It bounds any slow memory growth in long-running browsers. All values live in `config.js`. No daily reload in
+  admin preview.
 - Heartbeat every 30 s.
 - While offline: keep cycling, show nothing alarming, and add a tiny dim dot in the info overlay
   only when the overlay is enabled.

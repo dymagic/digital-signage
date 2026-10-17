@@ -28,21 +28,26 @@ Why not reuse: it saved nothing measurable against release (more PSS, in fact), 
 element, so a late `ended`/`error` event from the previous `src` can land on the next slide. Fresh elements keep
 each slide's listeners and timers scoped to its own element.
 
-**Safety net: a daily reload.** Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
+**Safety net: a daily reload** (*Proposed: user-visible, awaiting the product owner's confirmation*). Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
 videos add about 0.03 MB each. A mix of images and videos still grows (about 0.09 MB per transition over 2000
-transitions, slowing from +147 MB in the first half to +78 MB in the second). That looks like Chromium's caches filling
+transitions; +147 MB from transition 200 to 1000 and +104 MB from 1000 to 1800, two equal 800-transition spans, leaving
+out the last sample, which was taken after the loop had stopped). That looks like Chromium's caches filling
 up, but a plateau isn't proven. If the growth were linear, 10 s slides (8,640 transitions a day) would add about
-0.7 GB a day, too much for a Pi left alone for weeks. So the player **reloads itself once a day**: after 20 hours of
-uptime, at the next transition inside a night window (02:00–05:00 in the system time zone), or after 26 hours
-whatever the time. It restarts from its cached manifest, so the screen shows a moment of black and then carries on.
-PLAYER_SPEC §9 has the values. A reload resets all renderer memory, so any slow growth, from video or anything else,
+0.7 GB a day, too much for a Pi left alone for weeks. So the proposal is that the player **reloads itself once a
+day**: after 20 hours of uptime, inside a night window (02:00–05:00 in the system time zone), or after 26 hours
+whatever the time. It reloads only when the server answers at that moment, so an offline screen keeps cycling (R-24)
+instead of landing on the browser's error page. A carousel reloads at a transition, and screens that never
+transition reload at the check. It restarts from its cached manifest, so the screen shows a moment of black and then
+carries on. PLAYER_SPEC §9 has the details. A reload resets all renderer memory, so any slow growth, from video or anything else,
 stays bounded at one day's worth.
 
 ## Consequences
 - Covered videos lose their decoded frames immediately. That's fine: they are covered.
-- WP-13's soak runs the shipped player at `timeScale=0.05` for 30 minutes (thousands of transitions) and measures
-  the same way. It fails if PSS grows more than 150 MB between the first and the last third. WP-13 records the
-  result in M1_ACCEPTANCE.
+- WP-13's soak runs the shipped player for 30 minutes (about 1,000–1,400 transitions; videos play at normal speed)
+  as a regression guard: it fails if growth exceeds twice the rate measured here. The daily reload, not the soak,
+  is what bounds memory. See BACKLOG WP-13.
+- Not measured: whether the next video was ready (`canplay`) before its turn. The harness waits up to 3 s like the
+  player will. WP-09 tests the player's behaviour when a video is late or fails.
 - Raspberry Pi (from public documentation and reports, not measured here): the Pi 4 decodes H.264 in hardware
   through V4L2, with a limited number of decoder instances and limited CMA memory. Pages that keep a paused
   element with a `src` can hold a hardware decoder until the element is garbage-collected or Chromium suspends it.
