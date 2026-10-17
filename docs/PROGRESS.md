@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-02 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-03 Slide library — branch `wp-03-slides` — status In progress
+- Package: WP-03 Slide library — branch `wp-03-slides` — status In review (round 1 requested)
 - Plan: `Features/Slides`: `SlideInput` + pure `SlideValidator` (absolute http(s) URL, required field per
   type, duration 1–3600 not for video, play-audio video only, until > from, .mp4 warning only),
   `ScheduleClock` (system-TZ local ↔ UTC, DST gap = error, ambiguous = standard time), `SlideService`
@@ -20,7 +20,8 @@ Milestone 1: in progress (WP-00–WP-02 done). Project docs, skills and the revi
 - Risks: datetime-local parsing/culture; preview iframes must never get allow-same-origin for Html.
 - Done: SlideValidator + ScheduleClock (unit-tested), SlideService, pages (list with previews/search/toggle, create, edit + preview, delete with usage), nav, ~75 strings, CSS.
 - Half-done: —
-- Next step: integration tests (CRUD, validation, TZ, role matrix, delete in use, conflict, XSS, sandbox), WP-01 follow-ups, screenshots, ADR-0005 (schedule time semantics, type fixed after creation).
+- Done (2): integration + E2E tests, WP-01 follow-ups, ADR-0005. Self-check: build clean, 246 tests green, E2E 7/7.
+- Next step: handle review round 1 verdict (docs/reviews/WP-03-review-1.md).
 - Last checkpoint: (this commit)
 
 
