@@ -7,26 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-09 Video & single video mode — branch `wp-09-video` — status In review (round 2 requested)
-- Plan: `slides/video.js` (fresh <video>, muted unless playAudio, playsinline, preload=auto, no autoplay; ready on
-  canplay, false on error; start() after the transition; finished on ended / error / 8 s stall / 10 min cap; release per
-  ADR-0008); carousel dwells on `finished` with the progress bar following playback; a lone video loops;
-  `singlevideo.js` (mode SingleVideo: one looping <video>, 300 ms cross-fade on mode/URL change, applied at once: the
-  dwell is interrupted by a mode change). WP-08 follow-ups. E2E with testmedia clips: currentTime 0 during the
-  transition, next on ended, broken URL skipped, single video loops without progress bar, live mode switch.
-- Risks: headless Chromium codec support (H.264 confirmed in WP-07), timing flakiness with real-time video.
-- Done: video.js, singlevideo.js, carousel (start after transition, dwell until finished, progress follows playback,
-  lone video loops, mode change interrupts the dwell), WP-08 follow-ups; VideoTests (3) + ClockTests stale test written.
-- Player E2E 25/25 (video + clock tests 3 repeat runs green); docs: PLAYER_SPEC §2/§4/§6, ARCHITECTURE, ADR-0009.
-- Self-check green: build 0 warnings, `dotnet test` 433, E2E 43 (8 opt-in spike skips); single-video screenshot checked.
-- Round 1: CHANGES_REQUIRED (2 BLOCKER: busy loop after a video ends next to a broken slide, orphaned single video
-  layer; 1 MAJOR: lone video froze; 3 MINOR; 2 NIT). Fixed: replayable video item (state, replay, renewed finished,
-  setLoop only on change), carousel keepCurrentPlaying (replay ended, fresh element after 10 s for failed), single video
-  tracks all layers + stall watchdog + refused play() counts as failure, carousel slide released when the URL fails.
-  6 new VideoTests; the regression ones fail on the round-1 code (checked).
-- Self-check green: build 0 warnings, `dotnet test` 439, E2E 49 (8 opt-in spike skips).
-- Next step: handle the review round 2 verdict (docs/reviews/WP-09-review-2.md).
-- Last checkpoint: (this commit)
+_(none: next is WP-10 Live updates, heartbeat & status)_
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -49,6 +30,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-06 — pairing (codes, one-time token minted at delivery, re-pair, revoke, cancelling pending claims), screen address + token exchange with retry, HttpOnly screen cookie auth, rate limits, player pairing screen; ADR-0007; APPROVE round 2 (1 MINOR + 2 NIT deferred to WP-08) — 2999e75
 - WP-07 — spike: release strategy (fresh <video>, pause/removeAttribute src/load/remove, release before preparing), daily reload confirmed by the PO, soak spec for WP-13; ADR-0008; 4 rounds (PO approved round 4), 2 NIT deferred to WP-08 — a11619e
 - WP-08 — player core: manifest (ETag/304, weak match) + admin preview, ES-module player (carousel with no double dwell, skipping, 3-layer cap, shadow only while animating, progress bar, empty state, offline cache incl. token boot, client schedule re-check, daily reload), demo seed under advisory lock, WP-03/06/07 follow-ups; 3 rounds, 1 MINOR + 3 NIT deferred to WP-09 — 40dff75
+- WP-09 — video slides (fresh element, play after transition, progress follows playback, ended/error/stall/cap, replay and loop when alone, muted fallback for sound) and single video mode (cross-fade, live mode switch, retries, layer tracking); ADR-0009; 2 rounds, 2 MINOR + 2 NIT deferred to WP-10 — 975c459
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.

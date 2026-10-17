@@ -123,7 +123,7 @@ so admin preview and screen match. Share one helper for the srcdoc wrapper.
 `translateX(0)` while the incoming one animates; the progress bar fills over the duration; at most 3 layers;
 it keeps cycling when the server is stopped. R-20, R-21, R-23, R-24, R-13.
 
-### WP-09 Video & single video mode — `In review`
+### WP-09 Video & single video mode — `Done`
 Video slide per PLAYER_SPEC §4 plus the WP-07 ADR decision; single video mode per §6; error/stall
 skip.
 **Accept:** E2E — the video doesn't play until fully in view (`currentTime` stays 0 during the transition);
@@ -144,6 +144,12 @@ instances sharing one DB both deliver an event (R-63); the status flips to offli
 R-25, R-26, R-33, R-63.
 *From WP-09:* report skipped or failed videos (slide id, reason: error / stalled / safety cap / play() failed)
 and single-video failures in the heartbeat; today `slides/video.js` and `singlevideo.js` only `console.warn` (ADR-0009).
+*From WP-09 review round 2:* (MINOR) single video mode: start the no-progress watchdog when the URL is set, not on
+`playing`, so a server that accepts the connection but never sends data is retried and the carousel slide underneath
+is released (`singlevideo.js`; PLAYER_SPEC §6 already promises this); (MINOR) regression tests for `keepCurrentPlaying`
+failure paths: a failed video next to a slide that can't load, and a failed lone video replaced by a fresh element;
+(NIT) `VideoTests` single-video recovery: count the failed retries instead of a fixed 5 s wait; (NIT) a new manifest
+shouldn't cut the 10 s wait before a failed video is retried (`carousel.js` `keepCurrentPlaying` uses `idle`).
 
 ### WP-11 Identification — `Todo`
 Identify one (red border + name, 30 s), identify all, the global info overlay toggle with
