@@ -82,7 +82,7 @@ between loading and saving a screen form doesn't cause a conflict. Optional NITs
 ADR sentence placement, rename `ConcurrentSignInTests` (it now covers password changes too), and make
 `GatedPasswordHasher.Gate.Dispose` release a waiting thread.
 
-### WP-06 Pairing & screen tokens — `Todo`
+### WP-06 Pairing & screen tokens — `In review`
 Pairing request API, the pairing screen in the player, the admin "Pair screen" page (enter code → new
 or existing unpaired screen), token issuing as an HttpOnly cookie, one-time delivery, the
 pre-configured URL + `/api/player/session` exchange, revoke/re-pair, rate limiting on pairing

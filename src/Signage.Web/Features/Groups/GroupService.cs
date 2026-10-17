@@ -37,26 +37,26 @@ public sealed class GroupService(SignageDbContext db, IScreenNotifier notifier)
     }
 
     /// <summary>Admin.</summary>
-    public async Task<(OperationResult Result, Guid? Id)> CreateAsync(string name, string? description, int sortOrder, CancellationToken ct)
+    public async Task<(OperationResult Result, Guid? Id)> CreateAsync(string? name, string? description, int sortOrder, CancellationToken ct)
     {
         if (Validate(name, description) is { } error)
         {
             return (OperationResult.Fail(error), null);
         }
 
-        var group = new ScreenGroup { Name = name.Trim(), Description = Normalize(description), SortOrder = sortOrder };
+        var group = new ScreenGroup { Name = name!.Trim(), Description = Normalize(description), SortOrder = sortOrder };
         db.ScreenGroups.Add(group);
         var result = await SaveAsync(ct).ConfigureAwait(false);
         return (result, result.Succeeded ? group.Id : null);
     }
 
     /// <summary>Admin. The sort order changes where this group's playlists sit in its screens' sequences (R-12).</summary>
-    public Task<OperationResult> UpdateDetailsAsync(Guid id, string name, string? description, int sortOrder, uint version, CancellationToken ct) =>
+    public Task<OperationResult> UpdateDetailsAsync(Guid id, string? name, string? description, int sortOrder, uint version, CancellationToken ct) =>
         Validate(name, description) is { } error
             ? Task.FromResult(OperationResult.Fail(error))
             : ChangeAsync(id, version, group =>
             {
-                group.Name = name.Trim();
+                group.Name = name!.Trim();
                 group.Description = Normalize(description);
                 group.SortOrder = sortOrder;
                 return Task.FromResult<string?>(null);
@@ -194,7 +194,7 @@ public sealed class GroupService(SignageDbContext db, IScreenNotifier notifier)
         }
     }
 
-    private static string? Validate(string name, string? description) =>
+    private static string? Validate(string? name, string? description) =>
         string.IsNullOrWhiteSpace(name) ? GroupErrors.NameRequired
         : name.Trim().Length > Limits.Name ? GroupErrors.NameTooLong
         : description?.Trim().Length > Limits.Description ? GroupErrors.DescriptionTooLong

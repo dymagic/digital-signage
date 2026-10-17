@@ -84,7 +84,7 @@ ScreenGroup     Id, Name(unique ci), Description?, SortOrder, Version
 ScreenGroupMember  ScreenId, GroupId
 GroupPlaylist   GroupId, PlaylistId, Position
 
-PairingRequest  Id, Code(indexed; uniqueness among active codes enforced in WP-06), DeviceSecretHash, CreatedAt, ExpiresAt,
+PairingRequest  Id, Code(indexed; unique among active codes, best effort: 20 tries), DeviceSecretHash, CreatedAt, ExpiresAt,
                 ClaimedScreenId?, ClaimedAt?, TokenDeliveredAt?
 SystemSettings  (single row) DefaultSlideDurationSeconds=10, ShowInfoOverlay=false,
                 TimeZoneId="UTC" (IANA), UpdatedAt, Version; row created at start-up
@@ -141,9 +141,9 @@ answer with `HX-Redirect` to the list and a message.
 | Method & path | Auth | Purpose |
 |---|---|---|
 | `GET /screen` | none | Player shell (static) |
-| `POST /api/player/pairing` | none, rate-limited | Start pairing → `{ code, pairingId, deviceSecret, expiresAt }` |
-| `GET /api/player/pairing/{id}` | `deviceSecret` header | Poll; once claimed, sets the screen-token cookie and returns `{ paired: true }` (one-time delivery) |
-| `POST /api/player/session` | `token` in body | Exchanges a pre-configured URL token for the cookie (R-41) |
+| `POST /api/player/pairing` | none, rate-limited (10/min/IP) | Start pairing → `{ code ("XXX-XXX"), pairingId, deviceSecret, expiresAt }` |
+| `GET /api/player/pairing/{id}` | `X-Device-Secret` header, 60/min/IP | `{ status: "pending", expiresAt }`; once claimed, mints the token, sets the cookie and returns `{ status: "paired", screen{name} }` (one-time); afterwards or when expired `410`; wrong secret `404` |
+| `POST /api/player/session` | `token` in body, rate-limited | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
 | `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion, etag, screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. Supports `If-None-Match` |
 | `GET /api/player/events` | screen cookie | SSE stream: `manifest-changed`, `identify{seconds}`, `identify-all{seconds}`, `reload`, keep-alive comments every 15 s |
 | `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId }`; the server records IP/UA/LastSeen |
@@ -152,7 +152,8 @@ Slides in the manifest carry `{ id, type, url?, html?, durationSeconds (resolved
 activeFromUtc?, activeUntilUtc? }`. The player re-checks the schedule client-side so offline playback
 respects expiry (R-24).
 
-A revoked or unknown token returns `401`. The player then wipes its token and shows the pairing screen.
+A revoked or unknown token returns `401`, and the response deletes the cookie (the player can't: it's HttpOnly).
+The player then shows the pairing screen. The cookie is `signage.screen`, path `/api/player` (ADR-0007).
 
 Admin preview of a screen (R-13) uses `/screen?preview={screenId}`. That path authorises with the
 **admin** cookie and never records heartbeats.

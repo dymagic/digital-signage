@@ -16,6 +16,7 @@ namespace Signage.Web.Pages.Admin.Screens;
 /// </summary>
 public class DetailModel(
     ScreenService screens,
+    Signage.Web.Features.Pairing.ScreenAccessService access,
     GroupService groups,
     PlaylistService playlists,
     SettingsService settings,
@@ -45,6 +46,16 @@ public class DetailModel(
     public IReadOnlyList<ResolvedSlide> Sequence { get; private set; } = [];
 
     public int DefaultDuration { get; private set; }
+
+    /// <summary>The system time zone (Settings), for times shown on this page.</summary>
+    public string TimeZoneId { get; private set; } = "UTC";
+
+    public string ToLocal(DateTimeOffset utc) =>
+        Signage.Web.Features.Slides.ScheduleClock.ToWallClock(utc, Signage.Web.Features.Slides.ScheduleClock.Resolve(TimeZoneId))
+            .ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>R-41: the pre-configured address, shown once right after it was created; never stored.</summary>
+    public string? ScreenAddress { get; private set; }
 
     /// <summary>Error shown above the composition after a failed htmx change.</summary>
     public string? CompositionError { get; private set; }
@@ -92,6 +103,44 @@ public class DetailModel(
         }
 
         return await AfterFormPostAsync(await screens.SetGroupsAsync(Id, GroupIds, Version, ct), [], ct);
+    }
+
+    /// <summary>Admin, R-42: the device stops working at once and returns to the pairing screen.</summary>
+    public async Task<IActionResult> OnPostRevokeAsync(CancellationToken ct)
+    {
+        if (RequireAdmin() is { } forbidden)
+        {
+            return forbidden;
+        }
+
+        if (!(await access.RevokeAsync(Id, ct)).Succeeded)
+        {
+            return GoneMeanwhile("/Admin/Screens/Index");
+        }
+
+        TempData["Status"] = "Pairing.Revoked";
+        return RedirectToPage(new { id = Id });
+    }
+
+    /// <summary>Admin, R-41: a new screen address with an embedded token, replacing any earlier pairing.</summary>
+    public async Task<IActionResult> OnPostAddressAsync(CancellationToken ct)
+    {
+        if (RequireAdmin() is { } forbidden)
+        {
+            return forbidden;
+        }
+
+        var token = await access.CreateAddressTokenAsync(Id, ct);
+        if (token is null || !await LoadAsync(ct))
+        {
+            return GoneMeanwhile("/Admin/Screens/Index");
+        }
+
+        Details = new DetailsInput { Name = Screen!.Name, Location = Screen.Location, Mode = Screen.Mode, SingleVideoUrl = Screen.SingleVideoUrl };
+        GroupIds = Screen.Groups.Select(m => m.GroupId).ToList();
+        ScreenAddress = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/screen?token={Uri.EscapeDataString(token)}";
+        Response.Headers.CacheControl = "no-store";
+        return Page();
     }
 
     public Task<IActionResult> OnPostAddSlideAsync(SlidePlacement placement, Guid slideId, CancellationToken ct) =>
@@ -174,7 +223,9 @@ public class DetailModel(
 
         Version = Screen.Version;
         Sequence = await screens.ResolveAsync(Id, time.GetUtcNow(), ct) ?? [];
-        DefaultDuration = (await settings.GetAsync(ct)).DefaultSlideDurationSeconds;
+        var current = await settings.GetAsync(ct);
+        DefaultDuration = current.DefaultSlideDurationSeconds;
+        TimeZoneId = current.TimeZoneId;
         AvailableSlides = await playlists.SlidesForPickerAsync(ct);
         AvailablePlaylists = await playlists.ListAsync(ct);
         AllGroups = IsAdmin ? await groups.ListAsync(ct) : [];
@@ -184,7 +235,7 @@ public class DetailModel(
     public sealed class DetailsInput
     {
         [Display(Name = "Screens.Field.Name")]
-        public string Name { get; set; } = "";
+        public string? Name { get; set; }
 
         [Display(Name = "Screens.Field.Location")]
         public string? Location { get; set; }

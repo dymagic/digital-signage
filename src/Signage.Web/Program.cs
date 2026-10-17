@@ -6,6 +6,7 @@ using Signage.Web.Features.Events;
 using Signage.Web.Features.Groups;
 using Signage.Web.Features.Health;
 using Signage.Web.Features.Playlists;
+using Signage.Web.Features.Player;
 using Signage.Web.Features.Screens;
 using Signage.Web.Features.Settings;
 using Signage.Web.Features.Slides;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<PlaylistService>();
 builder.Services.AddScoped<ScreenService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddSingleton<IScreenNotifier, NoOpScreenNotifier>();
+builder.Services.AddSignagePlayerApi();
 builder.Services.AddSignageAdminUi();
 builder.Services.AddProblemDetails();
 builder.Services.AddSignageHealthChecks();
@@ -50,12 +52,29 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedCultures = [new CultureInfo(AdminUi.DefaultCulture)],
     SupportedUICultures = [new CultureInfo(AdminUi.DefaultCulture)],
 });
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    // The player has no build step or file hashes: let browsers revalidate its files so an update arrives (R-26).
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.Context.Request.Path.StartsWithSegments("/screen", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-cache";
+        }
+    },
+});
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapSignageHealthChecks();
+app.MapSignagePlayerApi();
+app.MapGet("/screen", (IWebHostEnvironment env, HttpContext http) =>
+{
+    http.Response.Headers.CacheControl = "no-cache";
+    return Results.File(env.WebRootFileProvider.GetFileInfo("screen/index.html").CreateReadStream(), "text/html; charset=utf-8");
+}).ExcludeFromDescription();
 app.MapGet("/", () => Results.Redirect("/admin")).ExcludeFromDescription();
 app.MapRazorPages();
 

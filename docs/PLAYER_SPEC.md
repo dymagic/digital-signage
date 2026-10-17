@@ -95,7 +95,9 @@ identify overlays still work.
 
 A calm dark screen with the product name, "Pair this screen" and the 6-character code in very large
 monospace (e.g. `K7P-Q2M`), the server URL, and the instruction "Admin → Screens → Pair screen". The
-code refreshes automatically before it expires. Poll every 3 s.
+code refreshes automatically before it expires. Poll every 3 s. A device with a token in the address (`/screen?token=…`) exchanges it
+for the cookie first and removes it from the address bar (R-41). Any `401` from the player API returns it to this
+screen (R-42).
 
 ## 9. Connectivity (R-24, R-25, R-26)
 

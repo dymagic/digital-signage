@@ -229,3 +229,10 @@ ul.plain { list-style: none; padding: 0; margin: .25rem 0; }
 #composition h3 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
 #composition h3:first-of-type { margin-top: .5rem; }
 .sequence { margin-top: 2rem; }
+
+/* Pairing */
+.code-input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.5rem; letter-spacing: .1em; text-transform: uppercase; max-width: 14ch; }
+.indent { margin: 0 0 .5rem 1.6rem; }
+.form-actions.wrap { flex-wrap: wrap; }
+.form-actions form { margin: 0; }
+code.secret { word-break: break-all; }

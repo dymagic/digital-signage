@@ -34,6 +34,7 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
         { "/admin/playlists/{playlist}/delete", true },
         { "/admin/screens", true },
         { "/admin/screens/create", false },
+        { "/admin/screens/pair", false },
         { "/admin/screens/{screen}", true },
         { "/admin/screens/{screen}/delete", false },
         { "/admin/groups", true },

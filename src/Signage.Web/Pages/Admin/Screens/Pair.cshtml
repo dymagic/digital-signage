@@ -1,0 +1,38 @@
+@page
+@model Signage.Web.Pages.Admin.Screens.PairModel
+@{
+    ViewData["Title"] = L["Pairing.Title"];
+    ViewData["Section"] = "Screens";
+}
+<h1>@L["Pairing.Title"]</h1>
+<p>@L["Pairing.Intro"]</p>
+<form method="post" class="form">
+    <partial name="_ValidationSummary" />
+    <label asp-for="Code"></label>
+    <input asp-for="Code" class="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC-123" maxlength="12" autofocus />
+    <fieldset class="choices">
+        <legend>@L["Pairing.Target"]</legend>
+        <label class="checkbox"><input type="radio" asp-for="Target" value="new" /> @L["Pairing.Target.New"]</label>
+        <div class="indent">
+            <label asp-for="NewName" class="visually-hidden"></label>
+            <input asp-for="NewName" maxlength="100" placeholder="@L["Pairing.NewNamePlaceholder"]" />
+        </div>
+        @if (Model.UnpairedScreens.Count > 0)
+        {
+            <label class="checkbox"><input type="radio" asp-for="Target" value="existing" /> @L["Pairing.Target.Existing"]</label>
+            <div class="indent">
+                <label asp-for="ScreenId" class="visually-hidden"></label>
+                <select asp-for="ScreenId">
+                    @foreach (var screen in Model.UnpairedScreens)
+                    {
+                        <option value="@screen.Id">@(screen.Id == Model.RepairScreen?.Id ? L["Pairing.RepairOption", screen.Name] : screen.Name)</option>
+                    }
+                </select>
+            </div>
+        }
+    </fieldset>
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Pairing.Submit"]</button>
+        <a asp-page="Index">@L["Common.Cancel"]</a>
+    </div>
+</form>

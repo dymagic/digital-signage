@@ -11,7 +11,7 @@ namespace Signage.Web.Features.Screens;
 public sealed record ScreenListItem(Guid Id, string Name, string? Location, ScreenMode Mode, IReadOnlyList<string> Groups, bool IsPaired);
 
 /// <summary>What an admin edits on a screen (R-10, R-14).</summary>
-public sealed record ScreenDetails(string Name, string? Location, ScreenMode Mode, string? SingleVideoUrl);
+public sealed record ScreenDetails(string? Name, string? Location, ScreenMode Mode, string? SingleVideoUrl);
 
 /// <summary>
 /// Screens and what they play (R-10, R-12, R-14). Details, mode and groups are admin-only (PROJECT_BRIEF §3).
@@ -59,14 +59,14 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
     }
 
     /// <summary>Admin. Creates an unpaired screen in carousel mode.</summary>
-    public async Task<(OperationResult Result, Guid? Id)> CreateAsync(string name, string? location, CancellationToken ct)
+    public async Task<(OperationResult Result, Guid? Id)> CreateAsync(string? name, string? location, CancellationToken ct)
     {
         if (ValidateNameAndLocation(name, location) is { } error)
         {
             return (OperationResult.Fail(error), null);
         }
 
-        var screen = new Screen { Name = name.Trim(), Location = Normalize(location) };
+        var screen = new Screen { Name = name!.Trim(), Location = Normalize(location) };
         db.Screens.Add(screen);
         var result = await SaveAsync(ct).ConfigureAwait(false);
         return (result, result.Succeeded ? screen.Id : null);
@@ -104,7 +104,7 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
 
         var result = await ChangeAsync(id, version, screen =>
         {
-            screen.Name = details.Name.Trim();
+            screen.Name = details.Name!.Trim();
             screen.Location = Normalize(details.Location);
             screen.Mode = details.Mode;
             screen.SingleVideoUrl = url;
@@ -297,7 +297,7 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
         }
     }
 
-    private static string? ValidateNameAndLocation(string name, string? location) =>
+    private static string? ValidateNameAndLocation(string? name, string? location) =>
         string.IsNullOrWhiteSpace(name) ? ScreenErrors.NameRequired
         : name.Trim().Length > Limits.Name ? ScreenErrors.NameTooLong
         : location?.Trim().Length > Limits.Description ? ScreenErrors.LocationTooLong
