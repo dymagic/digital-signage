@@ -9,15 +9,6 @@ public class PlaylistEditorTests(BrowserFixture fixture) : E2ETest(fixture)
 {
     protected override bool SignedInAsAdmin => true;
 
-    private async Task CreateHtmlSlideAsync(string title)
-    {
-        await Page.GotoAsync("/admin/slides/create?type=Html");
-        await Page.GetByLabel("Title").FillAsync(title);
-        await Page.GetByLabel("HTML", new() { Exact = true }).FillAsync($"<h1 style='color:#fff'>{title}</h1>");
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
-        await Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex("/admin/slides/[0-9a-f-]{36}$"));
-    }
-
     private ILocator Entries => Page.Locator("ol.entries > li .entry-title a");
 
     [Fact]
@@ -27,7 +18,7 @@ public class PlaylistEditorTests(BrowserFixture fixture) : E2ETest(fixture)
         string[] titles = [$"One {tag}", $"Two {tag}", $"Three {tag}"];
         foreach (var title in titles)
         {
-            await CreateHtmlSlideAsync(title);
+            await AdminActions.CreateHtmlSlideAsync(Page, title);
         }
 
         await Page.GotoAsync("/admin/playlists/create");

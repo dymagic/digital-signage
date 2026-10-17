@@ -41,6 +41,11 @@ public sealed class GatedPasswordHasher : IPasswordHasher<User>
 
         public void Release() => Released.Set();
 
-        public void Dispose() => Released.Dispose();
+        /// <summary>Releases a still-waiting thread first (e.g. when the test failed before releasing), then frees the event.</summary>
+        public void Dispose()
+        {
+            Released.Set();
+            Released.Dispose();
+        }
     }
 }

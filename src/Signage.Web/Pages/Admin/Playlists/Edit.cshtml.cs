@@ -7,7 +7,7 @@ using Signage.Web.Features.Playlists;
 
 namespace Signage.Web.Pages.Admin.Playlists;
 
-public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResource> l) : PageModel
+public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResource> l) : AdminPageModel
 {
     [BindProperty(SupportsGet = true)]
     public Guid Id { get; set; }
@@ -27,8 +27,6 @@ public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResourc
 
     /// <summary>Error to show above the entries after a failed htmx change.</summary>
     public string? EntriesError { get; private set; }
-
-    public bool IsHtmx => Request.Headers["HX-Request"] == "true";
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
@@ -63,21 +61,22 @@ public class EditModel(PlaylistService playlists, IStringLocalizer<SharedResourc
     }
 
     public Task<IActionResult> OnPostAddAsync(Guid slideId, CancellationToken ct) =>
-        EntriesChangeAsync(playlists.AddSlideAsync(Id, slideId, Version, ct), ct);
+        EntriesChangeAsync(() => playlists.AddSlideAsync(Id, slideId, Version, ct), ct);
 
     public Task<IActionResult> OnPostRemoveAsync(Guid entryId, CancellationToken ct) =>
-        EntriesChangeAsync(playlists.RemoveEntryAsync(Id, entryId, Version, ct), ct);
+        EntriesChangeAsync(() => playlists.RemoveEntryAsync(Id, entryId, Version, ct), ct);
 
     public Task<IActionResult> OnPostMoveAsync(Guid entryId, int toIndex, CancellationToken ct) =>
-        EntriesChangeAsync(playlists.MoveEntryAsync(Id, entryId, toIndex, Version, ct), ct);
+        EntriesChangeAsync(() => playlists.MoveEntryAsync(Id, entryId, toIndex, Version, ct), ct);
 
     /// <summary>htmx gets the refreshed entries block; a plain form post gets a redirect (with any error in TempData).</summary>
-    private async Task<IActionResult> EntriesChangeAsync(Task<OperationResult> change, CancellationToken ct)
+    private async Task<IActionResult> EntriesChangeAsync(Func<Task<OperationResult>> change, CancellationToken ct)
     {
-        var result = await change;
+        // A value that failed to bind (tampered or outdated form) must not silently become a default.
+        var result = ModelState.IsValid ? await change() : OperationResult.Fail(CommonErrors.InvalidRequest);
         if (result.ErrorKey == CommonErrors.NotFound && !await LoadAsync(ct))
         {
-            return NotFound();
+            return GoneMeanwhile("/Admin/Playlists/Index");
         }
 
         if (!IsHtmx)

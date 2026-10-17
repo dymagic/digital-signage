@@ -74,7 +74,8 @@ Playlist        Id, Name(unique ci), Description?, CreatedAt, UpdatedAt, Version
 PlaylistSlide   Id, PlaylistId, SlideId, Position                      (same slide may repeat)
 
 Screen          Id, Name(unique ci), Location?, Mode{Carousel,SingleVideo}, SingleVideoUrl?,
-                TokenHash?, PairedAt?, LastSeenAt?, LastIp?, PlayerVersion?, UserAgent?, CreatedAt, Version
+                TokenHash?, PairedAt?, LastSeenAt?, LastIp?, PlayerVersion?, UserAgent?, CreatedAt,
+                Version (app-managed: heartbeats must not conflict with edits, ADR-0004)
                 (TokenHash unique when set)
 ScreenSlide     Id, ScreenId, SlideId, Placement{Prepend,Append}, Position
 ScreenPlaylist  ScreenId, PlaylistId, Position
@@ -131,6 +132,10 @@ checks key coverage.
 Ordered lists (playlist slides; later screen and group lists) are edited through Razor Page handlers that
 return a partial for htmx and redirect for plain posts. They carry the parent's version, and `wwwroot/admin/reorder.js`
 adds native drag-and-drop (ADR-0006).
+Pages that mix admin-only and editor actions (screen and group detail) derive from `AdminPageModel`. Admin-only
+handlers call `RequireAdmin()`, because folder conventions can't authorize single handlers. Create and delete pages for
+screens and groups are admin-only by page convention. When the edited item was deleted meanwhile, htmx handlers
+answer with `HX-Redirect` to the list and a message.
 
 ### Player API (`/api/player/*`)
 | Method & path | Auth | Purpose |
@@ -153,7 +158,9 @@ Admin preview of a screen (R-13) uses `/screen?preview={screenId}`. That path au
 **admin** cookie and never records heartbeats.
 
 ### Event fan-out
-`IScreenNotifier` raises domain events like "screen X affected" and "all screens affected". The
+`IScreenNotifier` raises domain events like "screen X affected" and "all screens affected". Until WP-10 it is a
+no-op (`NoOpScreenNotifier`). Callers so far: screens and groups (the screen or the group's old and new members),
+playlists and slides (via `AffectedScreens`: direct, via groups, prepended/appended), settings (all screens). The
 Postgres implementation does `NOTIFY signage_events, '<json>'`. Each replica runs a background
 `LISTEN` service that dispatches to its locally connected SSE clients. Each feature works out the
 **affected screens**: a slide edit → all screens whose sequence contains the slide. Over-notifying

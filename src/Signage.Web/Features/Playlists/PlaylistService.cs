@@ -3,6 +3,7 @@ using Npgsql;
 using Signage.Web.Data;
 using Signage.Web.Data.Configurations;
 using Signage.Web.Domain;
+using Signage.Web.Features.Events;
 
 namespace Signage.Web.Features.Playlists;
 
@@ -18,7 +19,7 @@ public sealed record PlaylistUsage(IReadOnlyList<string> Screens, IReadOnlyList<
 /// Playlists and their ordered slides (R-08). Every change to the entries bumps the playlist's version, so two
 /// people editing the same playlist get a conflict instead of silently interleaving changes.
 /// </summary>
-public sealed class PlaylistService(SignageDbContext db)
+public sealed class PlaylistService(SignageDbContext db, IScreenNotifier notifier)
 {
     public Task<List<PlaylistListItem>> ListAsync(CancellationToken ct) =>
         db.Playlists.AsNoTracking()
@@ -135,6 +136,7 @@ public sealed class PlaylistService(SignageDbContext db)
             await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
             var screenIds = await db.ScreenPlaylists.Where(sp => sp.PlaylistId == id).Select(sp => sp.ScreenId).ToListAsync(ct).ConfigureAwait(false);
             var groupIds = await db.GroupPlaylists.Where(gp => gp.PlaylistId == id).Select(gp => gp.GroupId).ToListAsync(ct).ConfigureAwait(false);
+            var affected = await AffectedScreens.OfPlaylistAsync(db, id, ct).ConfigureAwait(false);
             if (await db.Playlists.Where(p => p.Id == id).ExecuteDeleteAsync(ct).ConfigureAwait(false) == 0)
             {
                 return OperationResult.Fail(CommonErrors.NotFound);
@@ -142,7 +144,12 @@ public sealed class PlaylistService(SignageDbContext db)
 
             await db.RenumberScreenPlaylistsAsync(screenIds, ct).ConfigureAwait(false);
             await db.RenumberGroupPlaylistsAsync(groupIds, ct).ConfigureAwait(false);
+
+            // Their lists changed under any open editor: move the versions on (as a slide delete does).
+            await db.Screens.Where(s => screenIds.Contains(s.Id)).ExecuteUpdateAsync(s => s.SetProperty(x => x.Version, x => x.Version + 1), ct).ConfigureAwait(false);
+            await db.ScreenGroups.Where(g => groupIds.Contains(g.Id)).ExecuteUpdateAsync(s => s.SetProperty(g => g.SortOrder, g => g.SortOrder), ct).ConfigureAwait(false); // rewrites the row: new xmin
             await tx.CommitAsync(ct).ConfigureAwait(false);
+            await notifier.ScreensChangedAsync(affected, ct).ConfigureAwait(false);
             return OperationResult.Ok;
         }).ConfigureAwait(false);
     }
@@ -172,7 +179,12 @@ public sealed class PlaylistService(SignageDbContext db)
         }
 
         db.Entry(playlist).State = EntityState.Modified; // bumps xmin (and UpdatedAt) even if only entries changed
-        return await SaveAsync(ct).ConfigureAwait(false);
+        var result = await SaveAsync(ct).ConfigureAwait(false);
+        if (result.Succeeded)
+        {
+            await notifier.ScreensChangedAsync(await AffectedScreens.OfPlaylistAsync(db, playlistId, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+        }
+        return result;
     }
 
     private async Task<Playlist?> LoadForChangeAsync(Guid id, uint version, CancellationToken ct)

@@ -1,0 +1,16 @@
+@page "/admin/screens/{id:guid}/delete"
+@model Signage.Web.Pages.Admin.Screens.DeleteModel
+@{
+    ViewData["Title"] = L["Screens.Delete.Title"];
+    ViewData["Section"] = "Screens";
+}
+<h1>@L["Screens.Delete.Title"]: @Model.Screen!.Name</h1>
+<p>@L["Screens.Delete.Body"]</p>
+@if (Model.Screen.TokenHash is not null)
+{
+    <p class="notice notice-error" role="alert">@L["Screens.Delete.Paired"]</p>
+}
+<form method="post" class="form-actions">
+    <button type="submit" class="danger">@L["Screens.Delete.Confirm"]</button>
+    <a asp-page="Detail" asp-route-id="@Model.Id">@L["Common.Cancel"]</a>
+</form>

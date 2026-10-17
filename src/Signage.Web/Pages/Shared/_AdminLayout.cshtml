@@ -23,6 +23,8 @@
             <a href="~/admin" aria-current="@Current("Home")">@L["Nav.Home"]</a>
             <a href="~/admin/slides" aria-current="@Current("Slides")">@L["Nav.Slides"]</a>
             <a href="~/admin/playlists" aria-current="@Current("Playlists")">@L["Nav.Playlists"]</a>
+            <a href="~/admin/screens" aria-current="@Current("Screens")">@L["Nav.Screens"]</a>
+            <a href="~/admin/groups" aria-current="@Current("Groups")">@L["Nav.Groups"]</a>
             @if (isAdmin)
             {
                 <a href="~/admin/users" aria-current="@Current("Users")">@L["Nav.Users"]</a>
@@ -40,6 +42,10 @@
         @if (TempData["Status"] is string status)
         {
             <p class="notice notice-success" role="status">@L[status]</p>
+        }
+        @if (TempData["Error"] is string pageError)
+        {
+            <p class="notice notice-error" role="alert">@L[pageError]</p>
         }
         @RenderBody()
     </main>

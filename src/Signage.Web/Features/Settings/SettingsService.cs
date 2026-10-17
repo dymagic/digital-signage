@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Signage.Web.Data;
 using Signage.Web.Domain;
+using Signage.Web.Features.Events;
 using Signage.Web.Features;
 
 namespace Signage.Web.Features.Settings;
 
 /// <summary>Global settings (PROJECT_BRIEF §3: admins only): default duration (R-02), info overlay (R-30), time zone (R-03).</summary>
-public sealed class SettingsService(SignageDbContext db)
+public sealed class SettingsService(SignageDbContext db, IScreenNotifier notifier)
 {
     public const int MinDuration = 1;
     public const int MaxDuration = 3600;
@@ -48,6 +49,9 @@ public sealed class SettingsService(SignageDbContext db)
         {
             return OperationResult.Fail(CommonErrors.Concurrency);
         }
+
+        // Duration, overlay and time zone reach every screen (R-25).
+        await notifier.AllScreensChangedAsync(ct).ConfigureAwait(false);
         return OperationResult.Ok;
     }
 }

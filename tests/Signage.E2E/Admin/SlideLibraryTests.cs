@@ -25,7 +25,7 @@ public class SlideLibraryTests(BrowserFixture fixture) : E2ETest(fixture)
         await Page.GetByRole(AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
 
         // Wait for the edit page itself (the create URL would also match a looser pattern).
-        await Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex("/admin/slides/[0-9a-f-]{36}$"));
+        await Page.WaitForURLAsync(AdminActions.SlideEditUrl());
         await Expect(Page.GetByRole(AriaRole.Status).GetByText("Slide created.")).ToBeVisibleAsync();
         var preview = Page.Locator(".preview-pane iframe");
         Assert.Equal("allow-scripts", await preview.GetAttributeAsync("sandbox"));

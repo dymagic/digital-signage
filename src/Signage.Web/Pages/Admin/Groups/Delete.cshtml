@@ -1,0 +1,12 @@
+@page "/admin/groups/{id:guid}/delete"
+@model Signage.Web.Pages.Admin.Groups.DeleteModel
+@{
+    ViewData["Title"] = L["Groups.Delete.Title"];
+    ViewData["Section"] = "Groups";
+}
+<h1>@L["Groups.Delete.Title"]: @Model.Group!.Name</h1>
+<p>@L["Groups.Delete.Body", Model.Group.Members.Count]</p>
+<form method="post" class="form-actions">
+    <button type="submit" class="danger">@L["Groups.Delete.Confirm"]</button>
+    <a asp-page="Detail" asp-route-id="@Model.Id">@L["Common.Cancel"]</a>
+</form>

@@ -12,6 +12,8 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
     private Guid _editorId;
     private Guid _slideId;
     private Guid _playlistId;
+    private Guid _screenId;
+    private Guid _groupId;
 
     public static TheoryData<string, bool> Pages => new()
     {
@@ -30,6 +32,14 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
         { "/admin/playlists/create", true },
         { "/admin/playlists/{playlist}", true },
         { "/admin/playlists/{playlist}/delete", true },
+        { "/admin/screens", true },
+        { "/admin/screens/create", false },
+        { "/admin/screens/{screen}", true },
+        { "/admin/screens/{screen}/delete", false },
+        { "/admin/groups", true },
+        { "/admin/groups/create", false },
+        { "/admin/groups/{group}", true },
+        { "/admin/groups/{group}/delete", false },
     };
 
     public async ValueTask InitializeAsync()
@@ -51,6 +61,14 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
             await db.SaveChangesAsync();
         });
         _playlistId = playlist.Id;
+        var screen = new Screen { Name = "Matrix screen" };
+        var group = new ScreenGroup { Name = "Matrix group" };
+        await _app.Factory.WithDbAsync(async db =>
+        {
+            db.AddRange(screen, group);
+            await db.SaveChangesAsync();
+        });
+        (_screenId, _groupId) = (screen.Id, group.Id);
     }
 
     public ValueTask DisposeAsync() => _app.DisposeAsync();
@@ -200,5 +218,7 @@ public sealed class RoleMatrixTests(PostgresFixture postgres) : IAsyncLifetime
     private string Resolve(string path) => path
         .Replace("{editor}", _editorId.ToString(), StringComparison.Ordinal)
         .Replace("{slide}", _slideId.ToString(), StringComparison.Ordinal)
-        .Replace("{playlist}", _playlistId.ToString(), StringComparison.Ordinal);
+        .Replace("{playlist}", _playlistId.ToString(), StringComparison.Ordinal)
+        .Replace("{screen}", _screenId.ToString(), StringComparison.Ordinal)
+        .Replace("{group}", _groupId.ToString(), StringComparison.Ordinal);
 }

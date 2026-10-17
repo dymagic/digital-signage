@@ -1,0 +1,86 @@
+@page "/admin/screens/{id:guid}"
+@model Signage.Web.Pages.Admin.Screens.DetailModel
+@{
+    var screen = Model.Screen!;
+    ViewData["Title"] = screen.Name;
+    ViewData["Section"] = "Screens";
+}
+<div class="page-head">
+    <h1>@L["Screens.Screen"]: @screen.Name</h1>
+    @if (Model.IsAdmin)
+    {
+        <a class="button danger" asp-page="Delete" asp-route-id="@Model.Id">@L["Common.Delete"]</a>
+    }
+</div>
+<partial name="_ValidationSummary" />
+<div class="split">
+    <section>
+        <h2>@L["Screens.Composition"]</h2>
+        @if (screen.Mode == ScreenMode.SingleVideo)
+        {
+            <p class="notice notice-info">@L["Screens.SingleVideoActive"]</p>
+        }
+        <partial name="_ScreenComposition" model="Model" />
+    </section>
+    <aside>
+        <section class="panel first">
+            <h2>@L["Screens.Details"]</h2>
+            @if (Model.IsAdmin)
+            {
+                <form method="post" asp-page-handler="Details" class="form">
+                    <input type="hidden" id="details-version" name="Version" value="@Model.Version" />
+                    <label asp-for="Details.Name"></label>
+                    <input asp-for="Details.Name" maxlength="100" />
+                    <label asp-for="Details.Location"></label>
+                    <input asp-for="Details.Location" maxlength="1000" />
+                    <fieldset class="choices">
+                        <legend>@L["Screens.Field.Mode"]</legend>
+                        @foreach (var mode in Enum.GetValues<ScreenMode>())
+                        {
+                            <label class="checkbox"><input type="radio" asp-for="Details.Mode" value="@mode" /> @L[$"Screens.Mode.{mode}"]</label>
+                        }
+                        <span class="hint">@L["Screens.ModeHint"]</span>
+                    </fieldset>
+                    <label asp-for="Details.SingleVideoUrl"></label>
+                    <input asp-for="Details.SingleVideoUrl" type="url" placeholder="https://…/video.mp4" />
+                    <span class="hint">@L["Screens.SingleVideoHint"]</span>
+                    <div class="form-actions"><button type="submit" class="primary">@L["Common.Save"]</button></div>
+                </form>
+            }
+            else
+            {
+                <dl class="facts">
+                    <dt>@L["Screens.Field.Location"]</dt><dd>@(screen.Location ?? "—")</dd>
+                    <dt>@L["Screens.Field.Mode"]</dt><dd>@L[$"Screens.Mode.{screen.Mode}"]</dd>
+                </dl>
+                <p class="hint">@L["Screens.AdminOnlyHint"]</p>
+            }
+        </section>
+        <section class="panel">
+            <h2>@L["Screens.Groups"]</h2>
+            @if (Model.IsAdmin)
+            {
+                @if (Model.AllGroups.Count == 0)
+                {
+                    <p class="muted">@L["Screens.NoGroupsYet"] <a asp-page="/Admin/Groups/Create">@L["Groups.Create"]</a></p>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Groups" class="form">
+                        <input type="hidden" id="groups-version" name="Version" value="@Model.Version" />
+                        @foreach (var group in Model.AllGroups)
+                        {
+                            <label class="checkbox"><input type="checkbox" name="GroupIds" value="@group.Id" checked="@Model.GroupIds.Contains(group.Id)" /> @group.Name</label>
+                        }
+                        <div class="form-actions"><button type="submit">@L["Screens.SaveGroups"]</button></div>
+                    </form>
+                }
+            }
+            else
+            {
+                <p>@(screen.Groups.Count == 0 ? L["Screens.InNoGroup"] : string.Join(", ", screen.Groups.Select(m => m.Group.Name)))</p>
+            }
+        </section>
+    </aside>
+</div>
+<script src="~/admin/reorder.js" asp-append-version="true" defer></script>

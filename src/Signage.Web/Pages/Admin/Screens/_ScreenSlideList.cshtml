@@ -1,0 +1,46 @@
+@model (Signage.Web.Pages.Admin.Screens.DetailModel Page, SlidePlacement Placement, List<ScreenSlide> Entries)
+@{
+    var owner = Model.Page;
+    var id = owner.Id;
+    var listName = Model.Placement == SlidePlacement.Prepend ? "Screens.Prepended" : "Screens.Appended";
+    var selectId = $"slide-{Model.Placement.ToString().ToLowerInvariant()}";
+}
+@if (Model.Entries.Count == 0)
+{
+    <p class="muted">@L[$"Screens.No{Model.Placement}"]</p>
+}
+else
+{
+    <ol class="entries" data-reorder data-target="#composition" data-version-input="#composition-version"
+        data-move-url="@Url.Page("Detail", "MoveSlide", new { id })" aria-label="@L[listName]">
+        @for (var i = 0; i < Model.Entries.Count; i++)
+        {
+            var entry = Model.Entries[i];
+            <li draggable="true" data-entry-id="@entry.Id" data-index="@i">
+                <span class="drag-handle" aria-hidden="true" title="@L["Playlists.DragHint"]">⋮⋮</span>
+                <span class="position">@(i + 1)</span>
+                <div class="thumb"><partial name="/Pages/Admin/Slides/_SlidePreview.cshtml" model="entry.Slide" /></div>
+                <div class="entry-title">
+                    <a asp-page="/Admin/Slides/Edit" asp-route-id="@entry.SlideId">@entry.Slide.Title</a>
+                    <div class="muted">@L[$"Slides.Type.{entry.Slide.Type}"]</div>
+                </div>
+                <partial name="/Pages/Admin/_EntryButtons.cshtml" model="@(new Signage.Web.Pages.Admin.EntryButtons(Url.Page("Detail", "MoveSlide", new { id })!, Url.Page("Detail", "RemoveSlide", new { id })!, entry.Id.ToString(), entry.Slide.Title, i, Model.Entries.Count, owner.Version.ToString(System.Globalization.CultureInfo.InvariantCulture)))" />
+            </li>
+        }
+    </ol>
+}
+<form method="post" asp-page-handler="AddSlide" asp-route-id="@id" hx-post="@Url.Page("Detail", "AddSlide", new { id })" class="add-slide">
+    <input type="hidden" name="Version" value="@owner.Version" />
+    <input type="hidden" name="placement" value="@Model.Placement" />
+    <label for="@selectId">@L[$"Screens.Add{Model.Placement}"]</label>
+    <div class="row">
+        <select id="@selectId" name="slideId" required data-focus-fallback>
+            <option value="">@L["Playlists.ChooseSlide"]</option>
+            @foreach (var slide in owner.AvailableSlides)
+            {
+                <option value="@slide.Id">@slide.Title (@L[$"Slides.Type.{slide.Type}"])</option>
+            }
+        </select>
+        <button type="submit">@L["Playlists.Add"]</button>
+    </div>
+</form>

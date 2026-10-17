@@ -1,0 +1,8 @@
+@model Signage.Web.Pages.Admin.Groups.GroupInput
+<label asp-for="Name"></label>
+<input asp-for="Name" maxlength="100" />
+<label asp-for="Description"></label>
+<textarea asp-for="Description" rows="2" maxlength="1000"></textarea>
+<label asp-for="SortOrder"></label>
+<input asp-for="SortOrder" type="number" step="1" />
+<span class="hint">@L["Groups.SortOrderHint"]</span>

@@ -1,0 +1,21 @@
+@model Signage.Web.Pages.Admin.EntryButtons
+@* Stable ids let reorder.js put focus back on the same button after the list is re-rendered. *@
+<div class="entry-actions">
+    <form method="post" action="@Model.MoveUrl" hx-post="@Model.MoveUrl">
+        <input type="hidden" name="Version" value="@Model.Version" />
+        <input type="hidden" name="entryId" value="@Model.EntryId" />
+        <input type="hidden" name="toIndex" value="@(Model.Index - 1)" />
+        <button type="submit" id="up-@Model.EntryId" disabled="@(Model.Index == 0)" aria-label="@L["Playlists.MoveUp", Model.Title]">↑</button>
+    </form>
+    <form method="post" action="@Model.MoveUrl" hx-post="@Model.MoveUrl">
+        <input type="hidden" name="Version" value="@Model.Version" />
+        <input type="hidden" name="entryId" value="@Model.EntryId" />
+        <input type="hidden" name="toIndex" value="@(Model.Index + 1)" />
+        <button type="submit" id="down-@Model.EntryId" disabled="@(Model.Index == Model.Count - 1)" aria-label="@L["Playlists.MoveDown", Model.Title]">↓</button>
+    </form>
+    <form method="post" action="@Model.RemoveUrl" hx-post="@Model.RemoveUrl">
+        <input type="hidden" name="Version" value="@Model.Version" />
+        <input type="hidden" name="entryId" value="@Model.EntryId" />
+        <button type="submit" id="remove-@Model.EntryId" class="danger" aria-label="@L["Screens.RemoveEntry", Model.Title]">✕</button>
+    </form>
+</div>

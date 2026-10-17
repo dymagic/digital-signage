@@ -39,8 +39,8 @@ exists.
 - Npgsql doesn't generate the reverse of a collation in `Down`, so `InitialCreate.Down` drops it by
   hand. Migrations that add collations or extensions must do the same. An integration test reverts
   and re-applies the whole chain.
-- Optimistic concurrency uses `xmin` on every human-edited root: Slide, Playlist, Screen,
-  ScreenGroup, SystemSettings. (User uses an app-managed `version` column instead, ADR-0004.)
+- Optimistic concurrency uses `xmin` on every human-edited root: Slide, Playlist,
+  ScreenGroup, SystemSettings. (User and Screen use an app-managed `version` column instead, ADR-0004.)
 - Start-up: migrate (when enabled) and then `INSERT … ON CONFLICT DO NOTHING` the settings row.
   A session-level PostgreSQL advisory lock around the whole start-up makes concurrent replica start-ups safe
   (amended in WP-02: EF Core's own migration lock let two replicas apply the same second migration). An

@@ -13,4 +13,7 @@ public static class CommonErrors
 {
     public const string Concurrency = "Error.Concurrency";
     public const string NotFound = "Error.NotFound";
+
+    /// <summary>A posted value that the page can't produce (tampered or outdated form).</summary>
+    public const string InvalidRequest = "Error.InvalidRequest";
 }

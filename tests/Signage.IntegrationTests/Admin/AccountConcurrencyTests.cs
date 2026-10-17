@@ -14,7 +14,7 @@ namespace Signage.IntegrationTests.Admin;
 /// admin's reset or block a deactivation (R-52, ADR-0004). A gated hasher parks the user's request in the middle
 /// of its password check, so each interleaving is forced deterministically.
 /// </summary>
-public sealed partial class ConcurrentSignInTests(PostgresFixture postgres) : IAsyncLifetime
+public sealed partial class AccountConcurrencyTests(PostgresFixture postgres) : IAsyncLifetime
 {
     private readonly GatedPasswordHasher _hasher = new();
     private AdminApp _app = null!;

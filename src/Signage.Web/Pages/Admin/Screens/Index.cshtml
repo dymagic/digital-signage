@@ -1,0 +1,49 @@
+@page
+@model Signage.Web.Pages.Admin.Screens.IndexModel
+@{
+    ViewData["Title"] = L["Screens.Title"];
+    ViewData["Section"] = "Screens";
+}
+<div class="page-head">
+    <h1>@L["Screens.Title"]</h1>
+    @if (Model.IsAdmin)
+    {
+        <a class="button primary" asp-page="Create">@L["Screens.Create"]</a>
+    }
+</div>
+@if (Model.Items.Count == 0)
+{
+    <p class="empty">@L[Model.IsAdmin ? "Screens.Empty.Admin" : "Screens.Empty.Editor"]</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">@L["Screens.Field.Name"]</th>
+                <th scope="col">@L["Screens.Field.Mode"]</th>
+                <th scope="col">@L["Screens.Column.Groups"]</th>
+                <th scope="col">@L["Screens.Column.Paired"]</th>
+                <th scope="col"><span class="visually-hidden">@L["Common.Actions"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>
+                        <a asp-page="Detail" asp-route-id="@item.Id">@item.Name</a>
+                        @if (item.Location is not null)
+                        {
+                            <div class="muted">@item.Location</div>
+                        }
+                    </td>
+                    <td>@L[$"Screens.Mode.{item.Mode}"]</td>
+                    <td>@(item.Groups.Count == 0 ? "—" : string.Join(", ", item.Groups))</td>
+                    <td>@(item.IsPaired ? L["Screens.Paired.Yes"] : L["Screens.Paired.No"])</td>
+                    <td class="actions"><a asp-page="Detail" asp-route-id="@item.Id">@L["Screens.Open"]</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

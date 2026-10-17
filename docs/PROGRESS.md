@@ -7,7 +7,24 @@
 Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_None. Next: WP-05 Screens, groups & composition._
+- Package: WP-05 Screens, groups & composition — branch `wp-05-screens-groups` — status In review (round 3 requested)
+- Plan: Screen gets an app-managed `version` (heartbeats in WP-10 won't conflict); `IPositioned` + shared
+  `OrderedList` helpers; `IScreenNotifier` (+ NoOp) and `AffectedScreens` queries; `ScreenService` (CRUD admin,
+  details/mode/single-video admin, groups membership admin, prepend/append slides + direct playlists editor+,
+  resolved sequence); `GroupService` (CRUD/sort/members admin, group playlists editor+). Pages: screens
+  list/create/detail/delete, groups list/create/detail/delete; detail pages mix admin-only forms (handler-level
+  `Forbid()` checks) and editor htmx lists. Follow-ups from WP-02 r4 + WP-04 (focus after swap, HX-Redirect when
+  parent gone, stale-details test, must-change on htmx test, slide delete bumps versions).
+- Risks: handler-level authorization on mixed pages (tests per handler).
+- Done: screen app-managed version (+ migration), IPositioned/OrderedList, IScreenNotifier (NoOp) + AffectedScreens, ScreenService, GroupService; slides/playlists/settings notify affected screens; slide delete bumps playlist/screen versions.
+- Half-done: —
+- Done (2): pages screens (list/create/detail with composition + resolved sequence/delete), groups (list/create/detail with playlists/delete), AdminPageModel (RequireAdmin, GoneMeanwhile HX-Redirect), shared _EntryButtons with stable ids, reorder.js generic + focus restore, nav, ~95 strings, coverage test for enum/ternary keys.
+- Done (3): integration + E2E tests, follow-ups, docs. Self-check: build clean, 320 tests green, E2E 10/10, glossary clean.
+- Round 1: CHANGES_REQUIRED (1 MAJOR oob version after failed change, 3 MINOR, 3 NIT); all fixed in 018572b. 330 tests, E2E 10/10.
+- Round 2: CHANGES_REQUIRED (1 MAJOR: implicit required on non-nullable strings; 1 NIT); fixed in 7d59591. 335 tests, E2E 10/10.
+- Next step: handle review round 3 verdict (docs/reviews/WP-05-review-3.md).
+- Last checkpoint: (this commit)
+
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)

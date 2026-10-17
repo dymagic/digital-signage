@@ -62,7 +62,7 @@ properly; NITs 5–9: singular/plural in `Slides.Usage`, own `Slides.Column.Stat
 Pages (e.g. minimal-API htmx endpoints) must enforce the forced password change too, so move the check into
 an authorization requirement or middleware when the first such endpoint appears.
 
-### WP-05 Screens, groups & composition — `Todo`
+### WP-05 Screens, groups & composition — `In review`
 Screen CRUD (admin), mode + single video URL (admin), group CRUD + membership + sort order
 (admin), assigning playlists to groups and screens and managing prepended/appended slides (editor+).
 The screen detail page shows the resolved sequence with its sources (R-13; the preview link

@@ -1,0 +1,54 @@
+@model Signage.Web.Pages.Admin.Groups.DetailModel
+@{
+    var group = Model.Group!;
+    var id = Model.Id;
+    var count = group.Playlists.Count;
+}
+<div id="group-playlists" hx-target="this" hx-swap="outerHTML">
+    <input type="hidden" id="group-playlists-version" value="@Model.Version" />
+    @* Only after a successful change (see _ScreenComposition). *@
+    @if (Model.IsHtmx && Model.PlaylistsError is null)
+    {
+        <input type="hidden" id="details-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
+        <input type="hidden" id="members-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
+    }
+    @if (Model.PlaylistsError is not null)
+    {
+        <p class="notice notice-error" role="alert">@L[Model.PlaylistsError]</p>
+    }
+    @if (count == 0)
+    {
+        <p class="muted">@L["Groups.NoPlaylists"]</p>
+    }
+    else
+    {
+        <ol class="entries" data-reorder data-target="#group-playlists" data-version-input="#group-playlists-version"
+            data-move-url="@Url.Page("Detail", "MovePlaylist", new { id })" aria-label="@L["Groups.Playlists"]">
+            @for (var i = 0; i < count; i++)
+            {
+                var entry = group.Playlists[i];
+                <li draggable="true" data-entry-id="@entry.PlaylistId" data-index="@i">
+                    <span class="drag-handle" aria-hidden="true" title="@L["Playlists.DragHint"]">⋮⋮</span>
+                    <span class="position">@(i + 1)</span>
+                    <span></span>
+                    <div class="entry-title"><a asp-page="/Admin/Playlists/Edit" asp-route-id="@entry.PlaylistId">@entry.Playlist.Name</a></div>
+                    <partial name="/Pages/Admin/_EntryButtons.cshtml" model="@(new Signage.Web.Pages.Admin.EntryButtons(Url.Page("Detail", "MovePlaylist", new { id })!, Url.Page("Detail", "RemovePlaylist", new { id })!, entry.PlaylistId.ToString(), entry.Playlist.Name, i, count, Model.Version.ToString(System.Globalization.CultureInfo.InvariantCulture)))" />
+                </li>
+            }
+        </ol>
+    }
+    <form method="post" asp-page-handler="AddPlaylist" asp-route-id="@id" hx-post="@Url.Page("Detail", "AddPlaylist", new { id })" class="add-slide">
+        <input type="hidden" name="Version" value="@Model.Version" />
+        <label for="playlistId">@L["Screens.AddPlaylist"]</label>
+        <div class="row">
+            <select id="playlistId" name="playlistId" required data-focus-fallback>
+                <option value="">@L["Screens.ChoosePlaylist"]</option>
+                @foreach (var playlist in Model.AvailablePlaylists.Where(p => group.Playlists.All(gp => gp.PlaylistId != p.Id)))
+                {
+                    <option value="@playlist.Id">@playlist.Name</option>
+                }
+            </select>
+            <button type="submit">@L["Playlists.Add"]</button>
+        </div>
+    </form>
+</div>

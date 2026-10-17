@@ -1,0 +1,15 @@
+@page
+@model Signage.Web.Pages.Admin.Groups.CreateModel
+@{
+    ViewData["Title"] = L["Groups.Create"];
+    ViewData["Section"] = "Groups";
+}
+<h1>@L["Groups.Create"]</h1>
+<form method="post" class="form">
+    <partial name="_ValidationSummary" />
+    <partial name="_GroupFields" for="Input" />
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Groups.Create"]</button>
+        <a asp-page="Index">@L["Common.Cancel"]</a>
+    </div>
+</form>

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Signage.IntegrationTests.Infrastructure;
 using Signage.Web.Domain;
 
@@ -142,6 +143,7 @@ public sealed class PlaylistPagesTests(PostgresFixture postgres) : IAsyncLifetim
 
         var fragment = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Contains("Someone else changed this in the meantime.", fragment, StringComparison.Ordinal);
+        Assert.DoesNotContain("hx-swap-oob", fragment, StringComparison.Ordinal); // the details form keeps its old version
         Assert.Equal([("C", 0), ("A", 1), ("B", 2)], await EntriesAsync(id));
     }
 
@@ -267,6 +269,59 @@ public sealed class PlaylistPagesTests(PostgresFixture postgres) : IAsyncLifetim
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("That item no longer exists.", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Empty(await EntriesAsync(id));
+    }
+
+    [Fact]
+    public async Task Saving_the_details_form_from_a_stale_page_reports_a_conflict()
+    {
+        var id = await CreatePlaylistAsync();
+        var stale = await VersionAsync(id);
+        await AddAsync(id, _slides[0]);
+
+        using var saved = await _editor.PostFormAsync($"/admin/playlists/{id}", new Dictionary<string, string>
+        {
+            ["Input.Name"] = "Renamed from a stale page",
+            ["Version"] = stale.ToString(CultureInfo.InvariantCulture),
+        });
+
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        Assert.Contains("Someone else changed this in the meantime.", WebUtility.HtmlDecode(await saved.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)), StringComparison.Ordinal);
+        Assert.Equal("Canteen", await _app.Factory.WithDbAsync(db => db.Playlists.Select(p => p.Name).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Changes_after_the_playlist_was_deleted_send_the_browser_back_to_the_list()
+    {
+        var id = await CreatePlaylistAsync();
+        var version = await VersionAsync(id);
+        await _app.Factory.WithDbAsync(db => db.Playlists.Where(p => p.Id == id).ExecuteDeleteAsync());
+
+        using var response = await _editor.PostHtmxAsync("/admin/playlists", $"/admin/playlists/{id}?handler=Add",
+            new Dictionary<string, string> { ["slideId"] = _slides[0].Id.ToString(), ["Version"] = version.ToString(CultureInfo.InvariantCulture) });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("/admin/playlists", response.Headers.GetValues("HX-Redirect").Single());
+    }
+
+    [Fact]
+    public async Task A_user_who_must_change_their_password_cannot_use_the_htmx_handlers_either()
+    {
+        var id = await CreatePlaylistAsync();
+        var version = await VersionAsync(id);
+        using var fresh = new AdminSession(_app.Factory);
+        await using (var scope = _app.Factory.Services.CreateAsyncScope())
+        {
+            var accounts = scope.ServiceProvider.GetRequiredService<Signage.Web.Features.Users.UserAccounts>();
+            var (_, temporary) = await accounts.CreateAsync("new@example.org", "New", UserRole.Editor, TestContext.Current.CancellationToken);
+            await fresh.SignInSuccessfullyAsync("new@example.org", temporary!);
+        }
+
+        using var response = await fresh.PostHtmxAsync("/admin/account/password", $"/admin/playlists/{id}?handler=Add",
+            new Dictionary<string, string> { ["slideId"] = _slides[0].Id.ToString(), ["Version"] = version.ToString(CultureInfo.InvariantCulture) });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/admin/account/password", AdminSession.Location(response));
         Assert.Empty(await EntriesAsync(id));
     }
 
