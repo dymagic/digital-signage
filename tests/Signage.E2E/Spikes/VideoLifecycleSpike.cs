@@ -14,11 +14,14 @@ namespace Signage.E2E.Spikes;
 [Trait("Category", "Spike")]
 public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
 {
+    // Tracing snapshots the DOM and screenshots continuously; it would be part of what we measure.
+    protected override bool Tracing => false;
+
     private const int Transitions = 240;
     private const int SampleEvery = 20;
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public sealed record Sample(int Transitions, double JsHeapMb, double Nodes, double Documents, double BrowserPssMb, int VideosInDom, int VideoElementsCreated, int PlayersCreated, int PlayersDestroyed);
+    public sealed record Sample(int Transitions, double JsHeapMb, double Nodes, double Documents, double BrowserPssMb, int VideosInDom, int VideoElementsCreated, int PipelinesCreated, int PipelinesDestroyed);
 
     [Theory]
     [InlineData("release")]
@@ -28,29 +31,32 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
     public Task Measure(string strategy)
     {
         Assert.SkipUnless(E2EEnvironment.SpikeEnabled && Environment.GetEnvironmentVariable("SIGNAGE_E2E_SPIKE_LONG") != "1", "Spike: set SIGNAGE_E2E_SPIKE=1.");
-        return RunAsync(strategy, Transitions, SampleEvery, imagesOnly: false);
+        return RunAsync(strategy, Transitions, SampleEvery, "mixed", "");
     }
 
-    /// <summary>Does the growth level off? release vs. an images-only baseline over a long run (SIGNAGE_E2E_SPIKE_LONG=1).</summary>
+    /// <summary>
+    /// Does release level off? 2000 transitions each, sampled identically: video/image mix, back-to-back videos, and
+    /// an images-only baseline (SIGNAGE_E2E_SPIKE_LONG=1, about an hour). Faster pacing than the short runs.
+    /// </summary>
     [Theory]
-    [InlineData("release", false)]
-    [InlineData("release", true)]
-    public Task MeasureLong(string strategy, bool imagesOnly)
+    [InlineData("mixed")]
+    [InlineData("videos")]
+    [InlineData("images")]
+    public Task MeasureLong(string mix)
     {
         Assert.SkipUnless(E2EEnvironment.SpikeEnabled && Environment.GetEnvironmentVariable("SIGNAGE_E2E_SPIKE_LONG") == "1", "Long spike: set SIGNAGE_E2E_SPIKE_LONG=1.");
-        return RunAsync(strategy, 1200, 100, imagesOnly);
+        return RunAsync("release", 2000, 200, mix, "&playbackRate=8&imageMs=200");
     }
 
-    private async Task RunAsync(string strategy, int transitions, int sampleEvery, bool imagesOnly)
+    private async Task RunAsync(string strategy, int transitions, int sampleEvery, string mix, string extraQuery)
     {
-        var label = imagesOnly ? "images-only" : $"{strategy}{(transitions == Transitions ? "" : $"-{transitions}")}";
+        var label = transitions == Transitions ? strategy : $"{strategy}-{mix}-{transitions}";
         var cdp = await Context.NewCDPSessionAsync(Page);
         await cdp.SendAsync("Performance.enable");
         await cdp.SendAsync("Media.enable");
         var created = 0;
         var destroyed = 0;
         var mediaEvents = new Dictionary<string, int>();
-        cdp.Event("Media.playersCreated").OnEvent += (_, e) => Interlocked.Add(ref created, e?.GetProperty("players").GetArrayLength() ?? 0);
         cdp.Event("Media.playerEventsAdded").OnEvent += (_, e) =>
         {
             foreach (var ev in e?.GetProperty("events").EnumerateArray() ?? default)
@@ -60,7 +66,12 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
                 {
                     mediaEvents[value] = mediaEvents.GetValueOrDefault(value) + 1;
                 }
-                if (value.Contains("Destroyed", StringComparison.OrdinalIgnoreCase))
+                // Chromium's media pipelines ("WebMediaPlayer") log their own creation and destruction.
+                if (value.Contains("kWebMediaPlayerCreated", StringComparison.Ordinal))
+                {
+                    Interlocked.Increment(ref created);
+                }
+                else if (value.Contains("kWebMediaPlayerDestroyed", StringComparison.Ordinal))
                 {
                     Interlocked.Increment(ref destroyed);
                 }
@@ -68,7 +79,7 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
         };
 
         var media = new Uri(E2EEnvironment.MediaBaseUrl, "/media/").ToString();
-        await Page.GotoAsync(new Uri(E2EEnvironment.MediaBaseUrl, $"/spikes/video-lifecycle/harness.html?strategy={strategy}&transitions={transitions}&imagesOnly={(imagesOnly ? 1 : 0)}&media={Uri.EscapeDataString(media)}").ToString());
+        await Page.GotoAsync(new Uri(E2EEnvironment.MediaBaseUrl, $"/spikes/video-lifecycle/harness.html?strategy={strategy}&transitions={transitions}&mix={mix}{extraQuery}&media={Uri.EscapeDataString(media)}").ToString());
 
         var samples = new List<Sample> { await SampleAsync(cdp, 0, created, destroyed) };
         for (var checkpoint = sampleEvery; checkpoint <= transitions; checkpoint += sampleEvery)
@@ -79,16 +90,17 @@ public class VideoLifecycleSpike(BrowserFixture fixture) : E2ETest(fixture)
 
         var errors = await Page.EvaluateAsync<string[]>("() => window.spike.errors");
         var maxLayers = await Page.EvaluateAsync<int>("() => window.spike.maxLayers");
+        var maxVideosInDom = await Page.EvaluateAsync<int>("() => window.spike.maxVideosInDom");
         var dir = Path.Combine(E2EEnvironment.ArtifactsDir, "spike");
         Directory.CreateDirectory(dir);
         await File.WriteAllTextAsync(Path.Combine(dir, $"video-{label}.json"),
-            JsonSerializer.Serialize(new { strategy, imagesOnly, transitions, maxLayers, errors, mediaEvents, samples }, Indented), TestContext.Current.CancellationToken);
+            JsonSerializer.Serialize(new { strategy, mix, transitions, maxVideosInDom, maxLayers, errors, mediaEvents, samples }, Indented), TestContext.Current.CancellationToken);
 
-        var csv = new StringBuilder("transitions,jsHeapMb,nodes,documents,browserPssMb,videosInDom,videoElementsCreated,playersCreated,playersDestroyed\n");
+        var csv = new StringBuilder("transitions,jsHeapMb,nodes,documents,browserPssMb,videosInDom,videoElementsCreated,pipelinesCreated,pipelinesDestroyed\n");
         foreach (var s in samples)
         {
             csv.AppendLine(string.Create(CultureInfo.InvariantCulture,
-                $"{s.Transitions},{s.JsHeapMb:F1},{s.Nodes},{s.Documents},{s.BrowserPssMb:F0},{s.VideosInDom},{s.VideoElementsCreated},{s.PlayersCreated},{s.PlayersDestroyed}"));
+                $"{s.Transitions},{s.JsHeapMb:F1},{s.Nodes},{s.Documents},{s.BrowserPssMb:F0},{s.VideosInDom},{s.VideoElementsCreated},{s.PipelinesCreated},{s.PipelinesDestroyed}"));
         }
         await File.WriteAllTextAsync(Path.Combine(dir, $"video-{label}.csv"), csv.ToString(), TestContext.Current.CancellationToken);
         TestContext.Current.SendDiagnosticMessage($"{label}\n{csv}");

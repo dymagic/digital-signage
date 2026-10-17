@@ -8,7 +8,8 @@ const imageMs = Number(params.get('imageMs') ?? 300);
 const playbackRate = Number(params.get('playbackRate') ?? 4); // plays 3-4 s clips in < 1 s; the decoder still runs
 document.documentElement.style.setProperty('--transition-ms', `${transitionMs}ms`);
 
-const imagesOnly = params.get('imagesOnly') === '1'; // baseline: same loop without any video
+// mix (default): video, image, video, …; images: no video at all (baseline); videos: back-to-back videos only.
+const mix = params.get('mix') ?? 'mixed';
 const fullSequence = [
     { type: 'video', src: 'clip-a-h264.mp4' },
     { type: 'image', src: 'image-testsrc2.png' },
@@ -17,10 +18,12 @@ const fullSequence = [
     { type: 'video', src: 'clip-c-h264.mp4' },
     { type: 'image', src: 'image-mandelbrot.png' },
 ];
-const sequence = imagesOnly ? fullSequence.filter((s) => s.type === 'image') : fullSequence;
+const sequence = mix === 'images' ? fullSequence.filter((s) => s.type === 'image')
+    : mix === 'videos' ? fullSequence.filter((s) => s.type === 'video')
+    : fullSequence;
 
 const stage = document.getElementById('stage');
-const state = (window.spike = { strategy, transitions: 0, done: false, errors: [], videoElementsCreated: 0, maxLayers: 0 });
+const state = (window.spike = { strategy, mix, transitions: 0, done: false, errors: [], videoElementsCreated: 0, maxLayers: 0, maxVideosInDom: 0 });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // For "reuse": two persistent video elements.
@@ -139,8 +142,11 @@ async function run() {
         const nextSlide = sequence[(index + 1) % sequence.length];
         const next = prepare(nextSlide); // preload while the current slide plays
         state.maxLayers = Math.max(state.maxLayers, stage.childElementCount);
+        state.maxVideosInDom = Math.max(state.maxVideosInDom, document.querySelectorAll('video').length);
         await play(current, slide);
         await transition(next);
+        // Order matters (ADR-0008): release the covered slide first, then (next loop) prepare the one after next,
+        // so at most two video elements exist even when videos follow each other.
         cover(current);
         current = next;
         index++;

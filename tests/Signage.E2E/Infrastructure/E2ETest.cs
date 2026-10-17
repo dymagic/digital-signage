@@ -24,6 +24,9 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
     /// <summary>When true, the test starts signed in as the E2E admin.</summary>
     protected virtual bool SignedInAsAdmin => false;
 
+    /// <summary>Playwright tracing (screenshots + DOM snapshots) for failure artefacts. Measurements turn it off.</summary>
+    protected virtual bool Tracing => true;
+
     public virtual async ValueTask InitializeAsync()
     {
         BaseUrl = E2EEnvironment.RequireBaseUrl();
@@ -33,7 +36,10 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
             ViewportSize = new() { Width = 1920, Height = 1080 },
             StorageState = SignedInAsAdmin ? await fixture.Admin.StorageStateAsync() : null,
         });
-        await _context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true });
+        if (Tracing)
+        {
+            await _context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true });
+        }
         Page = await _context.NewPageAsync();
     }
 
@@ -57,9 +63,12 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
             {
                 // The page may already be gone; the trace below still helps.
             }
-            await _context.Tracing.StopAsync(new() { Path = Path.Combine(E2EEnvironment.ArtifactsDir, $"{name}.trace.zip") });
+            if (Tracing)
+            {
+                await _context.Tracing.StopAsync(new() { Path = Path.Combine(E2EEnvironment.ArtifactsDir, $"{name}.trace.zip") });
+            }
         }
-        else
+        else if (Tracing)
         {
             await _context.Tracing.StopAsync();
         }
