@@ -52,7 +52,13 @@ Baseline behaviour (must hold whatever the spike finds):
 4. On `error`, or a stall longer than 8 s without progress: log it, skip to the next slide, and report it in the heartbeat.
 5. If the video has no duration metadata, a safety cap (10 min) applies.
 
-**Spike WP-07 must investigate and decide** (record in an ADR), measuring on Chromium in Docker and
+**Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
+`removeAttribute('src')` → `load()` → remove the layer. Only the next slide is prepared, so at most two video
+elements exist: the playing one and the next one. No element reuse. The order is fixed: when a transition completes, the covered
+slide is released *first*, and only then is the slide after the new one prepared. So even back-to-back videos never
+have more than two `<video>` elements (and two decoders) alive.
+
+The original brief for the spike: **Spike WP-07 must investigate and decide** (record in an ADR), measuring on Chromium in Docker and
 noting the Raspberry Pi implications from the literature:
 - whether a covered video element should be released by `pause()` → `removeAttribute('src')` →
   `load()` → remove from DOM. That is the hypothesis: it frees decoder and buffer memory, which
@@ -109,6 +115,15 @@ screen (R-42).
   transition. Continue from the slide after the current one's id if it still exists, otherwise
   start from the beginning. Mode changes and overlay toggles apply immediately.
 - If `appVersion` differs from the loaded player's version: reload the page at the next transition.
+- Daily reload (ADR-0008, confirmed by the product owner on 2026-10-17): a timer checks once a minute. The reload is
+  due after 20 h of uptime when the local time (system time zone) is between 02:00 and 05:00, or after 26 h at any
+  time. A carousel with two or more slides reloads at its next transition, and a screen that doesn't transition (one
+  slide, the empty state, single video mode) at the next check. *Immediately before reloading* the player requests
+  `GET /screen` (no cache) and reloads only on a 2xx response. Anything else (no answer, timeout, or a proxy's 502
+  during a restart) postpones the reload to the next check, so an offline screen keeps cycling (R-24) and never lands
+  on a browser or proxy error page. The reload starts from the cached manifest.
+  It bounds any slow memory growth in long-running browsers. All values live in `config.js`. No daily reload in
+  admin preview.
 - Heartbeat every 30 s.
 - While offline: keep cycling, show nothing alarming, and add a tiny dim dot in the info overlay
   only when the overlay is enabled.

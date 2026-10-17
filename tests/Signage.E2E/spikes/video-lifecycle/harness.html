@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>WP-07 video lifecycle harness</title>
+    <!--
+        Throwaway measurement harness for the WP-07 spike (not shipped). It cycles video and image slides with the
+        planned carousel transition (PLAYER_SPEC §2) and handles covered video slides with one of these strategies:
+          release  new <video> per slide; covered: pause → removeAttribute('src') → load() → remove   (hypothesis)
+          remove   new <video> per slide; covered: remove from the DOM only
+          keep     new <video> per slide; covered: pause and hide, never removed                        (no cleanup)
+          reuse    two <video> elements, used in turn; covered: pause, the next video swaps its src
+        URL: harness.html?strategy=release&transitions=240&media=/media/
+    -->
+    <style>
+        html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+        #stage { position: fixed; inset: 0; }
+        .slide { position: absolute; inset: 0; transform: translateX(0); }
+        .slide.entering { transform: translateX(100%); box-shadow: -24px 0 48px -8px rgba(0,0,0,.45); }
+        .slide.animating { transition: transform var(--transition-ms) cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; transform: translateX(0); }
+        .slide img, .slide video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .slide.hidden { visibility: hidden; }
+    </style>
+</head>
+<body>
+    <div id="stage"></div>
+    <script type="module" src="harness.js"></script>
+</body>
+</html>
