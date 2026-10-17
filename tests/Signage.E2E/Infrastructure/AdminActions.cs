@@ -27,18 +27,39 @@ public static partial class AdminActions
         return Guid.Parse(new Uri(page.Url).Segments[^1]);
     }
 
-    /// <summary>Creates an Image or WebPage slide pointing at <paramref name="url"/>; returns its id.</summary>
-    public static async Task<Guid> CreateUrlSlideAsync(IPage page, string type, string title, Uri url, int durationSeconds)
+    /// <summary>Creates an Image, Video or WebPage slide pointing at <paramref name="url"/>; returns its id. Videos have no duration.</summary>
+    public static async Task<Guid> CreateUrlSlideAsync(IPage page, string type, string title, Uri url, int? durationSeconds = null)
     {
         ArgumentNullException.ThrowIfNull(page);
         ArgumentNullException.ThrowIfNull(url);
         await page.GotoAsync($"/admin/slides/create?type={type}");
         await page.GetByLabel("Title").FillAsync(title);
         await page.GetByLabel("Address (URL)").FillAsync(url.ToString());
-        await page.GetByLabel("Duration (seconds)").FillAsync(durationSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (durationSeconds is { } seconds)
+        {
+            await page.GetByLabel("Duration (seconds)").FillAsync(seconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
         await page.GetByRole(AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
         await page.WaitForURLAsync(SlideEditUrl());
         return Guid.Parse(new Uri(page.Url).Segments[^1]);
+    }
+
+    /// <summary>Switches a screen to single video mode with <paramref name="videoUrl"/>, or back to carousel when it is null.</summary>
+    public static async Task SetScreenModeAsync(IPage page, Guid screenId, Uri? videoUrl)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        await page.GotoAsync($"/admin/screens/{screenId}");
+        if (videoUrl is null)
+        {
+            await page.GetByLabel("Carousel", new() { Exact = true }).CheckAsync();
+        }
+        else
+        {
+            await page.GetByLabel("Single video", new() { Exact = true }).CheckAsync();
+            await page.GetByLabel("Video address (single video mode)").FillAsync(videoUrl.ToString());
+        }
+        await page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
+        await Expect(page.GetByText("Changes saved.")).ToBeVisibleAsync();
     }
 
     /// <summary>Creates a playlist and adds the slides (by title) in order. Returns with the playlist page open.</summary>

@@ -180,7 +180,7 @@ public class CarouselTests(BrowserFixture fixture) : PlayerTest(fixture)
         var active = device.Locator(".slide[data-state=active] iframe");
         Assert.Contains("Edited notice", await active.GetAttributeAsync("srcdoc"), StringComparison.Ordinal);
         Assert.Equal("same page", await device.EvaluateAsync<string>("() => window.__marker"));
-        await device.WaitForTimeoutAsync(1500); // and it settles: no further swaps for an unchanged slide
+        await device.WaitForTimeoutAsync(7000); // and it settles: a repeat poll (every 6 s) of the unchanged slide swaps nothing
         Assert.Equal(2, await ActivationCountAsync(device));
         await device.Context.CloseAsync();
     }

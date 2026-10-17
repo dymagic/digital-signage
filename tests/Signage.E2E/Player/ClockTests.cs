@@ -45,6 +45,27 @@ public class ClockTests(BrowserFixture fixture) : PlayerTest(fixture)
     }
 
     [Fact]
+    public async Task A_slide_whose_schedule_ended_is_not_kept_on_screen_when_nothing_else_can_be_shown()
+    {
+        var tag = Tag();
+        await AdminActions.CreateHtmlSlideAsync(Page, $"Ends {tag}", 2, activeUntilLocal: "2030-01-02T10:02");
+        await AdminActions.CreateUrlSlideAsync(Page, "Image", $"Gone {tag}", new Uri(E2EEnvironment.MediaBaseUrl, $"/media/gone-{tag}.png"), 2);
+        await EmptyScreenAsync($"Stale {tag}", $"Stale {tag}", [$"Ends {tag}", $"Gone {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+
+        var device = await OpenDeviceAsync(token, timeScale: 0.25, ctx => InstallClock(ctx, DeviceStart));
+        await WaitForActivationsAsync(device, 1);
+        await ExpectModeAsync(device, "player"); // "Ends" stays on screen: the image next to it can't load
+
+        await device.Context.RouteAsync("**/api/player/**", route => route.AbortAsync("connectionrefused"));
+        await device.Clock.FastForwardAsync("03:00"); // its window ends; nothing else can be shown (R-03, R-23)
+
+        await ExpectModeAsync(device, "empty");
+        await Expect(device.Locator(".slides > .slide")).ToHaveCountAsync(0);
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
     public async Task The_daily_reload_waits_while_the_server_is_unreachable_and_happens_at_a_transition_once_it_answers()
     {
         var (_, token, _) = await ScreenWithSlidesAsync(("Day", 2, "#0c4a6e"), ("Night", 2, "#3b0764"));

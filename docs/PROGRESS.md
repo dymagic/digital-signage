@@ -15,7 +15,9 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
   dwell is interrupted by a mode change). WP-08 follow-ups. E2E with testmedia clips: currentTime 0 during the
   transition, next on ended, broken URL skipped, single video loops without progress bar, live mode switch.
 - Risks: headless Chromium codec support (H.264 confirmed in WP-07), timing flakiness with real-time video.
-- Next step: implement video.js and the carousel changes.
+- Done: video.js, singlevideo.js, carousel (start after transition, dwell until finished, progress follows playback,
+  lone video loops, mode change interrupts the dwell), WP-08 follow-ups; VideoTests (3) + ClockTests stale test written.
+- Next step: run `scripts/test-e2e.sh -trait Category=Player`, fix, then docs (PLAYER_SPEC §4/§6, ARCHITECTURE modules).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

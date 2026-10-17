@@ -2,7 +2,7 @@
 // Half-open like the server (SlideSchedule.cs): active from activeFromUtc (inclusive) until activeUntilUtc (exclusive).
 
 /** Slide types this player version can show. */
-const supported = new Set(['Image', 'WebPage', 'Html']);
+const supported = new Set(['Image', 'Video', 'WebPage', 'Html']);
 
 export function isActive(slide, nowMs) {
     const from = slide.activeFromUtc ? Date.parse(slide.activeFromUtc) : null;

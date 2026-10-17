@@ -23,6 +23,11 @@ export const config = Object.freeze({
     staticRecheckMs: 1000, // one slide or empty: how often to look for schedule changes
     nothingShowableRetryMs: 10_000, // no slide could be shown (e.g. every image host unreachable): empty state, then retry
 
+    // Video (PLAYER_SPEC §4). Real time, never scaled: videos play at normal speed in tests too.
+    videoStallMs: 8000, // no playback progress for this long: skip the slide
+    videoSafetyCapMs: 10 * 60_000, // a video slide never stays longer than this
+    singleVideoFadeMs: 300, // cross-fade when single video mode starts, ends or changes its URL (PLAYER_SPEC §6)
+
     // Stage (PLAYER_SPEC §1)
     cursorHideMs: 3000,
 

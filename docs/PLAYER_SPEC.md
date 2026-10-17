@@ -33,7 +33,8 @@
   If the next slide is not ready when its time comes, wait up to 3 s more, then transition anyway.
 - **Skipping:** a slide that failed to load, or whose schedule window has ended by the time it is due (R-03), is
   skipped when its turn comes: the slide after it is prepared straight away, without a second dwell on the current
-  slide. If nothing else can be shown, the current slide stays for another round. If no slide can be shown at all
+  slide. If nothing else can be shown, the current slide stays for another round, unless its own window has ended or it
+  has left the sequence: then the empty state (§10) replaces it. If no slide can be shown at all
   (e.g. every image host unreachable), the player shows the empty state (§10) and tries again after 10 s.
 - With only one playable slide: show it and do not transition to itself. A single video loops. If a new manifest
   changes that slide's content, the new version is prepared and slides in over the old one once it is ready (the
