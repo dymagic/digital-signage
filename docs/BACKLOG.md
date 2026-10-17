@@ -106,6 +106,8 @@ progress bar, Image/WebPage/Html slides, preloading, the 3-layer cap, empty stat
 manifest cache and offline cycling, schedule re-check on the client, admin preview mode
 (`/screen?preview=`), test hooks (`data-state`, `timeScale`). A demo seed (a sample playlist with public
 domain images + an HTML clock slide), applied only in Development or with `SIGNAGE__SEEDDEMO=true`.
+*From WP-07 (ADR-0008):* implement the video release order (release the covered slide before preparing the one after
+next) and the daily reload (PLAYER_SPEC §9) in the player.
 *From WP-06 review round 2:* (MINOR) the device stops polling a code 60 s before it expires but the server accepts
 claims until expiry: keep polling the old code until a new one is shown, or stop accepting claims in the last
 minute; (NIT) do the token write and `CancelPendingClaimsAsync` in one transaction in revoke and screen address;
@@ -153,4 +155,7 @@ trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute
 soak of the player in E2E (memory stable), and request the **milestone-level** review (the reviewer reviews
 the whole repo, not a diff).
+*From WP-07 (ADR-0008):* the soak runs the shipped player at `?test=1&timeScale=0.05` for 30 min with a video/image mix and
+samples browser PSS (same method as the spike, tracing off). It fails if PSS grows more than 150 MB between the first
+and the last third. Record the numbers in M1_ACCEPTANCE.
 **Accept:** PROJECT_BRIEF §8 is fully satisfied.

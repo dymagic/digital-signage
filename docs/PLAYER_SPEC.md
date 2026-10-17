@@ -54,7 +54,9 @@ Baseline behaviour (must hold whatever the spike finds):
 
 **Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
 `removeAttribute('src')` → `load()` → remove the layer. Only the next slide is prepared, so at most two video
-elements exist: the playing one and the next one. No element reuse.
+elements exist: the playing one and the next one. No element reuse. The order is fixed: when a transition completes, the covered
+slide is released *first*, and only then is the slide after the new one prepared. So even back-to-back videos never
+have more than two `<video>` elements (and two decoders) alive.
 
 The original brief for the spike: **Spike WP-07 must investigate and decide** (record in an ADR), measuring on Chromium in Docker and
 noting the Raspberry Pi implications from the literature:
@@ -113,6 +115,10 @@ screen (R-42).
   transition. Continue from the slide after the current one's id if it still exists, otherwise
   start from the beginning. Mode changes and overlay toggles apply immediately.
 - If `appVersion` differs from the loaded player's version: reload the page at the next transition.
+- Daily reload (ADR-0008): after 20 h of uptime, reload at the next transition between 02:00 and 05:00 in the system
+  time zone, or at the next transition after 26 h whatever the time. The reload starts from the cached manifest. It
+  bounds any slow memory growth in long-running browsers. All three values live in `config.js`. No daily reload
+  in admin preview.
 - Heartbeat every 30 s.
 - While offline: keep cycling, show nothing alarming, and add a tiny dim dot in the info overlay
   only when the overlay is enabled.
