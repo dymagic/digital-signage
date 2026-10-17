@@ -4,26 +4,10 @@
 > does not read this file.
 
 ## Status
-Milestone 1: in progress (WP-00–WP-03 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
+Milestone 1: in progress (WP-00–WP-04 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-04 Playlists — branch `wp-04-playlists` — status In review (round 1 requested)
-- Plan: `Data/PositionMaintenance` (SQL ROW_NUMBER renumbering for playlist_slides, screen_slides per
-  placement, screen_playlists, group_playlists); `Features/Playlists/PlaylistService` (list with counts,
-  get with entries, create/update with unique-name + xmin, add/remove/move entry = dense rewrite + playlist
-  version bump, usage, delete + renumber affected screens/groups); SlideService.DeleteAsync renumbers too.
-  Pages `/admin/playlists` (list), `create`, `{id}` (details form + entries partial `_PlaylistEntries` driven
-  by htmx page handlers Add/Remove/Move with version; without JS the same forms post and redirect),
-  `{id}/delete`. Drag & drop in `wwwroot/admin/reorder.js` (native HTML5 DnD, no library) plus up/down
-  buttons. Handlers are Razor page handlers, so MustChangePasswordFilter applies (WP-02 follow-up).
-  WP-03 follow-ups: dense renumber on slide delete, E2E wait fix, NITs 5–9.
-- Risks: htmx antiforgery header; drag & drop in Playwright (use DragToAsync).
-- Done: PositionMaintenance, PlaylistService, slide delete renumbering, pages (list, create, edit with htmx entries + drag&drop reorder.js, delete), strings, CSS. Builds.
-- Half-done: —
-- Done (2): integration + E2E tests, WP-03 follow-ups, ADR-0006. Self-check: build clean, 273 tests green, E2E 8/8.
-- Next step: handle review round 1 verdict (docs/reviews/WP-04-review-1.md).
-- Last checkpoint: (this commit)
-
+_None. Next: WP-05 Screens, groups & composition._
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -41,6 +25,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-01 — EF model (UUIDv7, snake_case, ICU ci names, xmin), InitialCreate (reversible), start-up initializer, DP keys in DB, timestamp interceptor, SequenceResolver + 41 unit tests; APPROVE round 2 (2 NIT deferred to WP-03) — 740ebf1
 - WP-02 — cookie auth (per-request stamp validation), lockout via atomic claims in user_lockouts, setup + bootstrap under advisory lock, user admin with self/last-admin guards, settings page, layout + i18n (resx coverage test), E2E admin; app-managed user version; start-up advisory lock; 4 review rounds (PO approved round 4), 1 MINOR + NITs deferred to WP-05 — 677bb74
 - WP-03 — slide library: validator + schedule clock (DST rules), CRUD pages with sandboxed previews, search, toggle, delete-in-use; ADR-0005; APPROVE round 1 (4 MINOR + 5 NIT deferred to WP-04/WP-08/WP-12) — d6c6a9e
+- WP-04 — playlists: CRUD, ordered entries via htmx page handlers (dense, versioned, oob version), native drag & drop, delete renumbering; ADR-0006; APPROVE round 1 (3 MINOR + 1 NIT deferred to WP-05) — fe33f04
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.

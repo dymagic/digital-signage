@@ -49,7 +49,7 @@ filter.
 **Accept:** integration tests for validation and TZ conversion; Editor and Admin both allowed. R-01–R-07.
 *Follow-ups from WP-01 review:* note in ARCHITECTURE that bulk `ExecuteUpdate` bypasses `TimestampInterceptor` (set `UpdatedAt` explicitly there); test that updates always overwrite `UpdatedAt` while inserts keep an explicit one.
 
-### WP-04 Playlists — `In review`
+### WP-04 Playlists — `Done`
 Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
 duplicate slides allowed, "used by" info (screens/groups).
 **Accept:** reorder persists densely; concurrent edit gets a friendly conflict message. R-08.
@@ -69,6 +69,11 @@ The screen detail page shows the resolved sequence with its sources (R-13; the p
 comes in WP-08). Domain events emitted through `IScreenNotifier` (a no-op implementation for now).
 **Accept:** the role split matches the brief; the resolved sequence on the page equals the resolver's output
 (integration test). R-10, R-11, R-12, R-13 (partly), R-14 (config).
+*From WP-04 review (apply to playlist lists and the new screen/group lists):* (1) keep keyboard focus after
+up/down/remove swaps (stable ids on the buttons, or refocus after `htmx:afterSwap`); (2) when the parent was
+deleted meanwhile, htmx changes get a 404 that htmx 2 doesn't swap: show a message or redirect (e.g. `HX-Redirect`
+to the list); (3) add tests: saving the playlist details form with a stale version, and the forced password
+change blocking htmx handlers; NIT: a slide delete renumbers playlist entries without bumping the playlist version.
 *From WP-02 review round 4:* heartbeats (WP-10) will write `LastSeenAt`/`LastIp`/… on `screens`, which bumps
 `xmin` and would make an open screen edit form fail with a conflict, the same class of bug as on users. Give
 `Screen` an app-managed `version` like `User` (ADR-0004), or keep heartbeat data in its own table, and reword
