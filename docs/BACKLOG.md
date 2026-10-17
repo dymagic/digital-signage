@@ -107,7 +107,7 @@ manifest cache and offline cycling, schedule re-check on the client, admin previ
 (`/screen?preview=`), test hooks (`data-state`, `timeScale`). A demo seed (a sample playlist with public
 domain images + an HTML clock slide), applied only in Development or with `SIGNAGE__SEEDDEMO=true`.
 *From WP-07 (ADR-0008):* implement the video release order (release the covered slide before preparing the one after
-next) and, if the product owner confirms it, the daily reload (PLAYER_SPEC §9). Its E2E tests use test-only clock
+next) and the daily reload (PLAYER_SPEC §9, confirmed by the product owner). Its E2E tests use test-only clock
 values via `?test=1` overrides: a due reload with the server unreachable (route abort) is postponed, and the
 player keeps cycling; a due reload with the server up happens at a transition; a one-slide screen reloads at the check.
 *From WP-06 review round 2:* (MINOR) the device stops polling a code 60 s before it expires but the server accepts

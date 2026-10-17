@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-06 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-07 Spike: video lifecycle & memory — branch `wp-07-video-spike` — status In review (round 2 requested)
+- Package: WP-07 Spike: video lifecycle & memory — branch `wp-07-video-spike` — status In review (round 3 requested)
 - Plan: generate H.264 test media in a container (`scripts/generate-test-media.sh`, linuxserver/ffmpeg:9.0.2), serve it
   and the harness from nginx (`testmedia` service in docker-compose.e2e.yml), harness in
   `tests/Signage.E2E/spikes/video-lifecycle/` with 4 strategies (release / remove / keep / reuse), runner
@@ -16,7 +16,8 @@ Milestone 1: in progress (WP-00–WP-06 done). Project docs, skills and the revi
 - Done: media, harness, runner, measurements (240 x 4 strategies; 1200 release vs images-only), ADR-0008, PLAYER_SPEC §4.
 - Round 1: CHANGES_REQUIRED (2 MAJOR: unexplained growth + tracing on, back-to-back videos unmeasured; 1 MINOR; 2 NIT); fixed in 7d9219d with new runs (artifacts/spike-short, artifacts/spike-long).
 - Round 2: CHANGES_REQUIRED (1 MAJOR: daily reload while offline; 2 MINOR; 2 NIT); fixed in d0d3641. The daily reload is user-visible, so it is Proposed and I asked the product owner.
-- Next step: after the PO answers, adjust ADR-0008/PLAYER_SPEC §9 (Accepted or removed) and request round 3 (last before escalation).
+- PO confirmed the daily reload (2026-10-17); ADR-0008 and PLAYER_SPEC §9 updated.
+- Next step: handle review round 3 verdict (docs/reviews/WP-07-review-3.md).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
@@ -41,7 +42,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
-- WP-07: may the player reload itself once a day (night window, only when the server answers; a moment of black) to bound slow browser memory growth? (ADR-0008)
+- (answered) WP-07 daily player reload confirmed by the product owner on 2026-10-17 (ADR-0008).
 
 ## Notes
 - The shell is zsh and `grep` is aliased to ugrep: use `command grep` in scripts. Quote `-?`.

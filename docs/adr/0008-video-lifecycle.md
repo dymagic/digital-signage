@@ -28,12 +28,12 @@ Why not reuse: it saved nothing measurable against release (more PSS, in fact), 
 element, so a late `ended`/`error` event from the previous `src` can land on the next slide. Fresh elements keep
 each slide's listeners and timers scoped to its own element.
 
-**Safety net: a daily reload** (*Proposed: user-visible, awaiting the product owner's confirmation*). Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
+**Safety net: a daily reload** (user-visible; confirmed by the product owner on 2026-10-17). Long runs (data below) show that releasing videos itself doesn't leak: 2000 back-to-back
 videos add about 0.03 MB each. A mix of images and videos still grows (about 0.09 MB per transition over 2000
 transitions; +147 MB from transition 200 to 1000 and +104 MB from 1000 to 1800, two equal 800-transition spans, leaving
 out the last sample, which was taken after the loop had stopped). That looks like Chromium's caches filling
 up, but a plateau isn't proven. If the growth were linear, 10 s slides (8,640 transitions a day) would add about
-0.7 GB a day, too much for a Pi left alone for weeks. So the proposal is that the player **reloads itself once a
+0.7 GB a day, too much for a Pi left alone for weeks. So the player **reloads itself once a
 day**: after 20 hours of uptime, inside a night window (02:00–05:00 in the system time zone), or after 26 hours
 whatever the time. It reloads only when the server answers at that moment, so an offline screen keeps cycling (R-24)
 instead of landing on the browser's error page. A carousel reloads at a transition, and screens that never
