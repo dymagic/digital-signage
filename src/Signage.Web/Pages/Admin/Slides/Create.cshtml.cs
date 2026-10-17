@@ -8,14 +8,15 @@ namespace Signage.Web.Pages.Admin.Slides;
 
 public class CreateModel(SlideService slides, SettingsService settings, IStringLocalizer<SharedResource> l) : SlideFormPage(settings, l)
 {
+    /// <summary>The slide type by name (<c>?type=Video</c>). Unknown names are a 404.</summary>
     [BindProperty(SupportsGet = true, Name = "type")]
-    public SlideType SlideType { get; set; } = SlideType.Image;
+    public string? TypeName { get; set; }
 
-    public override SlideType Type => SlideType;
+    public override SlideType Type => TryParseType(TypeName) ?? SlideType.Image;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
-        if (!Enum.IsDefined(SlideType))
+        if (TryParseType(TypeName) is null)
         {
             return NotFound();
         }
@@ -26,7 +27,7 @@ public class CreateModel(SlideService slides, SettingsService settings, IStringL
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
-        if (!Enum.IsDefined(SlideType))
+        if (TryParseType(TypeName) is not { } type)
         {
             return NotFound();
         }
@@ -37,8 +38,12 @@ public class CreateModel(SlideService slides, SettingsService settings, IStringL
             return Page();
         }
 
-        var id = await slides.CreateAsync(SlideType, result.Slide, ct);
+        var id = await slides.CreateAsync(type, result.Slide, ct);
         TempData["Status"] = "Slides.Created";
         return RedirectToPage("Edit", new { id });
     }
+
+    private static SlideType? TryParseType(string? name) =>
+        Enum.GetValues<SlideType>().Select(t => (SlideType?)t)
+            .FirstOrDefault(t => string.Equals(t.ToString(), name, StringComparison.OrdinalIgnoreCase));
 }

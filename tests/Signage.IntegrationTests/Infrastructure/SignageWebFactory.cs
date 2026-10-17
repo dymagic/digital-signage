@@ -13,6 +13,15 @@ public sealed class SignageWebFactory(
     TimeProvider? timeProvider = null,
     Action<IServiceCollection>? configureServices = null) : WebApplicationFactory<Program>
 {
+    static SignageWebFactory()
+    {
+        // The suite starts many in-process hosts. Each would watch appsettings*.json and wwwroot (asp-append-version)
+        // through inotify, and the per-user inotify limit (often 128) runs out. Tests never change those files, so
+        // config reloading is off and file watching falls back to polling.
+        Environment.SetEnvironmentVariable("DOTNET_hostBuilder__reloadConfigOnChange", "false");
+        Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "true");
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");

@@ -153,6 +153,9 @@
   <data name="Slides.BackToLibrary" xml:space="preserve">
     <value>Back to the slide library</value>
   </data>
+  <data name="Slides.Column.Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
   <data name="Slides.Create" xml:space="preserve">
     <value>Create slide</value>
   </data>

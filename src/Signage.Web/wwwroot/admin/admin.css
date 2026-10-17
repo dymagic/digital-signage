@@ -73,7 +73,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .form, .auth-panel form { display: flex; flex-direction: column; gap: .35rem; max-width: 560px; }
 label { font-weight: 600; margin-top: .6rem; }
 label.checkbox { display: flex; gap: .5rem; align-items: center; font-weight: 400; }
-input[type="text"], input[type="email"], input[type="password"], input[type="number"], input:not([type]), select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="url"],
+input[type="search"], input[type="datetime-local"], input:not([type]), select, textarea {
     font: inherit;
     padding: .5rem .65rem;
     border: 1px solid var(--border);
