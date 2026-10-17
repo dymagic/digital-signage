@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In review (round 3 requested)
+- Package: WP-02 Authentication & users — branch `wp-02-auth` — status In review (round 4 requested, product owner approved a 4th round)
 - Plan: `Features/Users` (UserAccounts service: create/verify+lockout/change/reset/role/active with
   last-admin guard; PasswordHasher<User> + own lockout on TimeProvider — ADR-0004 deviates from
   AddIdentityCore), cookie auth (`signage.auth`, HttpOnly, SameSite=Lax, Secure=SameAsRequest),
@@ -25,8 +25,8 @@ Milestone 1: in progress (WP-00, WP-01 done). Project docs, skills and the revie
 - Round 1: CHANGES_REQUIRED (2 MAJOR lockout race + editor POST tests, 4 MINOR, 2 NIT); all fixed in 1a13703 (NIT 8 noted under WP-04).
 - Round 2: CHANGES_REQUIRED (2 BLOCKER: stale hash write-back, xmin bumps by sign-ins; 1 MINOR; 1 NIT); fixed in 10dfd46. Round 3 is the last before escalation.
 - Round 3: CHANGES_REQUIRED (2 BLOCKER via the user's own change-password path: change can undo an admin reset; change bumps xmin and blocks deactivation; 1 MINOR tests rely on Task.Delay; 1 NIT). I agree with all findings.
-- STOPPED per review-gate escalation rule (round 3). Asked the product owner whether to fix and run round 4. Proposed fix: conditional hash write in ChangePasswordAsync (WHERE password_hash = verified), app-managed Version column on users bumped only by admin edits (not by own password change / sign-in), deterministic race tests via a blocking test hasher.
-- Next step: wait for the product owner's answer.
+- Product owner approved fixing and a 4th round (2026-10-17). Fixed in e41ddfb.
+- Next step: handle review round 4 verdict (docs/reviews/WP-02-review-4.md).
 - Last checkpoint: (this commit)
 
 
@@ -46,7 +46,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-01 — EF model (UUIDv7, snake_case, ICU ci names, xmin), InitialCreate (reversible), start-up initializer, DP keys in DB, timestamp interceptor, SequenceResolver + 41 unit tests; APPROVE round 2 (2 NIT deferred to WP-03) — 740ebf1
 
 ## Open questions for the product owner
-- WP-02 hit review round 3 with CHANGES_REQUIRED (docs/reviews/WP-02-review-3.md). May I fix and run round 4?
+- (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
 
 ## Notes
 - The shell is zsh and `grep` is aliased to ugrep: use `command grep` in scripts. Quote `-?`.
