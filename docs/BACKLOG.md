@@ -123,7 +123,7 @@ so admin preview and screen match. Share one helper for the srcdoc wrapper.
 `translateX(0)` while the incoming one animates; the progress bar fills over the duration; at most 3 layers;
 it keeps cycling when the server is stopped. R-20, R-21, R-23, R-24, R-13.
 
-### WP-09 Video & single video mode — `In progress`
+### WP-09 Video & single video mode — `In review`
 Video slide per PLAYER_SPEC §4 plus the WP-07 ADR decision; single video mode per §6; error/stall
 skip.
 **Accept:** E2E — the video doesn't play until fully in view (`currentTime` stays 0 during the transition);
