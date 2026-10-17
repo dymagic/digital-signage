@@ -40,7 +40,7 @@ package owns it, ADR-0004).
 setup is unreachable once a user exists; a deactivated user can't log in and their existing cookie is
 invalidated (security stamp). R-50, R-51, R-52, R-53, R-64.
 
-### WP-03 Slide library — `In review`
+### WP-03 Slide library — `Done`
 Slide CRUD for all 4 types, validation (absolute http/https URLs, required fields per type),
 the duration override, the schedule (entered in the system TZ, stored UTC), enable/disable, the
 play-audio flag with a help text, the WebPage framing note, a thumbnail/preview in the list (an
@@ -53,6 +53,11 @@ filter.
 Playlist CRUD, add/remove slides, reorder (drag with keyboard-accessible up/down fallback, via htmx),
 duplicate slides allowed, "used by" info (screens/groups).
 **Accept:** reorder persists densely; concurrent edit gets a friendly conflict message. R-08.
+*From WP-03 review:* (1) deleting a slide cascades away playlist/screen links and leaves gaps in `Position`;
+renumber densely in the same transaction (slide and playlist deletes) or reword ARCHITECTURE §3 "dense";
+(3) `SlideLibraryTests` waits on `**/admin/slides/*`, which already matches the create URL; wait for the edit page
+properly; NITs 5–9: singular/plural in `Slides.Usage`, own `Slides.Column.Status` key, `.split` preview overflow at
+1920 px, set `TempData["Warning"]` only after a successful save, strip an existing `#fragment` before `#t=0.1`.
 *From WP-02 review:* `MustChangePasswordFilter` is a Razor *page* filter. Admin endpoints mapped outside Razor
 Pages (e.g. minimal-API htmx endpoints) must enforce the forced password change too, so move the check into
 an authorization requirement or middleware when the first such endpoint appears.
@@ -94,6 +99,8 @@ progress bar, Image/WebPage/Html slides, preloading, the 3-layer cap, empty stat
 manifest cache and offline cycling, schedule re-check on the client, admin preview mode
 (`/screen?preview=`), test hooks (`data-state`, `timeScale`). A demo seed (a sample playlist with public
 domain images + an HTML clock slide), applied only in Development or with `SIGNAGE__SEEDDEMO=true`.
+*From WP-03 review:* the admin Html preview should use the player's base stylesheet for srcdoc (PLAYER_SPEC §5),
+so admin preview and screen match. Share one helper for the srcdoc wrapper.
 **Accept:** E2E — order follows the resolved sequence; the outgoing slide's transform stays
 `translateX(0)` while the incoming one animates; the progress bar fills over the duration; at most 3 layers;
 it keeps cycling when the server is stopped. R-20, R-21, R-23, R-24, R-13.
@@ -126,6 +133,8 @@ no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`
 it). R-60, R-61, R-62, R-65.
 *Follow-up from WP-01 review:* document that compose publishes Postgres on `127.0.0.1:55432` for the
 host dev loop and how to change it (`SIGNAGE_DB_PORT`) or remove it.
+*From WP-03 review:* the play-audio hint says "see the README": document Chromium/Firefox autoplay-with-sound
+kiosk flags there (R-07).
 *From WP-02 (ADR-0004):* the security note recommends HTTPS via a reverse proxy when the network isn't
 trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
 
