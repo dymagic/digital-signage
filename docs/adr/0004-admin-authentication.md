@@ -33,7 +33,9 @@ For revocation: validate the security stamp periodically (Identity's default is 
   correct password clears the counter. Because a claim counts until its password is verified, when 5 or
   more sign-ins for the *same* account are in flight at once, the extra ones are refused as locked until one
   of them succeeds. That is accepted: it only happens under a guessing burst. Wrong current passwords
-  on the change-password page go through the same check.
+  on the change-password page go through the same check. Every sign-in failure (unknown email, wrong password,
+  locked, deactivated) shows the same message, and unknown and locked accounts still pay for a (dummy) hash,
+  so neither the response nor its timing reveals whether an account exists or is locked.
 - The counter and lockout live in their own table, `user_lockouts`, not on `users`. Sign-ins therefore
   never change the user row: they can't bump its concurrency token (`xmin`), which would let someone
   holding a leaked password make an admin's deactivation fail as a conflict, and they never write the
@@ -43,10 +45,9 @@ For revocation: validate the security stamp periodically (Identity's default is 
   always wins, whatever the user (or someone holding their password) does at the same moment.
 - The concurrency token for admin edits of a user is an app-managed `version` column, not `xmin`. Only admin
   edits and resets increment it. The user's own sign-ins and password changes never do, so they can't make an
-  admin's deactivation or role change fail as a conflict. Other entities keep `xmin` (ADR-0003). Their rows are
-  written only by human edits. Every sign-in failure (unknown email, wrong password, locked, deactivated)
-  shows the same message, and unknown and locked accounts still pay for a (dummy) hash, so neither the
-  response nor its timing reveals whether an account exists or is locked.
+  admin's deactivation or role change fail as a conflict. The same applies to `Screen` (WP-05): heartbeats and
+  pairing write its row, so it also has an app-managed `version` that only edits by people increment. Other
+  entities (slides, playlists, groups, settings) keep `xmin` (ADR-0003), because only people write their rows.
 - Passwords need 10–128 characters and have no composition rules (NIST 800-63B style). Temporary
   passwords are 16 random characters from an alphabet without look-alike characters.
 - The cookie `signage.auth` is `HttpOnly` and `SameSite=Lax`, with `Secure` set when the request is
