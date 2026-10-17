@@ -77,7 +77,7 @@
             @if (Model.IsAdmin)
             {
                 <div class="form-actions wrap">
-                    <a class="button" asp-page="Pair" asp-route-screenId="@Model.Id">@L[screen.TokenHash is null ? "Pairing.Pair" : "Pairing.Repair"]</a>
+                    <a class="button" asp-page="Pair" asp-route-screenId="@(screen.TokenHash is null ? Model.Id : null)" asp-route-repair="@(screen.TokenHash is null ? null : Model.Id)">@L[screen.TokenHash is null ? "Pairing.Pair" : "Pairing.Repair"]</a>
                     @if (screen.TokenHash is not null)
                     {
                         <form method="post" asp-page-handler="Revoke"><button type="submit" class="danger">@L["Pairing.Revoke"]</button></form>

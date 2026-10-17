@@ -18,6 +18,9 @@ public abstract class E2ETest(BrowserFixture fixture) : IAsyncLifetime
 
     protected IBrowserContext Context => _context ?? throw new InvalidOperationException("Context not created.");
 
+    /// <summary>The shared browser, for tests that need extra contexts (e.g. a device next to the admin).</summary>
+    protected IBrowser Browser => fixture.Browser;
+
     /// <summary>When true, the test starts signed in as the E2E admin.</summary>
     protected virtual bool SignedInAsAdmin => false;
 

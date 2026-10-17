@@ -25,6 +25,10 @@ public class PairModel(PairingService pairing, ScreenService screens, IStringLoc
     [Display(Name = "Pairing.Field.Screen")]
     public Guid? ScreenId { get; set; }
 
+    /// <summary>Only the "Re-pair" link on a screen's page sets this (query string): that paired screen may be claimed.</summary>
+    [FromQuery(Name = "repair")]
+    public Guid? Repair { get; set; }
+
     public IReadOnlyList<ScreenListItem> UnpairedScreens { get; private set; } = [];
 
     /// <summary>Set when opened from a paired screen's "Re-pair" button: that screen is offered too.</summary>
@@ -33,6 +37,7 @@ public class PairModel(PairingService pairing, ScreenService screens, IStringLoc
     public async Task OnGetAsync(CancellationToken ct)
     {
         await LoadAsync(ct);
+        ScreenId ??= Repair;
         if (ScreenId is not null && UnpairedScreens.Any(s => s.Id == ScreenId))
         {
             Target = "existing";
@@ -41,6 +46,7 @@ public class PairModel(PairingService pairing, ScreenService screens, IStringLoc
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
+        await LoadAsync(ct); // RepairScreen decides whether an already paired screen may be claimed
         var (result, screenId) = Target == "existing" && ScreenId is { } existing
             ? await pairing.ClaimForScreenAsync(Code, existing, repair: RepairScreen?.Id == existing, ct)
             : await pairing.ClaimForNewScreenAsync(Code, NewName, ct);
@@ -58,7 +64,7 @@ public class PairModel(PairingService pairing, ScreenService screens, IStringLoc
     private async Task LoadAsync(CancellationToken ct)
     {
         var all = await screens.ListAsync(ct);
-        RepairScreen = all.FirstOrDefault(s => s.Id == ScreenId && s.IsPaired);
+        RepairScreen = all.FirstOrDefault(s => s.Id == Repair && s.IsPaired);
         UnpairedScreens = all.Where(s => !s.IsPaired || s.Id == RepairScreen?.Id).ToList();
     }
 }
