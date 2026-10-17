@@ -64,10 +64,10 @@ Baseline behaviour (must hold whatever the spike finds):
 7. While the video plays, the progress bar follows its playback position (R-21). A video that is the only playable
    slide loops (`loop`), so it never ends.
    It also loops when it *becomes* the only playable slide while it plays (a neighbour expired or was removed).
-9. When a video slide stays on screen for another round because nothing else can be shown (§2, Skipping), a video
+8. When a video slide stays on screen for another round because nothing else can be shown (§2, Skipping), a video
    that ended plays again from the start, and one that failed (error, stall, cap) is replaced by a fresh element after
    10 s. The player never retries in a tight loop.
-8. The stall limit and the cap are real time, never scaled by `timeScale` (videos play at normal speed in tests).
+9. The stall limit and the cap are real time, never scaled by `timeScale` (videos play at normal speed in tests).
 
 **Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
 `removeAttribute('src')` → `load()` → remove the layer. Only the next slide is prepared, so at most two video
