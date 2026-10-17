@@ -17,7 +17,8 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
 - Risks: headless Chromium codec support (H.264 confirmed in WP-07), timing flakiness with real-time video.
 - Done: video.js, singlevideo.js, carousel (start after transition, dwell until finished, progress follows playback,
   lone video loops, mode change interrupts the dwell), WP-08 follow-ups; VideoTests (3) + ClockTests stale test written.
-- Next step: run `scripts/test-e2e.sh -trait Category=Player`, fix, then docs (PLAYER_SPEC §4/§6, ARCHITECTURE modules).
+- Player E2E 25/25 (video + clock tests 3 repeat runs green); docs: PLAYER_SPEC §2/§4/§6, ARCHITECTURE, ADR-0009.
+- Next step: full self-check, then request review round 1.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

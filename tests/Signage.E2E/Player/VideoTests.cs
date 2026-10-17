@@ -99,6 +99,7 @@ public class VideoTests(BrowserFixture fixture) : PlayerTest(fixture)
         Assert.True(await single.EvaluateAsync<bool>("v => v.loop && v.muted"));
         await Expect(device.GetByTestId("progress")).ToBeHiddenAsync();
         await Expect(device.Locator(".slides > .slide")).ToHaveCountAsync(0); // the carousel slide is released
+        await device.ScreenshotAsync(new() { Path = Path.Combine(E2EEnvironment.ArtifactsDir, "screens", "player-single-video.png") });
 
         // It loops: playback wraps around instead of ending.
         Assert.True(await single.EvaluateAsync<bool>("""

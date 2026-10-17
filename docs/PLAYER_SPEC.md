@@ -58,7 +58,12 @@ Baseline behaviour (must hold whatever the spike finds):
 2. `play()` is called only when the slide's transition has fully completed.
 3. On `ended`: the last frame stays visible, and the next transition starts at once.
 4. On `error`, or a stall longer than 8 s without progress: log it, skip to the next slide, and report it in the heartbeat.
-5. If the video has no duration metadata, a safety cap (10 min) applies.
+5. A safety cap (10 min) applies to every video slide, so a video without duration metadata can't hold the screen.
+6. A video slide with sound whose `play()` is refused (the browser lacks the autoplay-with-sound policy, R-07) plays
+   muted instead of being skipped, and logs a warning.
+7. While the video plays, the progress bar follows its playback position (R-21). A video that is the only playable
+   slide loops (`loop`), so it never ends.
+8. The stall limit and the cap are real time, never scaled by `timeScale` (videos play at normal speed in tests).
 
 **Decided by the WP-07 spike (ADR-0008):** every video slide gets a fresh `<video>`. When it is covered: `pause()` →
 `removeAttribute('src')` → `load()` → remove the layer. Only the next slide is prepared, so at most two video
@@ -93,7 +98,11 @@ Pointer events are disabled on all slide content.
 ## 6. Single video mode (R-14)
 
 One `<video loop muted playsinline>` filling the screen. No carousel, progress bar or transitions.
-When the mode or URL changes through an event, cross-fade (300 ms) to the new state. The info and
+When the mode or URL changes through an event, cross-fade (300 ms) to the new state. A mode or URL change applies at once, also in
+the middle of a slide (it does not wait for the next transition). The carousel slide underneath is released once the
+video has faded in; going back, the carousel starts from its first slide underneath the fading video. Without a URL
+the empty state shows. A video that fails is tried again after 10 s. The video is released like a video slide
+(ADR-0008). The info and
 identify overlays still work.
 
 ## 7. Overlays
