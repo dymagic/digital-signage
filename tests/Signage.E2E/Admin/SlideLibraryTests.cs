@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using static Microsoft.Playwright.Assertions;
 using Signage.E2E.Infrastructure;
 
 namespace Signage.E2E.Admin;
@@ -23,15 +24,16 @@ public class SlideLibraryTests(BrowserFixture fixture) : E2ETest(fixture)
         await SaveScreenshotAsync("slides-create-html");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Create slide" }).ClickAsync();
 
-        await Page.WaitForURLAsync("**/admin/slides/*");
-        Assert.True(await Page.GetByRole(AriaRole.Status).GetByText("Slide created.").IsVisibleAsync());
+        // Wait for the edit page itself (the create URL would also match a looser pattern).
+        await Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex("/admin/slides/[0-9a-f-]{36}$"));
+        await Expect(Page.GetByRole(AriaRole.Status).GetByText("Slide created.")).ToBeVisibleAsync();
         var preview = Page.Locator(".preview-pane iframe");
         Assert.Equal("allow-scripts", await preview.GetAttributeAsync("sandbox"));
         await SaveScreenshotAsync("slides-edit-html");
 
         await Page.GetByRole(AriaRole.Link, new() { Name = "Back to the slide library" }).ClickAsync();
         var row = Page.Locator("tr", new() { HasText = title });
-        Assert.True(await row.IsVisibleAsync());
+        await Expect(row).ToBeVisibleAsync();
         Assert.Contains("20 s", await row.InnerTextAsync(), StringComparison.Ordinal);
         await SaveScreenshotAsync("slides-library");
     }
@@ -41,8 +43,8 @@ public class SlideLibraryTests(BrowserFixture fixture) : E2ETest(fixture)
     {
         await Page.GotoAsync("/admin/slides/create?type=WebPage");
 
-        Assert.True(await Page.GetByText("Some websites refuse to be shown inside another page").IsVisibleAsync());
-        Assert.False(await Page.GetByLabel("Play audio").IsVisibleAsync());
+        await Expect(Page.GetByText("Some websites refuse to be shown inside another page")).ToBeVisibleAsync();
+        await Expect(Page.GetByLabel("Play audio")).Not.ToBeVisibleAsync();
     }
 
     [Fact]
@@ -50,8 +52,8 @@ public class SlideLibraryTests(BrowserFixture fixture) : E2ETest(fixture)
     {
         await Page.GotoAsync("/admin/slides/create?type=Video");
 
-        Assert.True(await Page.GetByLabel("Play audio").IsVisibleAsync());
-        Assert.True(await Page.GetByText("autoplay-with-sound policy").IsVisibleAsync());
+        await Expect(Page.GetByLabel("Play audio")).ToBeVisibleAsync();
+        await Expect(Page.GetByText("autoplay-with-sound policy")).ToBeVisibleAsync();
         Assert.Equal(0, await Page.GetByLabel("Duration (seconds)").CountAsync());
     }
 }

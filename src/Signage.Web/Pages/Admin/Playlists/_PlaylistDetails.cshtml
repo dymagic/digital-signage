@@ -1,0 +1,7 @@
+@model Signage.Web.Pages.Admin.Playlists.PlaylistDetailsInput
+<label asp-for="Name"></label>
+<input asp-for="Name" maxlength="100" />
+<span asp-validation-for="Name" class="field-error"></span>
+<label asp-for="Description"></label>
+<textarea asp-for="Description" rows="2" maxlength="1000"></textarea>
+<span asp-validation-for="Description" class="field-error"></span>

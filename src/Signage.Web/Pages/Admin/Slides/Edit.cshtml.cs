@@ -72,6 +72,7 @@ public class EditModel(SlideService slides, SettingsService settings, IStringLoc
             return Page();
         }
 
+        KeepWarningForNextPage(result);
         TempData["Status"] = "Common.Saved";
         return RedirectToPage(new { id = Id });
     }

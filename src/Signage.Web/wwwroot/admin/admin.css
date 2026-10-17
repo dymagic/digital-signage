@@ -156,6 +156,9 @@ fieldset.schedule legend { font-weight: 600; padding: 0 .25rem; }
 fieldset.schedule .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 fieldset.schedule .row > div { display: flex; flex-direction: column; gap: .35rem; }
 .split { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 2rem; align-items: start; }
+/* Slide editor: the form takes the rest, the 440 px preview never overflows the content column. */
+.split.split-preview { grid-template-columns: minmax(0, 1fr) auto; }
+.preview-pane .slide-preview { --preview-width: 440; }
 .preview-pane { position: sticky; top: 1rem; }
 .badge-button { font-size: .8rem; padding: .1rem .6rem; border-radius: 999px; }
 .badge-button.on { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
@@ -189,3 +192,28 @@ fieldset.schedule .row > div { display: flex; flex-direction: column; gap: .35re
     .preview-pane { position: static; }
     .preview-pane .slide-preview { --preview-width: 320; }
 }
+
+/* Ordered lists (playlist slides) */
+ol.entries { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+ol.entries li {
+    display: grid;
+    grid-template-columns: auto auto auto 1fr auto;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem .75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+ol.entries li.dragging { opacity: .4; }
+ol.entries li.drop-before { box-shadow: 0 -3px 0 var(--accent); }
+ol.entries li.drop-after { box-shadow: 0 3px 0 var(--accent); }
+.drag-handle { cursor: grab; color: var(--muted); user-select: none; letter-spacing: -2px; }
+.position { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 1.5rem; text-align: right; }
+.entry-actions { display: flex; gap: .25rem; }
+.entry-actions form { margin: 0; }
+.entry-actions button { padding: .25rem .6rem; }
+.entry-actions button:disabled { opacity: .35; cursor: default; }
+.add-slide { display: flex; flex-direction: column; gap: .35rem; max-width: 560px; }
+.add-slide .row { display: flex; gap: .5rem; }
+.htmx-request #entries, #entries.htmx-request { opacity: .6; transition: opacity .15s; }

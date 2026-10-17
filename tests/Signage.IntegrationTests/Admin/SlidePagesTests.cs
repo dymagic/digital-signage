@@ -258,7 +258,7 @@ public sealed partial class SlidePagesTests(PostgresFixture postgres) : IAsyncLi
         Assert.Contains("Canteen", confirm, StringComparison.Ordinal);
         Assert.Contains("Lobby TV", confirm, StringComparison.Ordinal);
         var list = WebUtility.HtmlDecode(await _editor.GetHtmlAsync("/admin/slides"));
-        Assert.Contains("1 playlists · 1 screens", list, StringComparison.Ordinal);
+        Assert.Contains("Playlists: 1 · Screens: 1", list, StringComparison.Ordinal);
 
         using var deleted = await _editor.PostFormAsync($"/admin/slides/{slide.Id}/delete", new Dictionary<string, string>());
 

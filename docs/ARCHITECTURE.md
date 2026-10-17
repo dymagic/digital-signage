@@ -92,7 +92,8 @@ DataProtectionKey  (EF Core data-protection key store, for multi-replica cookies
 
 Rules:
 - Positions are dense integers, rewritten on reorder. Position columns are indexed but deliberately not unique
-  (a swap would violate a unique index mid-update). Use optimistic concurrency (`xmin` /
+  (a swap would violate a unique index mid-update). Deletes that cascade away links (slide, playlist) renumber the
+  affected lists in the same transaction (`PositionMaintenance`, ADR-0006). Use optimistic concurrency (`xmin` /
   row version) on aggregate roots edited by humans.
 - Deleting a slide that is in use asks for confirmation and removes its links. Deleting a playlist
   likewise.
@@ -127,6 +128,9 @@ Admin, and login, setup and forbidden are anonymous. Each request re-validates t
 (security stamp, active, role). A page filter keeps users who must change their password on that page.
 URLs are lowercase. Strings come from `Resources/SharedResource.resx` (`L["Key"]`), and a unit test
 checks key coverage.
+Ordered lists (playlist slides; later screen and group lists) are edited through Razor Page handlers that
+return a partial for htmx and redirect for plain posts. They carry the parent's version, and `wwwroot/admin/reorder.js`
+adds native drag-and-drop (ADR-0006).
 
 ### Player API (`/api/player/*`)
 | Method & path | Auth | Purpose |

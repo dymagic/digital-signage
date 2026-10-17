@@ -35,10 +35,16 @@ public abstract class SlideFormPage(SettingsService settings, IStringLocalizer<S
             ModelState.AddModelError($"{nameof(Input)}.{field}", l[key]);
         }
 
-        if (result.IsValid && result.Warnings.Count > 0)
+        return result;
+    }
+
+    /// <summary>Call after a successful save: shows the first non-blocking warning on the next page.</summary>
+    protected void KeepWarningForNextPage(SlideValidation result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        if (result.Warnings.Count > 0)
         {
             TempData["Warning"] = result.Warnings[0];
         }
-        return result;
     }
 }

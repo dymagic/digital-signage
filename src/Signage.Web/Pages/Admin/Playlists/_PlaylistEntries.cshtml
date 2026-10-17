@@ -1,0 +1,82 @@
+@model Signage.Web.Pages.Admin.Playlists.EditModel
+@*
+    The ordered slides of a playlist. Every button is a normal form (works without JavaScript: full post and
+    redirect). With htmx the forms post in the background and this block is swapped in place. The playlist
+    version travels with every change; the hidden #playlist-version is refreshed out-of-band after each swap.
+*@
+@{
+    var entries = Model.Playlist!.Slides;
+    var count = entries.Count;
+}
+<div id="entries" hx-target="this" hx-swap="outerHTML">
+    @if (Model.IsHtmx)
+    {
+        <input type="hidden" id="playlist-version" name="Version" value="@Model.Version" hx-swap-oob="true" />
+    }
+    @if (Model.EntriesError is not null)
+    {
+        <p class="notice notice-error" role="alert">@L[Model.EntriesError]</p>
+    }
+    @if (count == 0)
+    {
+        <p class="empty">@L["Playlists.NoSlides"]</p>
+    }
+    else
+    {
+        <ol class="entries" data-reorder data-move-url="@Url.Page("Edit", "Move", new { id = Model.Id })" aria-label="@L["Playlists.Slides"]">
+            @for (var i = 0; i < count; i++)
+            {
+                var entry = entries[i];
+                <li draggable="true" data-entry-id="@entry.Id" data-index="@i">
+                    <span class="drag-handle" aria-hidden="true" title="@L["Playlists.DragHint"]">⋮⋮</span>
+                    <span class="position">@(i + 1)</span>
+                    <div class="thumb"><partial name="/Pages/Admin/Slides/_SlidePreview.cshtml" model="entry.Slide" /></div>
+                    <div class="entry-title">
+                        <a asp-page="/Admin/Slides/Edit" asp-route-id="@entry.SlideId">@entry.Slide.Title</a>
+                        <div class="muted">
+                            @L[$"Slides.Type.{entry.Slide.Type}"]
+                            @if (!entry.Slide.IsEnabled)
+                            {
+                                <span class="badge badge-muted">@L["Slides.Disabled"]</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="entry-actions">
+                        <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" hx-post="@Url.Page("Edit", "Move", new { id = Model.Id })">
+                            <input type="hidden" name="Version" value="@Model.Version" />
+                            <input type="hidden" name="entryId" value="@entry.Id" />
+                            <input type="hidden" name="toIndex" value="@(i - 1)" />
+                            <button type="submit" disabled="@(i == 0)" aria-label="@L["Playlists.MoveUp", entry.Slide.Title]">↑</button>
+                        </form>
+                        <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" hx-post="@Url.Page("Edit", "Move", new { id = Model.Id })">
+                            <input type="hidden" name="Version" value="@Model.Version" />
+                            <input type="hidden" name="entryId" value="@entry.Id" />
+                            <input type="hidden" name="toIndex" value="@(i + 1)" />
+                            <button type="submit" disabled="@(i == count - 1)" aria-label="@L["Playlists.MoveDown", entry.Slide.Title]">↓</button>
+                        </form>
+                        <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" hx-post="@Url.Page("Edit", "Remove", new { id = Model.Id })">
+                            <input type="hidden" name="Version" value="@Model.Version" />
+                            <input type="hidden" name="entryId" value="@entry.Id" />
+                            <button type="submit" class="danger" aria-label="@L["Playlists.Remove", entry.Slide.Title]">✕</button>
+                        </form>
+                    </div>
+                </li>
+            }
+        </ol>
+    }
+    <form method="post" asp-page-handler="Add" asp-route-id="@Model.Id" hx-post="@Url.Page("Edit", "Add", new { id = Model.Id })" class="add-slide">
+        <input type="hidden" name="Version" value="@Model.Version" />
+        <label for="slideId">@L["Playlists.AddSlide"]</label>
+        <div class="row">
+            <select id="slideId" name="slideId" required>
+                <option value="">@L["Playlists.ChooseSlide"]</option>
+                @foreach (var slide in Model.AvailableSlides)
+                {
+                    <option value="@slide.Id">@slide.Title (@L[$"Slides.Type.{slide.Type}"])</option>
+                }
+            </select>
+            <button type="submit">@L["Playlists.Add"]</button>
+        </div>
+        <span class="hint">@L["Playlists.AddHint"]</span>
+    </form>
+</div>

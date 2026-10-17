@@ -43,6 +43,16 @@ public sealed partial class AdminSession : IDisposable
         return await _client.PostAsync(new Uri(action ?? formPage, UriKind.Relative), content, TestContext.Current.CancellationToken);
     }
 
+    /// <summary>Like an htmx request: form-encoded POST with the antiforgery token in the header and HX-Request set.</summary>
+    public async Task<HttpResponseMessage> PostHtmxAsync(string tokenPage, string action, IDictionary<string, string> fields)
+    {
+        var token = await GetAntiforgeryTokenAsync(tokenPage);
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(action, UriKind.Relative)) { Content = new FormUrlEncodedContent(fields) };
+        request.Headers.Add("RequestVerificationToken", token);
+        request.Headers.Add("HX-Request", "true");
+        return await _client.SendAsync(request, TestContext.Current.CancellationToken);
+    }
+
     public async Task<HttpResponseMessage> PostWithoutTokenAsync(string action, IDictionary<string, string> fields)
     {
         using var content = new FormUrlEncodedContent(fields);

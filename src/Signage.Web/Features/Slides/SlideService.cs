@@ -91,11 +91,29 @@ public sealed class SlideService(SignageDbContext db, TimeProvider time)
         return new SlideUsage(playlists, screens);
     }
 
-    /// <summary>Deletes the slide and every link to it (playlist entries, prepended/appended slides).</summary>
+    /// <summary>
+    /// Deletes the slide and every link to it (playlist entries, prepended/appended slides), then closes the gaps
+    /// those links leave so positions stay dense.
+    /// </summary>
     public async Task<OperationResult> DeleteAsync(Guid id, CancellationToken ct)
     {
-        var deleted = await db.Slides.Where(s => s.Id == id).ExecuteDeleteAsync(ct).ConfigureAwait(false);
-        return deleted == 0 ? OperationResult.Fail(CommonErrors.NotFound) : OperationResult.Ok;
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+            var playlistIds = await db.PlaylistSlides.Where(ps => ps.SlideId == id).Select(ps => ps.PlaylistId).Distinct().ToListAsync(ct).ConfigureAwait(false);
+            var screenIds = await db.ScreenSlides.Where(ss => ss.SlideId == id).Select(ss => ss.ScreenId).Distinct().ToListAsync(ct).ConfigureAwait(false);
+            var deleted = await db.Slides.Where(s => s.Id == id).ExecuteDeleteAsync(ct).ConfigureAwait(false);
+            if (deleted == 0)
+            {
+                return OperationResult.Fail(CommonErrors.NotFound);
+            }
+
+            await db.RenumberPlaylistsAsync(playlistIds, ct).ConfigureAwait(false);
+            await db.RenumberScreenSlidesAsync(screenIds, ct).ConfigureAwait(false);
+            await tx.CommitAsync(ct).ConfigureAwait(false);
+            return OperationResult.Ok;
+        }).ConfigureAwait(false);
     }
 
     private static void Apply(Slide slide, ValidSlide valid)

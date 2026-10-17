@@ -1,0 +1,15 @@
+@page
+@model Signage.Web.Pages.Admin.Playlists.CreateModel
+@{
+    ViewData["Title"] = L["Playlists.Create"];
+    ViewData["Section"] = "Playlists";
+}
+<h1>@L["Playlists.Create"]</h1>
+<form method="post" class="form">
+    <partial name="_ValidationSummary" />
+    <partial name="_PlaylistDetails" for="Input" />
+    <div class="form-actions">
+        <button type="submit" class="primary">@L["Playlists.Create"]</button>
+        <a asp-page="Index">@L["Common.Cancel"]</a>
+    </div>
+</form>

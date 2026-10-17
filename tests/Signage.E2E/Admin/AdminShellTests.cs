@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using static Microsoft.Playwright.Assertions;
 using Signage.E2E.Infrastructure;
 
 namespace Signage.E2E.Admin;
@@ -17,7 +18,7 @@ public class AdminShellTests(BrowserFixture fixture) : E2ETest(fixture)
 
         await Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Users" }).ClickAsync();
         await Page.WaitForURLAsync("**/admin/users");
-        Assert.True(await Page.GetByRole(AriaRole.Cell, new() { Name = AdminLogin.Email }).First.IsVisibleAsync());
+        await Expect(Page.GetByRole(AriaRole.Cell, new() { Name = AdminLogin.Email }).First).ToBeVisibleAsync();
         await SaveScreenshotAsync("admin-users");
 
         await Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Settings" }).ClickAsync();
@@ -49,6 +50,6 @@ public class SignInPageTests(BrowserFixture fixture) : E2ETest(fixture)
 
         Assert.False(await AdminLogin.SignInAsync(Page, "definitely wrong"));
 
-        Assert.True(await Page.GetByRole(AriaRole.Alert).GetByText("Sign-in failed").IsVisibleAsync());
+        await Expect(Page.GetByRole(AriaRole.Alert).GetByText("Sign-in failed")).ToBeVisibleAsync();
     }
 }
