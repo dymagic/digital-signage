@@ -33,7 +33,7 @@ ConnectionStrings__Default="Host=localhost;Port=55432;Database=signage;Username=
 Add a migration with the local EF tool (`dotnet tool restore` once):
 
 ```bash
-dotnet ef migrations add <Name> -p src/Signage.Web
+dotnet ef migrations add <Name> -p src/Signage.Web -o Data/Migrations
 ```
 
 Useful extras:

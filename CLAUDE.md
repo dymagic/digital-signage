@@ -55,6 +55,7 @@ docker compose up -d --build                   # app at http://localhost:8080
 docker compose down -v                         # stop and wipe DB
 scripts/test-e2e.sh                            # Playwright E2E inside Docker (args → xUnit runner, e.g. -trait "Category=Smoke")
 scripts/generate-test-media.sh                 # test videos/images into artifacts/media (run by test-e2e.sh)
+scripts/update-readme-screenshots.sh           # retake the README screenshots (docs/images, fresh database)
 dotnet tool restore && dotnet ef migrations add <Name> -p src/Signage.Web -o Data/Migrations   # local tool (dotnet-tools.json)
 ```
 
