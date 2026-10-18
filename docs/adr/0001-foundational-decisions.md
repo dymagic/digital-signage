@@ -6,7 +6,7 @@
 - Requirements: all
 
 ## Context
-`opening-spec.md` left the platform, terminology and several behaviours open. They were settled in an
+`docs/opening-spec.md` left the platform, terminology and several behaviours open. They were settled in an
 interview with the product owner before development started.
 
 ## Decisions

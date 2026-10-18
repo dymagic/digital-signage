@@ -2,7 +2,7 @@
 
 > The source of truth for **what** we build. `docs/ARCHITECTURE.md` says **how**,
 > `docs/PLAYER_SPEC.md` gives the exact screen behaviour, and `docs/BACKLOG.md` sets the **order**.
-> The original request is preserved in `opening-spec.md`. Where this brief and the opening spec
+> The original request is preserved in `docs/opening-spec.md`. Where this brief and the opening spec
 > disagree, this brief wins. It was agreed with the product owner on 2026-10-16.
 
 ## 1. Vision

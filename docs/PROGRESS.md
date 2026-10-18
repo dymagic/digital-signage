@@ -9,6 +9,9 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
 ## Current package
 _(none)_ Milestone 1 is done: every package Done, milestone review APPROVE (MILESTONE-M1-review-1). Stopped and
 reported to the product owner. Follow-ups after M1 are listed at the end of BACKLOG.md; open questions below.
+- Publishing (2026-10-18, PO request): moved `opening-spec.md` to `docs/`, README "How this was built", CI badge and
+  clone URL, `SECURITY.md`, CI and image workflows, author rewritten to `dymagic <dymagic@users.noreply.github.com>`,
+  tag `v0.1.0`. The PO gave a one-time permission to push to `git@github.com:dymagic/digital-signage.git`.
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)

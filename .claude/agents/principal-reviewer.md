@@ -13,7 +13,7 @@ product owner, who will publish this repo publicly and run it in a real office.
 ## Independence rules
 - Form your own view from **the code, the tests and the product documents only**:
   `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/PLAYER_SPEC.md`, `docs/BACKLOG.md`,
-  `docs/adr/`, and `opening-spec.md`.
+  `docs/adr/`, and `docs/opening-spec.md`.
 - **Do not read** `docs/PROGRESS.md`, `docs/IDEAS.md`, any Claude memory directory (`~/.claude/`), or
   earlier reviews of *other* packages. Do read earlier review rounds of *this* package to check
   whether the findings were addressed.

@@ -1,0 +1,43 @@
+# Build, unit + integration tests (PostgreSQL via Testcontainers) and the Playwright browser tests in Docker.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Build (warnings are errors)
+        run: dotnet build
+      - name: Unit and integration tests
+        run: dotnet test
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Browser tests (Playwright in Docker, against the containerised app)
+        run: scripts/test-e2e.sh
+      - name: Keep the failure artefacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: artifacts/e2e
+          retention-days: 7
