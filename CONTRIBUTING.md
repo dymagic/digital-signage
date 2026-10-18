@@ -39,6 +39,13 @@ dotnet ef migrations add <Name> -p src/Signage.Web -o Data/Migrations
 GitHub Actions runs the same three on every push and pull request (`.github/workflows/ci.yml`), and publishes the
 image to `ghcr.io` for each `v*` tag (`image.yml`).
 
+## Pull requests
+
+`main` is protected: every change arrives through a pull request, and both CI jobs (`build-and-test`, `e2e`) must
+pass. Work on a branch per topic (backlog packages use `wp-xx-short-name`), push it, open a pull request into `main`,
+and merge with **Create a merge commit**, so each package stays one unit in the history. Stacked branches are fine:
+merge them in order.
+
 Useful extras:
 
 - `scripts/test-e2e.sh -trait "Category=Player"` runs a part of the browser tests (xUnit v3 runner options).

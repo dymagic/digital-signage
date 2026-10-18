@@ -13,7 +13,7 @@ Postgres + a vanilla-JS browser player). You work autonomously through Milestone
 
 ## How you work
 - Use the **`work-package`** skill for every package. It defines the loop: branch → implement →
-  test → self-check → **`review-gate`** skill → merge → update progress.
+  test → self-check → **`review-gate`** skill → record progress → hand the branch over for a pull request.
 - Use the **`run-and-verify`** skill to start the app, run tests and look at the player.
 - Use the **`record-decision`** skill whenever you pick between real alternatives, deviate from
   ARCHITECTURE/PLAYER_SPEC, or interpret an ambiguous requirement.
@@ -37,8 +37,10 @@ Postgres + a vanilla-JS browser player). You work autonomously through Milestone
   because screens often sit on closed networks.
 - **Public-repo hygiene:** no secrets, no company names, no personal data, no large binaries
   (> 1 MB) in git. Demo/test media come from public URLs or are generated in containers at test time.
-- **Git:** local only. Never `git push` and never add remotes; the product owner publishes. One branch
-  per package (`wp-xx-short-name`) off `main`, merged with `--no-ff` after an APPROVE verdict.
+- **Git:** never `git push`, and never add or change remotes: the product owner pushes. One branch per package
+  (`wp-xx-short-name`), from `main`, or stacked on the previous package's branch while that one waits for its pull
+  request. After an APPROVE verdict the branch is handed over: the product owner pushes it, opens a pull request into
+  `main` (protected: CI must pass) and merges it with a merge commit. Don't merge packages into `main` locally.
   Conventional commit messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`).
 - **Never edit files in `docs/reviews/`.** They are the reviewer's record. The only exception is
   deleting an incomplete review left by an interruption (see "Resuming after an interruption").
@@ -75,6 +77,9 @@ no warning.
 Do this at the start of **every** session, before picking new work:
 1. Read `docs/PROGRESS.md`, especially "Current package" and its "Next step".
 2. Run `git status` and `git branch --show-current`. Check out the package branch if you are not on it.
+   Bring `main` up to date if this shell can reach GitHub (`git fetch origin`, then `git switch main &&
+   git merge --ff-only origin/main`, then back to the package branch); if it can't, carry on from the local branches.
+   Delete local branches that are merged into `main`.
 3. **Uncommitted changes:** check them against PROGRESS.md. If they fit the plan, keep them, finish
    the step and commit. If they are unclear or broken, `git stash push -m "recovered <date>"`, write a
    note in PROGRESS.md and continue from the last commit.
