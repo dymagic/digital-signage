@@ -49,7 +49,7 @@ docker buildx build --platform linux/arm64 -t <account>.dkr.ecr.eu-west-1.amazon
 In Secrets Manager (or SSM Parameter Store), store:
 
 - `signage/db`: `Host=<rds endpoint>;Port=5432;Database=signage;Username=signage;Password=<password>;SSL Mode=Require`
-- `signage/admin-password`: a temporary password for the first admin (at least 12 characters)
+- `signage/admin-password`: a temporary password for the first admin (at least 10 characters)
 
 Give the ECS **task execution role** permission to read them.
 

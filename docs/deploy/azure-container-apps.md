@@ -19,7 +19,7 @@ ENV=signage-env
 APP=signage
 PG_PASSWORD='<a long random password>'
 ADMIN_EMAIL='you@example.org'
-ADMIN_PASSWORD='<a temporary password, at least 12 characters>'
+ADMIN_PASSWORD='<a temporary password, at least 10 characters>'
 
 az group create -n $RG -l $LOCATION
 ```
@@ -45,12 +45,16 @@ Notes:
 
 ## 3. The image
 
-Build in Azure (no local Docker needed) or push one you built with `docker buildx`:
+Build the image locally with Docker Buildx (the Dockerfile needs BuildKit) and push it to a new registry:
 
 ```bash
 az acr create -g $RG -n $ACR --sku Basic
-az acr build -r $ACR -t signage:0.1.0 .      # run in the repository root
+az acr login -n $ACR
+docker buildx build --platform linux/amd64 -t $ACR.azurecr.io/signage:0.1.0 --push .   # in the repository root
 ```
+
+Container Apps run amd64. (`az acr build` isn't used here: it isn't shown to build with BuildKit, which this Dockerfile
+requires.)
 
 ## 4. The Container Apps environment
 
@@ -117,7 +121,7 @@ The container has no shell, so probes must be HTTP. In the app's YAML (`az conta
 Build a new tag and point the app at it:
 
 ```bash
-az acr build -r $ACR -t signage:0.2.0 .
+docker buildx build --platform linux/amd64 -t $ACR.azurecr.io/signage:0.2.0 --push .
 az containerapp update -g $RG -n $APP --image $ACR.azurecr.io/signage:0.2.0
 ```
 

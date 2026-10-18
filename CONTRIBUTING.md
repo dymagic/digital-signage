@@ -22,12 +22,12 @@ docker compose up -d --build     # the app at http://localhost:8080 (with demo c
 docker compose down -v           # stop and wipe the database
 ```
 
-Run the app from source against the compose database (published on `127.0.0.1:55432`):
+Run the app from source against the compose database (published on `127.0.0.1:55432`; `appsettings.Development.json`
+already points there) at http://localhost:5080:
 
 ```bash
 docker compose up -d db
-ConnectionStrings__Default="Host=localhost;Port=55432;Database=signage;Username=signage;Password=signage-demo-password" \
-  dotnet run --project src/Signage.Web
+dotnet run --project src/Signage.Web
 ```
 
 Add a migration with the local EF tool (`dotnet tool restore` once):

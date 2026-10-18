@@ -22,6 +22,7 @@ as one container plus PostgreSQL, on a laptop with Docker, a server in the offic
 |---|---|
 | ![Playlist editor](docs/images/admin-playlist.jpg) | ![A screen and what it plays](docs/images/admin-screen.jpg) |
 | ![Screens with their status](docs/images/admin-screens.jpg) | ![Identifying a screen](docs/images/player-identify.jpg) |
+| ![The slide library](docs/images/admin-slides.jpg) | ![A new screen showing its pairing code](docs/images/player-pairing.jpg) |
 
 ## Quick start
 
@@ -47,8 +48,10 @@ Stop it with `docker compose down` (add `-v` to delete the database too). For a 
 set `SIGNAGE__SEEDDEMO: "false"` in `docker-compose.yml` before the first start, or delete the demo playlist, slides and
 screen in the admin.
 
-Change the database password in `docker-compose.yml` (or better, in a git-ignored `docker-compose.override.yml`) before
-you run this anywhere that matters: the one in the file is a demo value.
+Change the database password before you run this anywhere that matters: the one in the file is a demo value. It
+appears twice in `docker-compose.yml` (`POSTGRES_PASSWORD` and the app's connection string; better, override both in a
+git-ignored `docker-compose.override.yml`). Do it **before the first start**: PostgreSQL sets the password when it
+creates the volume, and changing the file later doesn't change it.
 
 ## Setting up a screen
 
@@ -57,7 +60,7 @@ computer attached to the TV. Point it at `http://<server>:8080/screen`.
 
 - **Pairing:** the screen shows a code; an admin enters it under **Screens → Pair screen**. The screen keeps its
   access in a cookie, so it stays paired across restarts. **Revoke** on the screen's page sends it back to pairing.
-- **Pre-configured address:** on a screen's page, **Create screen address** gives a one-time link
+- **Pre-configured address:** on a screen's page, **Create screen address** gives a link that is shown only once
   (`/screen?token=…`). Use it as the kiosk's start page: the screen pairs itself on first start, also after the
   browser's data is wiped. Treat the link like a password.
 
@@ -89,7 +92,7 @@ Everything is set with environment variables (the `SIGNAGE__` prefix maps to the
 | Variable | Default | What it does |
 |---|---|---|
 | `ConnectionStrings__Default` | — | PostgreSQL connection string (required), e.g. `Host=db;Database=signage;Username=signage;Password=…` |
-| `SIGNAGE__MIGRATEONSTARTUP` | `true` | Apply database migrations at start-up (safe with several replicas: they take turns). Set `false` to migrate yourself |
+| `SIGNAGE__MIGRATEONSTARTUP` | `true` | Apply database migrations at start-up (safe with several replicas: they take turns). With `false` the app refuses to start until the database is up to date: migrate yourself (see below) |
 | `SIGNAGE__BOOTSTRAP__ADMINEMAIL`, `SIGNAGE__BOOTSTRAP__ADMINPASSWORD` | — | Create the first admin at start-up when there are no users (useful in the cloud). The password must be changed at first sign-in |
 | `SIGNAGE__SEEDDEMO` | `false` (`true` in `docker-compose.yml`) | Create the demo playlist and "Demo screen" on an empty database |
 | `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Behind a reverse proxy or load balancer: take the client IP and scheme from `X-Forwarded-For`/`-Proto` |
@@ -103,6 +106,14 @@ system time zone used for schedules and times.
 `docker-compose.yml` also publishes PostgreSQL on **127.0.0.1:55432** (loopback only), so you can run the app from source
 against it. Change the port with `SIGNAGE_DB_PORT=…`, or remove the `ports:` section of the `db` service if you don't
 need it.
+
+To migrate by hand, generate an idempotent SQL script from a checkout of the **same version** and apply it:
+
+```bash
+dotnet tool restore
+dotnet ef migrations script --idempotent -p src/Signage.Web -o migrate.sql
+psql "host=… dbname=signage user=signage" -f migrate.sql
+```
 
 Health endpoints: `/healthz` (the process is up) and `/readyz` (the database is reachable). The image has no shell, so
 probe them from outside (the load balancer, the orchestrator).
@@ -138,6 +149,8 @@ The image is multi-arch (amd64 and arm64). Build and push it yourself with Docke
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 -t registry.example.com/signage:0.1.0 --push .
 ```
+
+If Docker says multi-platform builds aren't supported, create a builder first: `docker buildx create --use`.
 
 The container runs as a non-root user and listens on port 8080. Several replicas can run side by side: they share the
 database, and live updates reach every screen whichever replica it is connected to.
