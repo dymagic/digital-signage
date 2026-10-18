@@ -148,6 +148,7 @@ body.auth { display: grid; place-items: center; min-height: 100vh; padding: 1rem
 
 /* Slides */
 .button-group { display: flex; gap: .5rem; flex-wrap: wrap; }
+.button-group > form { margin: 0; }
 .search { display: flex; gap: .5rem; margin-bottom: 1rem; max-width: 560px; }
 .empty { color: var(--muted); padding: 2rem; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
 textarea.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; }

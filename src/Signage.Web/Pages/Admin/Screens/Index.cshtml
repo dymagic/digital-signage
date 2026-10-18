@@ -6,13 +6,17 @@
 }
 <div class="page-head">
     <h1>@L["Screens.Title"]</h1>
-    @if (Model.IsAdmin)
-    {
-        <div class="button-group">
+    <div class="button-group">
+        @if (Model.Items.Count > 0)
+        {
+            <form method="post" asp-page-handler="IdentifyAll"><button type="submit">@L["Screens.IdentifyAll"]</button></form>
+        }
+        @if (Model.IsAdmin)
+        {
             <a class="button primary" asp-page="Pair">@L["Pairing.Title"]</a>
             <a class="button" asp-page="Create">@L["Screens.Create"]</a>
-        </div>
-    }
+        }
+    </div>
 </div>
 @if (Model.Items.Count == 0)
 {

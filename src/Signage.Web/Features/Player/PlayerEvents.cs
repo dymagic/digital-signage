@@ -5,8 +5,8 @@ using Signage.Web.Features.Pairing;
 namespace Signage.Web.Features.Player;
 
 /// <summary>
-/// <c>GET /api/player/events</c>: the server-sent event stream of one screen (R-25, PLAYER_SPEC §9). Events carry no
-/// data: the player fetches its manifest (or acts) when one arrives. A comment every 15 s keeps proxies from closing
+/// <c>GET /api/player/events</c>: the server-sent event stream of one screen (R-25, R-31, PLAYER_SPEC §9). `manifest-changed`
+/// carries no data (the player fetches its manifest); `identify` and `identify-all` carry `{"seconds":30}`. A comment every 15 s keeps proxies from closing
 /// an idle connection.
 /// </summary>
 internal static class PlayerEvents
@@ -45,7 +45,7 @@ internal static class PlayerEvents
                     next = null;
                     while (subscription.Events.TryRead(out var screenEvent))
                     {
-                        await response.WriteAsync($"event: {screenEvent.Kind}\ndata: {{}}\n\n", ct).ConfigureAwait(false);
+                        await response.WriteAsync($"event: {screenEvent.Kind}\ndata: {screenEvent.DataJson()}\n\n", ct).ConfigureAwait(false);
                     }
                 }
                 else

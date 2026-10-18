@@ -8,6 +8,7 @@ public sealed class RecordingScreenNotifier : IScreenNotifier
 {
     private readonly ConcurrentQueue<IReadOnlyCollection<Guid>> _screens = new();
     private int _all;
+    private readonly ConcurrentQueue<IReadOnlyCollection<Guid>?> _identified = new();
 
     public IReadOnlyList<Guid> NotifiedScreens => _screens.SelectMany(s => s).Distinct().ToList();
 
@@ -28,6 +29,14 @@ public sealed class RecordingScreenNotifier : IScreenNotifier
     public Task AllScreensChangedAsync(CancellationToken ct)
     {
         Interlocked.Increment(ref _all);
+        return Task.CompletedTask;
+    }
+
+    public IReadOnlyList<IReadOnlyCollection<Guid>?> Identified => [.. _identified];
+
+    public Task IdentifyAsync(IReadOnlyCollection<Guid>? screenIds, CancellationToken ct)
+    {
+        _identified.Enqueue(screenIds?.ToList());
         return Task.CompletedTask;
     }
 }
