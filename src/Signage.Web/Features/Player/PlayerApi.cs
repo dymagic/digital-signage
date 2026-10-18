@@ -113,7 +113,7 @@ public static class PlayerApi
             return Results.NoContent();
         }).RequireAuthorization(ScreenPolicy).WithMetadata(new RequestSizeLimitAttribute(HeartbeatMaxBytes));
 
-        // R-13): an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
+        // R-13: an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
         // the preview never records anything about a device.
         api.MapGet("/preview/{screenId:guid}/manifest", async (Guid screenId, HttpContext http, ManifestService manifests, CancellationToken ct) =>
         {

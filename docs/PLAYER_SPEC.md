@@ -114,11 +114,16 @@ identify overlays still work.
 ## 7. Overlays
 
 - **Info overlay (R-30):** bottom-left, 8 px above the progress bar. 14 px system UI font at 1080p
-  (scale with `vmin`), white at 55 % opacity with a soft text shadow. Content: `Name · 10.0.3.27`.
+  (scale with `vmin`), white at 55 % opacity with a soft text shadow. Content: `Name · 10.0.3.27`. The IP is the one the
+  server observes (`observedIp` in the manifest). Turning the setting on or off applies at once, not at the next
+  transition. While offline, a tiny dim dot follows the text.
 - **Identify (R-31):** a 24 px solid red (`#e11d48`) inset border, pulsing in opacity between 100 % and 55 %
   at 1 Hz, with the screen name centred in large (≈ 8 vmin) bold white text on a translucent dark
   pill. Lasts 30 s (from the event), then fades out over 500 ms. A new identify event restarts the timer.
-- **Identify all (R-32):** the same name display, without the red border.
+- **Identify all (R-32):** the same name display, without the red border. The newest identify event decides whether the border
+  shows.
+- Overlays sit above the slides and above single video mode (`z-index` 25 and 30 in the stage). Test hooks:
+  `body[data-identify="one"|"all"]` while identification shows, `[data-testid=info-overlay]`.
 
 ## 8. Unpaired / pairing screen (R-40)
 

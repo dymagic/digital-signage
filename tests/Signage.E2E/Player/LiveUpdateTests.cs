@@ -72,6 +72,7 @@ public class LiveUpdateTests(BrowserFixture fixture) : PlayerTest(fixture)
     {
         var (_, token, _) = await ScreenWithSlidesAsync(("Rollout", 2, "#0f766e"), ("Retry", 2, "#9a3412"));
         var refused = 0;
+        var firstAttempt = new TaskCompletionSource();
         var device = await OpenDeviceAsync(token, timeScale: 0.25, async ctx =>
         {
             await ctx.Clock.InstallAsync();
@@ -80,6 +81,7 @@ public class LiveUpdateTests(BrowserFixture fixture) : PlayerTest(fixture)
                 if (route.Request.ResourceType == "fetch" && Interlocked.Increment(ref refused) == 1)
                 {
                     await route.AbortAsync("connectionrefused"); // the server is mid-rollout at the first attempt
+                    firstAttempt.TrySetResult();
                     return;
                 }
                 await route.ContinueAsync();
@@ -95,11 +97,7 @@ public class LiveUpdateTests(BrowserFixture fixture) : PlayerTest(fixture)
             await route.FulfillAsync(new() { Status = 200, ContentType = "application/json", Body = manifest.ToJsonString() });
         });
 
-        for (var i = 0; i < 300 && Volatile.Read(ref refused) < 1; i++)
-        {
-            await Task.Delay(100, TestContext.Current.CancellationToken); // the next poll (15 s here) sees the new version
-        }
-        Assert.Equal(1, refused);
+        await firstAttempt.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken); // the next poll (15 s here) sees it
         var reload = device.WaitForRequestAsync(r => r.IsNavigationRequest && new Uri(r.Url).AbsolutePath == "/screen", new() { Timeout = 30_000 });
         await device.Clock.FastForwardAsync("01:01"); // a minute later it tries again
 

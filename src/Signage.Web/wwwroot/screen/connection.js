@@ -8,9 +8,9 @@ import { Unauthorized } from './api.js';
  * version, onUnauthorized() on 401/403 (then stops), onNotFound() on 404 if given (then stops; otherwise 404 counts as
  * an error and is retried), and onOnline(boolean) when reachability changes. With `eventsUrl`, an EventSource on it
  * triggers a fetch on every `manifest-changed` event and on every (re)connect, since events may have been missed;
- * onEvents('open' | 'closed') reports the stream's state. An event that arrives during a fetch causes another fetch.
+ * onEvents('open' | 'closed') reports the stream's state, and onIdentify(seconds, withBorder) handles identification. An event that arrives during a fetch causes another fetch.
  */
-export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNotFound, onOnline, onEvents }) {
+export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNotFound, onOnline, onEvents, onIdentify }) {
     let etag = null;
     let stopped = false;
     let online = null;
@@ -56,6 +56,18 @@ export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNot
             fetchNow();
         });
         events.addEventListener('manifest-changed', fetchNow);
+        // R-31, R-32: identification carries its duration.
+        const identify = (withBorder) => (event) => {
+            let seconds = 30;
+            try {
+                seconds = Number(JSON.parse(event.data).seconds) || seconds;
+            } catch {
+                // keep the default
+            }
+            onIdentify?.(seconds, withBorder);
+        };
+        events.addEventListener('identify', identify(true));
+        events.addEventListener('identify-all', identify(false));
         events.addEventListener('error', () => {
             onEvents?.('closed');
             // EventSource reconnects by itself after a network error, but gives up after a non-200 answer (a proxy's

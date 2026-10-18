@@ -14,7 +14,9 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
   applied at once, offline dot; identify border + name pill, identify-all name only, 30 s, restart, 500 ms fade), also over
   single video mode. WP-10 NITs. Tests: integration (events with seconds, authz), E2E (identify, restart, identify all,
   overlay toggled live, in single video mode).
-- Next step: server events and admin buttons.
+- Done: identify events (seconds in the SSE data), admin buttons (editor+), overlay.js (info + identify, over single
+  video), WP-10 NITs; tests: integration 2, E2E IdentifyTests 4; docs.
+- Next step: full self-check, request review round 1.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

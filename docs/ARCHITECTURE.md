@@ -146,7 +146,7 @@ answer with `HX-Redirect` to the list and a message.
 | `POST /api/player/session` | `token` in body, rate-limited (10/min/IP, configurable) | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
 | `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion (the player build, as stamped on /screen), screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
 | `GET /api/player/preview/{screenId}/manifest` | admin cookie, Editor | The same manifest for the admin preview. `401` without a session, `403` while the user must change their password, `404` for an unknown screen |
-| `GET /api/player/events` | screen cookie | SSE stream (`retry: 5000`, keep-alive comment every 15 s). Events carry no data: `manifest-changed` means "fetch your manifest"; WP-11 adds `identify` and `identify-all` |
+| `GET /api/player/events` | screen cookie | SSE stream (`retry: 5000`, keep-alive comment every 15 s). `manifest-changed` (data `{}`) means "fetch your manifest"; `identify` (that screen, R-31) and `identify-all` (every screen, R-32) carry `{"seconds":30}`. Sent by the screen page's "Identify" and the list's "Identify all" (editor+) |
 | `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId, problems[{kind, slideId, reason}] }` every 30 s; `204`; at most 20 problems (`400` otherwise) and 16 KB. Records LastSeen, observed IP, user agent and version with a bulk update (no version bump, ADR-0004); problems are logged as warnings |
 
 Slides in the manifest carry `{ id, type, url?, html?, durationSeconds (resolved), playAudio,
@@ -199,7 +199,7 @@ Never commit real secrets. The compose file uses obvious demo values with a comm
 - Every admin string goes through `IStringLocalizer`/`IViewLocalizer`.
 - The player JS has no dependencies. Organise it as small ES modules in `wwwroot/screen/` (`player.js` boot, `carousel.js`,
   `slides/*.js` (image, video, webpage, html), `singlevideo.js`, `schedule.js`, `connection.js`, `pairing.js`,
-  `empty.js`, `reload.js`, `storage.js`, `api.js`, `strings.js`; `overlay.js` from WP-11). All timing constants live in one
+  `empty.js`, `reload.js`, `storage.js`, `api.js`, `strings.js`, `overlay.js`, `heartbeat.js`, `problems.js`). All timing constants live in one
   `config.js`.
 - Player test hooks: the player exposes state through `data-*` attributes on `<body>` and slide
   elements (`data-state="entering|active|leaving|covered"`, `data-slide-id`), plus
