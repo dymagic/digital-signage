@@ -175,7 +175,7 @@ trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
 *From WP-11 review round 1 (docs, MINOR):* PLAYER_SPEC §1 places the info overlay below the progress bar but the code (and
 §7) puts it 8 px above: make §1 agree; ARCHITECTURE §4 says identify uses htmx partials, but it is a plain form post.
 
-### WP-13 Milestone hardening & acceptance — `In review`
+### WP-13 Milestone hardening & acceptance — `Done`
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute
 soak of the player in E2E (memory stable), and request the **milestone-level** review (the reviewer reviews
 the whole repo, not a diff).
@@ -195,3 +195,10 @@ say so to the admin instead of a success message (and fix the log text, which pr
 gets); (NIT) run the global-setting-toggling E2E tests in a non-parallel collection; (NIT) assert the 1 Hz pulse and
 500 ms fade; (NIT) `using` instead of the fully qualified `IScreenNotifier` in `Detail.cshtml.cs`; (NIT) take the
 identify default 30 s from `config.js`, and show no empty pill when an identify arrives before any manifest.
+
+## Follow-ups after M1 (not packages yet)
+*From WP-13 review round 1:* (MINOR) the soak records only total browser PSS; also sample the JS heap
+(`Runtime.getHeapUsage`) and DOM node count so a player-side leak can be told apart from Chromium's native caches (the
+player grows ~0.22 MB per transition against the spike's 0.15); (NIT) time the soak with a `Stopwatch`, not
+`DateTimeOffset.UtcNow`; (NIT) an integration test for the real `PostgresScreenNotifier` failure path (`IdentifyAsync`
+returns false when the database can't take the notification).

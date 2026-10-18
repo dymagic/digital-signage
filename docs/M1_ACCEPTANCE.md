@@ -90,7 +90,7 @@ Classes are given once per row; several tests in a row belong to the class named
 | 2 | `dotnet test` passes | See "Verification run" |
 | 3 | The E2E suite passes in Docker, covering pairing, transition and ordering, video lifecycle, single video mode, identify, live update and offline | See "Verification run"; the rows R-20 to R-42 above name the tests |
 | 4 | Clean machine, `docker compose up`, README quick start → a working screen with the demo playlist | Verified on a clean clone in WP-12 (developer and reviewer) |
-| 5 | A milestone-level review returns APPROVE | `docs/reviews/MILESTONE-review-*.md` |
+| 5 | A milestone-level review returns APPROVE | `docs/reviews/MILESTONE-M1-review-*.md` |
 | 6 | This document | — |
 
 ## Soak (WP-13, ADR-0008)
@@ -129,8 +129,10 @@ On branch `wp-13-acceptance` at `5fcdd58` (2026-10-18), x86_64 Linux host with D
 ## For the product owner
 
 - **Cloud guides** (R-62) are written and reviewed but haven't been run against real Azure or AWS accounts.
-- **Open question** (not blocking): the screen-address exchange limit (10 per client IP and minute, configurable). See
-  `docs/PROGRESS.md`.
+- **Open question** (not blocking): kiosks that start from a pre-configured screen address may exchange it 10 times per
+  client IP and minute (`SIGNAGE__SCREENADDRESSEXCHANGESPERMINUTE`). Many kiosks behind one NAT that boot together
+  (after a power cut) then take a few minutes to all get through; they play their cached content meanwhile. Keep 10 as
+  the default, or raise it (for example to 60)? The token is 256 bits, so the limit is about load, not guessing.
 - **Daily reload** (ADR-0008): screens reload themselves once a day at night to bound browser memory, as you confirmed.
 - **Memory rate:** the soak measured 0.23 MB per transition (the spike estimated 0.15). Within the regression guard,
   but at 10 s slides that extrapolates to about 2 GB a day before the nightly reload: tight for a 2 GB Raspberry Pi
