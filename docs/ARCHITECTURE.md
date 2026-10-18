@@ -140,14 +140,14 @@ answer with `HX-Redirect` to the list and a message.
 ### Player API (`/api/player/*`)
 | Method & path | Auth | Purpose |
 |---|---|---|
-| `GET /screen` | none | Player shell (static) |
+| `GET /screen` | none | Player shell (`wwwroot/screen/index.html`, never cached), stamped with `<meta name="signage-version">` = the player build (`<Version>+<hash of wwwroot/screen>`, R-26, ADR-0010) |
 | `POST /api/player/pairing` | none, rate-limited (10/min/IP) | Start pairing → `{ code ("XXX-XXX"), pairingId, deviceSecret, expiresAt, expiresInSeconds }`. The player times codes with `expiresInSeconds` on its monotonic clock, so a wrong device clock can't break pairing |
 | `GET /api/player/pairing/{id}` | `X-Device-Secret` header, 60/min/IP | `{ status: "pending", expiresAt }`; once claimed, mints the token, sets the cookie and returns `{ status: "paired", screen{name} }` (one-time); afterwards or when expired `410`; wrong secret `404` |
-| `POST /api/player/session` | `token` in body, rate-limited | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
-| `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion, screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
+| `POST /api/player/session` | `token` in body, rate-limited (10/min/IP, configurable) | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
+| `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion (the player build, as stamped on /screen), screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
 | `GET /api/player/preview/{screenId}/manifest` | admin cookie, Editor | The same manifest for the admin preview. `401` without a session, `403` while the user must change their password, `404` for an unknown screen |
-| `GET /api/player/events` | screen cookie | SSE stream: `manifest-changed`, `identify{seconds}`, `identify-all{seconds}`, `reload`, keep-alive comments every 15 s |
-| `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId }`; the server records IP/UA/LastSeen |
+| `GET /api/player/events` | screen cookie | SSE stream (`retry: 5000`, keep-alive comment every 15 s). Events carry no data: `manifest-changed` means "fetch your manifest"; WP-11 adds `identify` and `identify-all` |
+| `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId, problems[{kind, slideId, reason}] }` every 30 s; `204`; at most 20 problems (`400` otherwise) and 16 KB. Records LastSeen, observed IP, user agent and version with a bulk update (no version bump, ADR-0004); problems are logged as warnings |
 
 Slides in the manifest carry `{ id, type, url?, html?, durationSeconds (resolved), playAudio,
 activeFromUtc?, activeUntilUtc? }`. The player re-checks the schedule client-side so offline playback
@@ -164,11 +164,14 @@ Admin preview of a screen (R-13) uses `/screen?preview={screenId}`, which loads 
 `/api/*` paths the admin cookie handler answers `401`/`403` instead of redirecting to the login page.
 
 ### Event fan-out
-`IScreenNotifier` raises domain events like "screen X affected" and "all screens affected". Until WP-10 it is a
-no-op (`NoOpScreenNotifier`). Callers so far: screens and groups (the screen or the group's old and new members),
-playlists and slides (via `AffectedScreens`: direct, via groups, prepended/appended), settings (all screens). The
-Postgres implementation does `NOTIFY signage_events, '<json>'`. Each replica runs a background
-`LISTEN` service that dispatches to its locally connected SSE clients. Each feature works out the
+`IScreenNotifier` raises domain events like "screen X affected" and "all screens affected". Callers: screens and groups (the screen or the group's old and new members),
+playlists and slides (via `AffectedScreens`: direct, via groups, prepended/appended), settings (all screens). `PostgresScreenNotifier`
+does `SELECT pg_notify('signage_events', '<json>')` (at most 150 screen ids per notification: payloads are limited to
+8000 bytes). Each replica runs `ScreenEventListener`, a background service with its own connection that `LISTEN`s and
+hands events to `ScreenEventHub`, which writes them to this replica's connected SSE clients (bounded per client: a slow
+client loses old events, not memory). The listener probes its connection every 30 s; after a reconnect it tells every
+connected player to fetch its manifest, since events may have been missed. Nothing is kept in memory across replicas
+(R-63). The player fetches its manifest on every event and every (re)connect, and still polls every 60 s (ADR-0010). Each feature works out the
 **affected screens**: a slide edit → all screens whose sequence contains the slide. Over-notifying
 is acceptable, since a manifest ETag stops redundant re-renders.
 
@@ -179,8 +182,9 @@ is acceptable, since a manifest ETag stops redundant re-renders.
 | `ConnectionStrings__Default` | — | Postgres connection string (required) |
 | `SIGNAGE__MIGRATEONSTARTUP` | `true` | |
 | `SIGNAGE__BOOTSTRAP__ADMINEMAIL` / `__ADMINPASSWORD` | — | Only used if there are no users. The admin must change the password at first sign-in. Invalid values stop start-up |
-| `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Trust `X-Forwarded-*` (behind ingress/load balancer) |
-| `SIGNAGE__FORWARDEDHEADERS__KNOWNNETWORKS` | — | CIDRs of the proxies |
+| `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Trust `X-Forwarded-For` and `X-Forwarded-Proto` from the proxy (behind ingress/load balancer). The host header is never taken from it |
+| `SIGNAGE__FORWARDEDHEADERS__KNOWNNETWORKS` | — | Comma-separated CIDRs of the proxies, e.g. `10.0.0.0/8`. Empty: the nearest hop is trusted whatever its address (only safe when the app is reachable through the proxy alone). An invalid value stops start-up |
+| `SIGNAGE__SCREENADDRESSEXCHANGESPERMINUTE` | `10` | Screen address exchanges (`/api/player/session`) per client IP and minute (ADR-0007). Pairing starts stay at 10/min, polls at 60/min |
 | `SIGNAGE__SEEDDEMO` | `false` (`true` in Development) | Seeds a demo Playlist and an unpaired "Demo screen" on start when there are no slides yet. The compose file turns it on |
 | `ASPNETCORE_HTTP_PORTS` | `8080` | Set by the .NET base image; the container listens on 8080 |
 

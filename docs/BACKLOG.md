@@ -135,7 +135,7 @@ else loads → empty state" (`carousel.js` `isStale`); (NIT) make the one-slide 
 `carousel.js` with `!this.stopped` so a stop can't draw over pairing or the preview message; (NIT) mention the
 expired/removed exception in PLAYER_SPEC §2 "Skipping".
 
-### WP-10 Live updates, heartbeat & status — `Todo`
+### WP-10 Live updates, heartbeat & status — `In review`
 SSE endpoint, Postgres LISTEN/NOTIFY notifier + listener background service, affected-screen
 calculation in each feature, the 60 s poll fallback, heartbeat endpoint, online/offline status in the admin
 list (htmx refresh), `appVersion` self-reload, forwarded-headers configuration.

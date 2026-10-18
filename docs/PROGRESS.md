@@ -7,7 +7,29 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_(none: next is WP-10 Live updates, heartbeat & status)_
+- Package: WP-10 Live updates, heartbeat & status — branch `wp-10-live-updates` — status In review (round 2 requested)
+- Plan: server: `PostgresScreenNotifier` (pg_notify on `signage_events`, chunked payloads), `ScreenEventHub` (per-replica
+  SSE subscribers by screen), `ScreenEventListener` (BackgroundService, LISTEN, reconnect + "all changed" after a gap),
+  `GET /api/player/events` (SSE, keep-alive 15 s), `POST /api/player/heartbeat` (ExecuteUpdate of LastSeen/IP/UA/version,
+  no version bump; problems logged), status columns in the screens list with htmx refresh (online = heartbeat < 90 s),
+  `/screen` injects the app version, forwarded headers from config. Player: EventSource with recreate after a closed
+  stream, fetch on event and on open, heartbeat every 30 s with problems (video/single-video failures), appVersion
+  reload at the next transition. WP-09 follow-ups.
+- Tests: integration (notifier → SSE on two app instances, heartbeat fields + no conflict, offline after 90 s with fake
+  time, forwarded headers, events auth), E2E (edit reaches the screen within 5 s, appVersion reload).
+- Done: notifier/hub/listener/SSE, heartbeat + status list, version stamp + reload, forwarded headers, WP-09
+  follow-ups, ADR-0010, docs. Integration 14 + E2E (LiveUpdateTests 3, 4 new VideoTests).
+- Full-suite flake found: E2E devices share one IP and hit the 10/min token exchange limit. The exchange now has its own
+  configurable limit (default unchanged), E2E sets 120; open question for the PO.
+- Self-check green: build 0 warnings, `dotnet test` 460, E2E 55 (8 opt-in spike skips), twice.
+- Round 1: CHANGES_REQUIRED (2 MAJOR: streams held up shutdown 30 s; an event during a fetch was lost; 3 MINOR; 5 NIT).
+  Fixed: ApplicationStopping ends streams; `again` flag refetches; background refresh doesn't renew the session and
+  htmx gets HX-Redirect when signed out; PlayerBuild (version + player file hash) and a self-re-arming reload;
+  listener reconnect test; heartbeat capped (20 problems, 16 KB), heartbeat stops on revoke, keep-alive timer reused,
+  stream state hook, notify failures logged. New tests fail on the round-1 code where behaviour changed (checked).
+- Self-check green: build 0 warnings, `dotnet test` 467, E2E 57 (8 opt-in spike skips).
+- Next step: handle the review round 2 verdict (docs/reviews/WP-10-review-2.md).
+- Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -36,6 +58,11 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
 - (answered) WP-07 daily player reload confirmed by the product owner on 2026-10-17 (ADR-0008).
 - (answered) WP-07: the PO confirmed the daily reload stands with the corrected ~1.3 GB/day worst case and approved review round 4 (2026-10-17).
+- (open, not blocking) WP-10: screen address exchanges are limited to 10 per client IP and minute (ADR-0007). Many
+  kiosks behind one NAT that boot together with `/screen?token=…` (a power cut) then take several minutes to all
+  exchange; they play their cached content meanwhile, so nobody sees it, but a first-ever boot would wait. The limit is
+  now configurable (`SIGNAGE__SCREENADDRESSEXCHANGESPERMINUTE`, default 10; E2E uses 120). Keep 10 as the default, or
+  raise it (e.g. 60, like pairing polls)? The token is 256 bits, so the limit is about load, not guessing.
 
 ## Notes
 - The shell is zsh and `grep` is aliased to ugrep: use `command grep` in scripts. Quote `-?`.

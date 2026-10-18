@@ -64,6 +64,11 @@ export class Carousel {
         return this.manifest?.mode !== 'SingleVideo' && this.current !== null && playable(this.manifest, Date.now()).length > 1;
     }
 
+    /** The slide on screen, for the heartbeat; null in single video mode or when nothing shows. */
+    get currentSlideId() {
+        return this.single.active ? null : this.current?.slide.id ?? null;
+    }
+
     /** Runs `task` right before the next transition (used by the daily reload). */
     runBeforeNextTransition(task) {
         this.beforeTransition = task;
@@ -170,8 +175,11 @@ export class Carousel {
         if (item?.state !== 'failed') {
             return;
         }
-        await this.idle(ms(config.nothingShowableRetryMs));
-        if (this.stopped || this.current?.item !== item) {
+        // A calm pause that only a mode change cuts short (a new manifest alone doesn't make the retry come sooner).
+        const interrupted = new Promise((resolve) => { this.interrupt = resolve; });
+        await Promise.race([sleep(ms(config.nothingShowableRetryMs)), interrupted]);
+        this.interrupt = null;
+        if (this.stopped || this.current?.item !== item || (this.pending && modeKey(this.pending) !== modeKey(this.manifest))) {
             return;
         }
         const fresh = this.prepare(this.current.slide);

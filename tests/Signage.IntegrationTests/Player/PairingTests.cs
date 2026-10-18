@@ -470,7 +470,7 @@ public sealed partial class PairingTests(PostgresFixture postgres) : IAsyncLifet
         using var tooManyPolls = await device.PollAsync(pairing);
 
         using var other = new PlayerClient(_app.Factory);
-        for (var i = 0; i < 9; i++) // start pairing above used one permit of the shared 10/min budget
+        for (var i = 0; i < 10; i++) // the exchange has its own 10/min budget (ScreenAddressExchangesPerMinute)
         {
             (await other.ExchangeAsync(ScreenTokens.NewSecret())).Dispose();
         }
@@ -478,6 +478,21 @@ public sealed partial class PairingTests(PostgresFixture postgres) : IAsyncLifet
 
         Assert.Equal(HttpStatusCode.TooManyRequests, tooManyPolls.StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, tooManyExchanges.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_screen_address_exchange_limit_is_configurable()
+    {
+        await using var app = await AdminApp.StartAsync(postgres, new Dictionary<string, string?> { ["Signage:ScreenAddressExchangesPerMinute"] = "3" });
+        using var device = new PlayerClient(app.Factory);
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await device.ExchangeAsync(ScreenTokens.NewSecret())).StatusCode);
+        }
+
+        using var fourth = await device.ExchangeAsync(ScreenTokens.NewSecret());
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, fourth.StatusCode);
     }
 
     [Fact]

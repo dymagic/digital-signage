@@ -33,7 +33,7 @@ public sealed record Manifest(
     string? ObservedIp,
     IReadOnlyList<ManifestSlide> Slides);
 
-public sealed class ManifestService(SignageDbContext db, SettingsService settings, TimeProvider time)
+public sealed class ManifestService(SignageDbContext db, SettingsService settings, TimeProvider time, PlayerBuild build)
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -69,7 +69,7 @@ public sealed class ManifestService(SignageDbContext db, SettingsService setting
             .ToList();
 
         return new Manifest(
-            AppInfo.Version,
+            build.Id,
             new ManifestScreen(screen.Id, screen.Name),
             screen.Mode.ToString(),
             screen.SingleVideoUrl,

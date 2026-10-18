@@ -6,7 +6,8 @@ import { exchangeToken } from './api.js';
 import { Carousel } from './carousel.js';
 import { pollManifest } from './connection.js';
 import { pairDevice } from './pairing.js';
-import { startDailyReload } from './reload.js';
+import { startDailyReload, reloadSoon } from './reload.js';
+import { startHeartbeat } from './heartbeat.js';
 import { loadManifest, saveManifest, clearManifest } from './storage.js';
 import { t } from './strings.js';
 
@@ -14,6 +15,10 @@ const params = new URLSearchParams(location.search);
 const previewId = params.get('preview');
 const stage = document.getElementById('stage');
 const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
+// The app version this page was served with (/screen stamps it); a manifest from a newer server makes it reload (R-26).
+const loadedVersion = document.querySelector('meta[name="signage-version"]')?.content || null;
+const reloadedForKey = 'signage.reloadedFor';
+let versionReloadStarted = false; // reloadSoon keeps trying by itself
 
 function applyLook() {
     const root = document.documentElement.style;
@@ -89,6 +94,36 @@ function runPreview() {
     });
 }
 
+/**
+ * R-26: the server runs another version than this page: reload at the next transition to load the new player. Once per
+ * version: if the page still reports the old version afterwards (a stale cache in between), don't reload in a loop.
+ */
+function reloadOnNewVersion(serverVersion, carousel) {
+    if (!loadedVersion || !serverVersion || serverVersion === loadedVersion) {
+        return;
+    }
+    let reloadedFor = null;
+    try {
+        reloadedFor = sessionStorage.getItem(reloadedForKey);
+    } catch {
+        // storage unavailable: still reload once
+    }
+    if (reloadedFor === serverVersion) {
+        return;
+    }
+    if (versionReloadStarted) {
+        return;
+    }
+    versionReloadStarted = true;
+    reloadSoon(carousel, () => {
+        try {
+            sessionStorage.setItem(reloadedForKey, serverVersion);
+        } catch {
+            // ignore
+        }
+    });
+}
+
 async function runScreen() {
     const carousel = new Carousel(stage);
     let manifest = loadManifest();
@@ -108,15 +143,23 @@ async function runScreen() {
 
     // The exchange may retry for a long time (a kiosk boots before its server); the cached slides play meanwhile (R-24).
     await takeTokenFromUrl();
+    let heartbeat = null;
     pollManifest('/api/player/manifest', {
+        eventsUrl: '/api/player/events',
         onManifest(fresh) {
             manifest = fresh;
             saveManifest(fresh);
             carousel.setManifest(fresh);
             start();
+            if (!heartbeat) {
+                // The server knows this device: report in from now on (R-33).
+                heartbeat = startHeartbeat({ playerVersion: loadedVersion ?? fresh.appVersion, currentSlideId: () => carousel.currentSlideId });
+            }
+            reloadOnNewVersion(fresh.appVersion, carousel);
         },
         async onUnauthorized() {
             // Unknown or revoked token (R-42): the server already deleted the cookie.
+            heartbeat?.stop();
             carousel.stop();
             clearManifest();
             await pairDevice(stage);
@@ -124,6 +167,9 @@ async function runScreen() {
         },
         onOnline(online) {
             document.body.dataset.online = String(online);
+        },
+        onEvents(state) {
+            document.body.dataset.events = state; // test hook: the push stream is connected
         },
     });
 }

@@ -5,6 +5,7 @@
 // screen for another round); one that failed is replaced by the carousel with a fresh element. release() frees the
 // decoder and buffers.
 import { config } from '../config.js';
+import { reportProblem } from '../problems.js';
 
 export function createVideo(slide) {
     const video = document.createElement('video');
@@ -39,7 +40,7 @@ export function createVideo(slide) {
         state = next;
         stopTimers();
         if (next === 'failed') {
-            console.warn(`Video slide ${slide.id} skipped: ${reason}`); // reported in the heartbeat from WP-10
+            reportProblem('video', slide.id, reason);
         }
         finish(reason);
     };
@@ -65,7 +66,7 @@ export function createVideo(slide) {
         video.play().catch((error) => {
             if (error?.name === 'NotAllowedError' && !video.muted) {
                 // Sound needs a browser started with an autoplay policy (R-07, ADR-0009): play muted rather than not at all.
-                console.warn(`Video slide ${slide.id}: playing muted, the browser blocks autoplay with sound`);
+                reportProblem('video', slide.id, 'played muted: the browser blocks autoplay with sound');
                 video.muted = true;
                 video.play().catch((again) => end('failed', `play() failed: ${again?.name ?? again}`));
             } else {

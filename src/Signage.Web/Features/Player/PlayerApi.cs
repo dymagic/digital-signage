@@ -1,8 +1,11 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Signage.Web.Features.Pairing;
+using Signage.Web.Features.Hosting;
 using Signage.Web.Features.Users;
 
 namespace Signage.Web.Features.Player;
@@ -14,12 +17,18 @@ public static class PlayerApi
     public const string DeviceSecretHeader = "X-Device-Secret";
     public const string PairingStartLimit = "pairing-start";
     public const string PairingPollLimit = "pairing-poll";
+    public const string SessionLimit = "screen-session";
+
+    /// <summary>A heartbeat is a few hundred bytes; 20 problems fit easily.</summary>
+    public const int HeartbeatMaxBytes = 16 * 1024;
 
     public static IServiceCollection AddSignagePlayerApi(this IServiceCollection services)
     {
         services.AddScoped<PairingService>();
         services.AddScoped<ScreenAccessService>();
         services.AddScoped<ManifestService>();
+        services.AddScoped<HeartbeatService>();
+        services.AddSingleton<PlayerBuild>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ScreenAuthenticationHandler>(ScreenAuthenticationHandler.SchemeName, null);
         services.AddAuthorizationBuilder().AddPolicy(ScreenPolicy, p => p
             .AddAuthenticationSchemes(ScreenAuthenticationHandler.SchemeName)
@@ -32,6 +41,8 @@ public static class PlayerApi
             o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             o.AddPolicy(PairingStartLimit, ctx => FixedWindowPerIp(ctx, permits: 10));
             o.AddPolicy(PairingPollLimit, ctx => FixedWindowPerIp(ctx, permits: 60));
+            o.AddPolicy(SessionLimit, ctx => FixedWindowPerIp(ctx,
+                permits: Math.Max(1, ctx.RequestServices.GetRequiredService<IOptions<SignageOptions>>().Value.ScreenAddressExchangesPerMinute)));
         });
         return services;
     }
@@ -77,16 +88,32 @@ public static class PlayerApi
 
             ScreenAuthenticationHandler.SetCookie(http, request.Token!, time);
             return Results.NoContent();
-        }).RequireRateLimiting(PairingStartLimit);
+        }).RequireRateLimiting(SessionLimit);
 
         // The screen's manifest (R-13, R-24, R-25). Supports If-None-Match so the 60 s poll is cheap.
         api.MapGet("/manifest", async (HttpContext http, ManifestService manifests, CancellationToken ct) =>
         {
-            var manifest = await manifests.BuildAsync(http.User.ScreenId(), http.Connection.RemoteIpAddress?.ToString(), ct).ConfigureAwait(false);
+            var manifest = await manifests.BuildAsync(http.User.ScreenId(), http.ObservedIp(), ct).ConfigureAwait(false);
             return manifest is null ? Results.Unauthorized() : ManifestResult(http, manifest);
         }).RequireAuthorization(ScreenPolicy);
 
-        // R-13: an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
+        // R-25: pushes "fetch your manifest" (and later identify) to the screen.
+        api.MapGet("/events", PlayerEvents.StreamAsync).RequireAuthorization(ScreenPolicy);
+
+        // R-33: last seen, observed IP, user agent and player version; problems are logged.
+        api.MapPost("/heartbeat", async (HeartbeatRequest request, HttpContext http, HeartbeatService heartbeats, CancellationToken ct) =>
+        {
+            NoStore(http);
+            if (request.Problems?.Count > HeartbeatService.MaxProblems)
+            {
+                return Results.BadRequest();
+            }
+            await heartbeats.RecordAsync(http.User.ScreenId(), request, http.ObservedIp(),
+                http.Request.Headers.UserAgent.ToString(), ct).ConfigureAwait(false);
+            return Results.NoContent();
+        }).RequireAuthorization(ScreenPolicy).WithMetadata(new RequestSizeLimitAttribute(HeartbeatMaxBytes));
+
+        // R-13): an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
         // the preview never records anything about a device.
         api.MapGet("/preview/{screenId:guid}/manifest", async (Guid screenId, HttpContext http, ManifestService manifests, CancellationToken ct) =>
         {

@@ -8,7 +8,8 @@ using Signage.Web.Features.Slides;
 
 namespace Signage.Web.Features.Screens;
 
-public sealed record ScreenListItem(Guid Id, string Name, string? Location, ScreenMode Mode, IReadOnlyList<string> Groups, bool IsPaired);
+public sealed record ScreenListItem(Guid Id, string Name, string? Location, ScreenMode Mode, IReadOnlyList<string> Groups, bool IsPaired,
+    DateTimeOffset? LastSeenAt = null, string? LastIp = null, string? PlayerVersion = null, string? UserAgent = null);
 
 /// <summary>What an admin edits on a screen (R-10, R-14).</summary>
 public sealed record ScreenDetails(string? Name, string? Location, ScreenMode Mode, string? SingleVideoUrl);
@@ -28,10 +29,11 @@ public sealed class ScreenService(SignageDbContext db, IScreenNotifier notifier)
             {
                 s.Id, s.Name, s.Location, s.Mode,
                 IsPaired = s.TokenHash != null,
+                s.LastSeenAt, s.LastIp, s.PlayerVersion, s.UserAgent,
                 Groups = s.Groups.OrderBy(m => m.Group.SortOrder).ThenBy(m => m.Group.Name).Select(m => m.Group.Name).ToList(),
             })
             .ToListAsync(ct).ConfigureAwait(false);
-        return rows.Select(r => new ScreenListItem(r.Id, r.Name, r.Location, r.Mode, r.Groups, r.IsPaired)).ToList();
+        return rows.Select(r => new ScreenListItem(r.Id, r.Name, r.Location, r.Mode, r.Groups, r.IsPaired, r.LastSeenAt, r.LastIp, r.PlayerVersion, r.UserAgent)).ToList();
     }
 
     /// <summary>The screen with groups, prepended/appended slides and direct playlists, each list in order.</summary>

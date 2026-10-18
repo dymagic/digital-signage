@@ -20,33 +20,62 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col">@L["Screens.Field.Name"]</th>
-                <th scope="col">@L["Screens.Field.Mode"]</th>
-                <th scope="col">@L["Screens.Column.Groups"]</th>
-                <th scope="col">@L["Screens.Column.Paired"]</th>
-                <th scope="col"><span class="visually-hidden">@L["Common.Actions"]</span></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Items)
-            {
+    @* R-33: the status refreshes itself every 15 s (htmx re-reads this page and swaps just the list). *@
+    <div id="screen-list" hx-get="@Url.Page("Index")" hx-trigger="every 15s" hx-select="#screen-list" hx-swap="outerHTML" hx-headers='{"X-Background-Refresh": "1"}'>
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>
-                        <a asp-page="Detail" asp-route-id="@item.Id">@item.Name</a>
-                        @if (item.Location is not null)
-                        {
-                            <div class="muted">@item.Location</div>
-                        }
-                    </td>
-                    <td>@L[$"Screens.Mode.{item.Mode}"]</td>
-                    <td>@(item.Groups.Count == 0 ? "—" : string.Join(", ", item.Groups))</td>
-                    <td>@(item.IsPaired ? L["Screens.Paired.Yes"] : L["Screens.Paired.No"])</td>
-                    <td class="actions"><a asp-page="Detail" asp-route-id="@item.Id">@L["Screens.Open"]</a></td>
+                    <th scope="col">@L["Screens.Field.Name"]</th>
+                    <th scope="col">@L["Screens.Field.Mode"]</th>
+                    <th scope="col">@L["Screens.Column.Groups"]</th>
+                    <th scope="col">@L["Screens.Column.Status"]</th>
+                    <th scope="col">@L["Screens.Column.LastSeen"]</th>
+                    <th scope="col">@L["Screens.Column.LastIp"]</th>
+                    <th scope="col">@L["Screens.Column.Player"]</th>
+                    <th scope="col"><span class="visually-hidden">@L["Common.Actions"]</span></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <a asp-page="Detail" asp-route-id="@item.Id">@item.Name</a>
+                            @if (item.Location is not null)
+                            {
+                                <div class="muted">@item.Location</div>
+                            }
+                        </td>
+                        <td>@L[$"Screens.Mode.{item.Mode}"]</td>
+                        <td>@(item.Groups.Count == 0 ? "—" : string.Join(", ", item.Groups))</td>
+                        <td data-testid="screen-status">
+                            @if (!item.IsPaired)
+                            {
+                                <span class="badge badge-muted">@L["Screens.Paired.No"]</span>
+                            }
+                            else if (Model.IsOnline(item))
+                            {
+                                <span class="badge badge-ok">@L["Screens.Status.Online"]</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">@L["Screens.Status.Offline"]</span>
+                            }
+                        </td>
+                        <td>@(item.LastSeenAt is { } seen ? Model.ToLocal(seen) : "—")</td>
+                        <td>@(item.LastIp ?? "—")</td>
+                        <td title="@item.UserAgent">
+                            @(item.PlayerVersion ?? "—")
+                            @if (item.UserAgent is not null)
+                            {
+                                <div class="muted user-agent">@item.UserAgent</div>
+                            }
+                        </td>
+                        <td class="actions"><a asp-page="Detail" asp-route-id="@item.Id">@L["Screens.Open"]</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="hint">@L["Screens.StatusHint", Model.TimeZoneId]</p>
 }
