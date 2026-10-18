@@ -22,6 +22,9 @@ public static class E2EEnvironment
     /// <summary>README screenshots (scripts/update-readme-screenshots.sh) only run with SIGNAGE_E2E_README=1, on a fresh database.</summary>
     public static bool ReadmeScreenshots { get; } = Environment.GetEnvironmentVariable("SIGNAGE_E2E_README") == "1";
 
+    /// <summary>The 30-minute player soak (WP-13, ADR-0008) only runs with SIGNAGE_E2E_SOAK=1.</summary>
+    public static bool SoakEnabled { get; } = Environment.GetEnvironmentVariable("SIGNAGE_E2E_SOAK") == "1";
+
     public static Uri RequireBaseUrl()
     {
         Assert.SkipWhen(BaseUrl is null, "E2E tests run only via scripts/test-e2e.sh (SIGNAGE_E2E_BASEURL not set).");
