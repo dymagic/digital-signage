@@ -7,14 +7,14 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-13 Milestone hardening & acceptance — branch `wp-13-acceptance` — status In progress
+- Package: WP-13 Milestone hardening & acceptance — branch `wp-13-acceptance` — status In review (round 1 requested)
 - Done: carried-over fixes (identify failure shown to the admin + log text, identify default in config.js, no empty
   pill, global-state E2E collection, pulse/fade asserts, offline-dot E2E, reload take-back E2E, psql via docker).
 - Done: soak test written (`tests/Signage.E2E/Soak/PlayerSoak.cs`, opt-in SIGNAGE_E2E_SOAK=1); `docs/M1_ACCEPTANCE.md`
   (every R-ID; soak and verification sections still to fill); `dotnet test` 478 (413 passed, 65 E2E skipped outside Docker).
-- Half-done: the soak run (first attempt timed out in the test's own wait, 120 s per 100 transitions; now 10 min).
-- Next step: when the soak passes, fill its numbers and the verification run into M1_ACCEPTANCE, run the full E2E,
-  request the WP-13 review, then the milestone review.
+- Soak passed (third run; the first two failed on the test's own wait and baseline layer check): 0.230 MB/transition,
+  within the guard, above the spike's 0.15 (raised for the PO in M1_ACCEPTANCE and ADR-0008). Full E2E 65 (10 opt-in skips).
+- Next step: handle the WP-13 review round 1 verdict, then request the MILESTONE review.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:

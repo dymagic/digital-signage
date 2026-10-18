@@ -118,7 +118,13 @@ Passing run (2026-10-18), browser PSS in MB:
 
 ## Verification run
 
-_Filled in at the end of WP-13._
+On branch `wp-13-acceptance` at `5fcdd58` (2026-10-18), x86_64 Linux host with Docker:
+
+- `dotnet build`: 0 warnings, 0 errors.
+- `dotnet test`: 478 tests, 0 failed (413 passed; the 65 E2E tests skip outside Docker by design).
+- `scripts/test-e2e.sh`: 65 tests, 0 failed, 10 skipped: the opt-in WP-07 spike measurements (8), the README
+  screenshot generator and the 30-minute soak, which ran separately (above).
+- README quick start: verified on a clean clone in WP-12 by the developer and the reviewer.
 
 ## For the product owner
 
