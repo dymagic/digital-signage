@@ -105,6 +105,42 @@ public class LiveUpdateTests(BrowserFixture fixture) : PlayerTest(fixture)
         await device.Context.CloseAsync();
     }
 
+    [Fact]
+    public async Task A_version_reload_waiting_for_a_transition_happens_anyway_when_the_screen_stops_cycling()
+    {
+        // Slides of 200 s stay 50 s at this scale: the reload is handed to a transition that is far away.
+        var (screenId, token, _) = await ScreenWithSlidesAsync(("Long one", 200, "#1e3a8a"), ("Long two", 200, "#7c2d12"));
+        var device = await OpenDeviceAsync(token, timeScale: 0.25, ctx => ctx.Clock.InstallAsync());
+        await WaitForActivationsAsync(device, 1);
+        await device.WaitForFunctionAsync("() => document.body.dataset.events === 'open'");
+        var newVersionSeen = new TaskCompletionSource();
+        var first = 0;
+        await device.Context.RouteAsync("**/api/player/manifest", async route =>
+        {
+            if (Interlocked.Exchange(ref first, 1) == 1)
+            {
+                await route.ContinueAsync();
+                return;
+            }
+            var headers = route.Request.Headers.Where(h => !h.Key.Equals("if-none-match", StringComparison.OrdinalIgnoreCase)).ToDictionary();
+            var response = await route.FetchAsync(new() { Headers = headers });
+            var manifest = JsonNode.Parse(await response.TextAsync())!.AsObject();
+            manifest["appVersion"] = "999.0.0";
+            await route.FulfillAsync(new() { Response = response, Body = manifest.ToJsonString() });
+            newVersionSeen.TrySetResult();
+        });
+        await newVersionSeen.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken); // the next poll (15 s)
+
+        // Before that transition comes, the screen switches to single video mode: no transition will come.
+        await AdminActions.SetScreenModeAsync(Page, screenId, new Uri(E2EEnvironment.MediaBaseUrl, "/media/clip-c-h264.mp4"));
+        await ExpectModeAsync(device, "single-video");
+        var reload = device.WaitForRequestAsync(r => r.IsNavigationRequest && new Uri(r.Url).AbsolutePath == "/screen", new() { Timeout = 30_000 });
+        await device.Clock.FastForwardAsync("01:01"); // the next check takes the reload back and does it
+
+        await reload;
+        await device.Context.CloseAsync();
+    }
+
     private async Task EditHtmlAsync(Guid slideId, string text)
     {
         await Page.GotoAsync($"/admin/slides/{slideId}");

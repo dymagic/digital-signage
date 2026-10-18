@@ -58,7 +58,7 @@ export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNot
         events.addEventListener('manifest-changed', fetchNow);
         // R-31, R-32: identification carries its duration.
         const identify = (withBorder) => (event) => {
-            let seconds = 30;
+            let seconds = config.identifySeconds;
             try {
                 seconds = Number(JSON.parse(event.data).seconds) || seconds;
             } catch {

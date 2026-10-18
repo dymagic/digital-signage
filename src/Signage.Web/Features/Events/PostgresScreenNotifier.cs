@@ -25,20 +25,22 @@ public sealed partial class PostgresScreenNotifier(NpgsqlDataSource dataSource, 
 
     public Task AllScreensChangedAsync(CancellationToken ct) => SendAsync(ScreenEvent.AllManifestsChanged, ct);
 
-    public async Task IdentifyAsync(IReadOnlyCollection<Guid>? screenIds, CancellationToken ct)
+    public async Task<bool> IdentifyAsync(IReadOnlyCollection<Guid>? screenIds, CancellationToken ct)
     {
         if (screenIds is null)
         {
-            await SendAsync(new ScreenEvent(ScreenEvent.IdentifyAll, null, ScreenEvent.IdentifySeconds), ct).ConfigureAwait(false);
-            return;
+            return await SendAsync(new ScreenEvent(ScreenEvent.IdentifyAll, null, ScreenEvent.IdentifySeconds), ct).ConfigureAwait(false);
         }
+        var sent = true;
         foreach (var chunk in screenIds.Distinct().Chunk(ScreensPerNotification))
         {
-            await SendAsync(new ScreenEvent(ScreenEvent.Identify, chunk, ScreenEvent.IdentifySeconds), ct).ConfigureAwait(false);
+            sent &= await SendAsync(new ScreenEvent(ScreenEvent.Identify, chunk, ScreenEvent.IdentifySeconds), ct).ConfigureAwait(false);
         }
+        return sent;
     }
 
-    public async Task SendAsync(ScreenEvent screenEvent, CancellationToken ct)
+    /// <summary>Sends the event; false (and a warning in the log) if Postgres couldn't take it.</summary>
+    public async Task<bool> SendAsync(ScreenEvent screenEvent, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(screenEvent);
         try
@@ -47,12 +49,24 @@ public sealed partial class PostgresScreenNotifier(NpgsqlDataSource dataSource, 
             command.Parameters.AddWithValue("channel", Channel);
             command.Parameters.AddWithValue("payload", screenEvent.ToJson());
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            return true;
         }
         catch (Exception ex) when (ex is NpgsqlException or InvalidOperationException or TimeoutException)
         {
-            LogNotifyFailed(logger, ex, screenEvent.Kind);
+            if (screenEvent.Kind == ScreenEvent.ManifestChanged)
+            {
+                LogNotifyFailed(logger, ex, screenEvent.Kind);
+            }
+            else
+            {
+                LogEventLost(logger, ex, screenEvent.Kind);
+            }
+            return false;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Couldn't send a {Kind} event to players; it is lost (the admin is told to try again)")]
+    private static partial void LogEventLost(ILogger logger, Exception ex, string kind);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Couldn't send a {Kind} event to players; they pick the change up with their next poll")]
     private static partial void LogNotifyFailed(ILogger logger, Exception ex, string kind);

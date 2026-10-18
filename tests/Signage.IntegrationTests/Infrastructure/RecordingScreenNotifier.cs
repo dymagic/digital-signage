@@ -34,9 +34,16 @@ public sealed class RecordingScreenNotifier : IScreenNotifier
 
     public IReadOnlyList<IReadOnlyCollection<Guid>?> Identified => [.. _identified];
 
-    public Task IdentifyAsync(IReadOnlyCollection<Guid>? screenIds, CancellationToken ct)
+    /// <summary>When true, identify fails like a database that can't take the notification.</summary>
+    public bool FailIdentify { get; set; }
+
+    public Task<bool> IdentifyAsync(IReadOnlyCollection<Guid>? screenIds, CancellationToken ct)
     {
+        if (FailIdentify)
+        {
+            return Task.FromResult(false);
+        }
         _identified.Enqueue(screenIds?.ToList());
-        return Task.CompletedTask;
+        return Task.FromResult(true);
     }
 }

@@ -5,6 +5,7 @@ using static Microsoft.Playwright.Assertions;
 namespace Signage.E2E.Player;
 
 /// <summary>WP-11: identify one (R-31), identify all (R-32) and the info overlay (R-30), all pushed live.</summary>
+[Collection(GlobalStateTests.Name)]
 [Trait("Category", "Player")]
 public class IdentifyTests(BrowserFixture fixture) : PlayerTest(fixture)
 {
@@ -33,6 +34,13 @@ public class IdentifyTests(BrowserFixture fixture) : PlayerTest(fixture)
         var border = await device.EvaluateAsync<string>("() => getComputedStyle(document.querySelector('[data-testid=identify]'), '::before').boxShadow");
         Assert.Contains("rgb(225, 29, 72)", border, StringComparison.Ordinal); // #e11d48
         Assert.Contains("24px", border, StringComparison.Ordinal);
+        // It pulses at 1 Hz between 100 % and 55 % (0.5 s each way), and fades out over 500 ms (100 ms at this time scale).
+        var pulse = await device.EvaluateAsync<string[]>("""
+            () => { const s = getComputedStyle(document.querySelector('[data-testid=identify]'), '::before');
+                    return [s.animationName, s.animationDuration, s.animationDirection, s.animationIterationCount,
+                            getComputedStyle(document.querySelector('[data-testid=identify]')).transitionDuration]; }
+            """);
+        Assert.Equal(["identify-pulse", "0.5s", "alternate", "infinite", "0.1s"], pulse);
         await device.ScreenshotAsync(new() { Path = Path.Combine(E2EEnvironment.ArtifactsDir, "screens", "player-identify.png") });
 
         // Halfway through, identify again: it now lasts 6 s from the second click, not the first.
@@ -116,6 +124,36 @@ public class IdentifyTests(BrowserFixture fixture) : PlayerTest(fixture)
         finally
         {
             await SetInfoOverlayAsync(false); // the setting is global: leave it as other tests expect
+        }
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task The_info_overlay_shows_a_dim_dot_while_the_screen_is_offline()
+    {
+        var tag = Tag();
+        await EmptyScreenAsync($"Dot {tag}", $"Dot {tag}", [await HtmlTitleAsync(tag)]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var device = await ConnectedDeviceAsync(this, token);
+        await WaitForActivationsAsync(device, 1);
+        try
+        {
+            await SetInfoOverlayAsync(true);
+            var overlay = device.GetByTestId("info-overlay");
+            await Expect(overlay).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Expect(overlay).Not.ToHaveClassAsync(new System.Text.RegularExpressions.Regex("offline"));
+
+            await device.Context.RouteAsync("**/api/player/**", route => route.AbortAsync("connectionrefused"));
+            await device.EvaluateAsync("() => document.body.dataset.online === 'false' || new Promise((r) => new MutationObserver(() => document.body.dataset.online === 'false' && r()).observe(document.body, { attributes: true }))");
+            await Expect(overlay).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("offline"));
+            Assert.Equal("\"\"", await device.EvaluateAsync<string>("() => getComputedStyle(document.querySelector('[data-testid=info-overlay]'), '::after').content"));
+
+            await device.Context.UnrouteAllAsync();
+            await Expect(overlay).Not.ToHaveClassAsync(new System.Text.RegularExpressions.Regex("offline"), new() { Timeout = 20_000 });
+        }
+        finally
+        {
+            await SetInfoOverlayAsync(false);
         }
         await device.Context.CloseAsync();
     }

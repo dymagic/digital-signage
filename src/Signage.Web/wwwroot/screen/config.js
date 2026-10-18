@@ -29,6 +29,7 @@ export const config = Object.freeze({
     singleVideoFadeMs: 300, // cross-fade when single video mode starts, ends or changes its URL (PLAYER_SPEC §6)
 
     // Overlays (PLAYER_SPEC §7)
+    identifySeconds: 30, // if an identify event carries no duration
     identifyFadeMs: 500,
 
     // Stage (PLAYER_SPEC §1)

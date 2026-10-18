@@ -115,6 +115,9 @@ dotnet ef migrations script --idempotent -p src/Signage.Web -o migrate.sql
 psql "host=… dbname=signage user=signage" -f migrate.sql
 ```
 
+No local `psql`? Use the one in the PostgreSQL image:
+`docker run --rm -i postgres:16 psql "host=… dbname=signage user=signage password=…" < migrate.sql`.
+
 Health endpoints: `/healthz` (the process is up) and `/readyz` (the database is reachable). The image has no shell, so
 probe them from outside (the load balancer, the orchestrator).
 
