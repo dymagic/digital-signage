@@ -17,7 +17,11 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
   reload at the next transition. WP-09 follow-ups.
 - Tests: integration (notifier → SSE on two app instances, heartbeat fields + no conflict, offline after 90 s with fake
   time, forwarded headers, events auth), E2E (edit reaches the screen within 5 s, appVersion reload).
-- Next step: notifier, hub, listener, SSE endpoint.
+- Done: notifier/hub/listener/SSE, heartbeat + status list, version stamp + reload, forwarded headers, WP-09
+  follow-ups, ADR-0010, docs. Integration 14 + E2E (LiveUpdateTests 3, 4 new VideoTests).
+- Full-suite flake found: E2E devices share one IP and hit the 10/min token exchange limit. The exchange now has its own
+  configurable limit (default unchanged), E2E sets 120; open question for the PO.
+- Next step: full self-check, request review round 1.
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
@@ -47,6 +51,11 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
 - (answered) WP-07 daily player reload confirmed by the product owner on 2026-10-17 (ADR-0008).
 - (answered) WP-07: the PO confirmed the daily reload stands with the corrected ~1.3 GB/day worst case and approved review round 4 (2026-10-17).
+- (open, not blocking) WP-10: screen address exchanges are limited to 10 per client IP and minute (ADR-0007). Many
+  kiosks behind one NAT that boot together with `/screen?token=…` (a power cut) then take several minutes to all
+  exchange; they play their cached content meanwhile, so nobody sees it, but a first-ever boot would wait. The limit is
+  now configurable (`SIGNAGE__SCREENADDRESSEXCHANGESPERMINUTE`, default 10; E2E uses 120). Keep 10 as the default, or
+  raise it (e.g. 60, like pairing polls)? The token is 256 bits, so the limit is about load, not guessing.
 
 ## Notes
 - The shell is zsh and `grep` is aliased to ugrep: use `command grep` in scripts. Quote `-?`.

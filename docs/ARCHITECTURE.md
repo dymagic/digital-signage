@@ -143,7 +143,7 @@ answer with `HX-Redirect` to the list and a message.
 | `GET /screen` | none | Player shell (`wwwroot/screen/index.html`, never cached), stamped with `<meta name="signage-version">` = the app version (R-26) |
 | `POST /api/player/pairing` | none, rate-limited (10/min/IP) | Start pairing → `{ code ("XXX-XXX"), pairingId, deviceSecret, expiresAt, expiresInSeconds }`. The player times codes with `expiresInSeconds` on its monotonic clock, so a wrong device clock can't break pairing |
 | `GET /api/player/pairing/{id}` | `X-Device-Secret` header, 60/min/IP | `{ status: "pending", expiresAt }`; once claimed, mints the token, sets the cookie and returns `{ status: "paired", screen{name} }` (one-time); afterwards or when expired `410`; wrong secret `404` |
-| `POST /api/player/session` | `token` in body, rate-limited | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
+| `POST /api/player/session` | `token` in body, rate-limited (10/min/IP, configurable) | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
 | `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion, screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
 | `GET /api/player/preview/{screenId}/manifest` | admin cookie, Editor | The same manifest for the admin preview. `401` without a session, `403` while the user must change their password, `404` for an unknown screen |
 | `GET /api/player/events` | screen cookie | SSE stream (`retry: 5000`, keep-alive comment every 15 s). Events carry no data: `manifest-changed` means "fetch your manifest"; WP-11 adds `identify` and `identify-all` |
@@ -184,6 +184,7 @@ is acceptable, since a manifest ETag stops redundant re-renders.
 | `SIGNAGE__BOOTSTRAP__ADMINEMAIL` / `__ADMINPASSWORD` | — | Only used if there are no users. The admin must change the password at first sign-in. Invalid values stop start-up |
 | `SIGNAGE__FORWARDEDHEADERS__ENABLED` | `false` | Trust `X-Forwarded-For` and `X-Forwarded-Proto` from the proxy (behind ingress/load balancer). The host header is never taken from it |
 | `SIGNAGE__FORWARDEDHEADERS__KNOWNNETWORKS` | — | Comma-separated CIDRs of the proxies, e.g. `10.0.0.0/8`. Empty: the nearest hop is trusted whatever its address (only safe when the app is reachable through the proxy alone). An invalid value stops start-up |
+| `SIGNAGE__SCREENADDRESSEXCHANGESPERMINUTE` | `10` | Screen address exchanges (`/api/player/session`) per client IP and minute (ADR-0007). Pairing starts stay at 10/min, polls at 60/min |
 | `SIGNAGE__SEEDDEMO` | `false` (`true` in Development) | Seeds a demo Playlist and an unpaired "Demo screen" on start when there are no slides yet. The compose file turns it on |
 | `ASPNETCORE_HTTP_PORTS` | `8080` | Set by the .NET base image; the container listens on 8080 |
 

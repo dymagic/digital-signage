@@ -8,6 +8,12 @@ public sealed class SignageOptions
     /// <summary>Apply EF Core migrations at start-up (R-60). Default on.</summary>
     public bool MigrateOnStartup { get; set; } = true;
 
+    /// <summary>
+    /// Screen address exchanges (/api/player/session) allowed per client IP and minute (ADR-0007). Kiosks behind one NAT
+    /// that boot together share it; they play their cached content meanwhile and retry.
+    /// </summary>
+    public int ScreenAddressExchangesPerMinute { get; set; } = 10;
+
     /// <summary>Create demo content at start-up (empty database only). Always on in Development.</summary>
     public bool SeedDemo { get; set; }
 

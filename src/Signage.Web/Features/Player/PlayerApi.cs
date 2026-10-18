@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Signage.Web.Features.Pairing;
@@ -15,6 +16,7 @@ public static class PlayerApi
     public const string DeviceSecretHeader = "X-Device-Secret";
     public const string PairingStartLimit = "pairing-start";
     public const string PairingPollLimit = "pairing-poll";
+    public const string SessionLimit = "screen-session";
 
     public static IServiceCollection AddSignagePlayerApi(this IServiceCollection services)
     {
@@ -34,6 +36,8 @@ public static class PlayerApi
             o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             o.AddPolicy(PairingStartLimit, ctx => FixedWindowPerIp(ctx, permits: 10));
             o.AddPolicy(PairingPollLimit, ctx => FixedWindowPerIp(ctx, permits: 60));
+            o.AddPolicy(SessionLimit, ctx => FixedWindowPerIp(ctx,
+                permits: Math.Max(1, ctx.RequestServices.GetRequiredService<IOptions<SignageOptions>>().Value.ScreenAddressExchangesPerMinute)));
         });
         return services;
     }
@@ -79,7 +83,7 @@ public static class PlayerApi
 
             ScreenAuthenticationHandler.SetCookie(http, request.Token!, time);
             return Results.NoContent();
-        }).RequireRateLimiting(PairingStartLimit);
+        }).RequireRateLimiting(SessionLimit);
 
         // The screen's manifest (R-13, R-24, R-25). Supports If-None-Match so the 60 s poll is cheap.
         api.MapGet("/manifest", async (HttpContext http, ManifestService manifests, CancellationToken ct) =>
