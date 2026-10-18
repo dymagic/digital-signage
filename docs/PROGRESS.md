@@ -7,7 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-10 Live updates, heartbeat & status — branch `wp-10-live-updates` — status In progress
+- Package: WP-10 Live updates, heartbeat & status — branch `wp-10-live-updates` — status In review (round 1 requested)
 - Plan: server: `PostgresScreenNotifier` (pg_notify on `signage_events`, chunked payloads), `ScreenEventHub` (per-replica
   SSE subscribers by screen), `ScreenEventListener` (BackgroundService, LISTEN, reconnect + "all changed" after a gap),
   `GET /api/player/events` (SSE, keep-alive 15 s), `POST /api/player/heartbeat` (ExecuteUpdate of LastSeen/IP/UA/version,
@@ -21,7 +21,8 @@ Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the revi
   follow-ups, ADR-0010, docs. Integration 14 + E2E (LiveUpdateTests 3, 4 new VideoTests).
 - Full-suite flake found: E2E devices share one IP and hit the 10/min token exchange limit. The exchange now has its own
   configurable limit (default unchanged), E2E sets 120; open question for the PO.
-- Next step: full self-check, request review round 1.
+- Self-check green: build 0 warnings, `dotnet test` 460, E2E 55 (8 opt-in spike skips), twice.
+- Next step: handle the review round 1 verdict (docs/reviews/WP-10-review-1.md).
 - Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
