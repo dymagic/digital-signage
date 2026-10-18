@@ -7,7 +7,15 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_(none: next is WP-11 Identification)_
+- Package: WP-11 Identification — branch `wp-11-identification` — status In progress
+- Plan: `ScreenEvent` gains `Seconds`; `IScreenNotifier.IdentifyAsync(screenId)` / `IdentifyAllAsync()` (30 s); SSE
+  writes `data: {"seconds":30}`. Admin: "Identify" on the screen page and "Identify all" on the list (editor+, POST
+  handlers with htmx, a confirmation message). Player: `overlay.js` (info overlay `Name · IP` from the manifest,
+  applied at once, offline dot; identify border + name pill, identify-all name only, 30 s, restart, 500 ms fade), also over
+  single video mode. WP-10 NITs. Tests: integration (events with seconds, authz), E2E (identify, restart, identify all,
+  overlay toggled live, in single video mode).
+- Next step: server events and admin buttons.
+- Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
