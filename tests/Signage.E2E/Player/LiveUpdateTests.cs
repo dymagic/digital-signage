@@ -16,8 +16,7 @@ public class LiveUpdateTests(BrowserFixture fixture) : PlayerTest(fixture)
         var (_, token, ids) = await ScreenWithSlidesAsync(("Menu", 30, "#14532d"));
         var device = await OpenDeviceAsync(token, timeScale: 1);
         await WaitForActivationsAsync(device, 1);
-        await device.WaitForFunctionAsync("() => document.body.dataset.online === 'true'");
-        await device.WaitForTimeoutAsync(500); // the event stream connects alongside the first manifest fetch
+        await device.WaitForFunctionAsync("() => document.body.dataset.events === 'open'"); // the push stream is connected
 
         await Page.GotoAsync($"/admin/slides/{ids[0]}");
         await Page.GetByLabel("HTML", new() { Exact = true }).FillAsync("<h1 style='color:#fff'>Soup of the day: tomato</h1>");
@@ -30,6 +29,90 @@ public class LiveUpdateTests(BrowserFixture fixture) : PlayerTest(fixture)
             null, new() { Timeout = 5000, PollingInterval = 100 });
         Assert.True(DateTimeOffset.UtcNow - saved < TimeSpan.FromSeconds(5));
         await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task An_edit_saved_while_the_screen_is_fetching_its_manifest_still_arrives_within_5_seconds()
+    {
+        var (_, token, ids) = await ScreenWithSlidesAsync(("Board", 30, "#1e293b"));
+        var hold = 0; // 1: hold the next manifest response (already read from the server) until released
+        var held = new TaskCompletionSource();
+        var release = new TaskCompletionSource();
+        var device = await OpenDeviceAsync(token, timeScale: 1, ctx => ctx.RouteAsync("**/api/player/manifest", async route =>
+        {
+            if (Interlocked.CompareExchange(ref hold, 2, 1) != 1)
+            {
+                await route.ContinueAsync();
+                return;
+            }
+            var response = await route.FetchAsync();
+            held.TrySetResult();
+            await release.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await route.FulfillAsync(new() { Response = response });
+        }));
+        await WaitForActivationsAsync(device, 1);
+        await device.WaitForFunctionAsync("() => document.body.dataset.events === 'open'");
+
+        Volatile.Write(ref hold, 1);
+        await EditHtmlAsync(ids[0], "First edit");
+        await held.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken); // the screen is fetching; its answer predates the next edit
+        await EditHtmlAsync(ids[0], "Second edit");
+        var saved = DateTimeOffset.UtcNow;
+        release.TrySetResult();
+
+        await device.WaitForFunctionAsync(
+            "() => document.querySelector('.slide[data-state=active] iframe')?.srcdoc.includes('Second edit')",
+            null, new() { Timeout = 5000, PollingInterval = 100 });
+        Assert.True(DateTimeOffset.UtcNow - saved < TimeSpan.FromSeconds(5));
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_version_reload_that_could_not_happen_is_tried_again()
+    {
+        var (_, token, _) = await ScreenWithSlidesAsync(("Rollout", 2, "#0f766e"), ("Retry", 2, "#9a3412"));
+        var refused = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 0.25, async ctx =>
+        {
+            await ctx.Clock.InstallAsync();
+            await ctx.RouteAsync(url => new Uri(url).AbsolutePath == "/screen", async route =>
+            {
+                if (route.Request.ResourceType == "fetch" && Interlocked.Increment(ref refused) == 1)
+                {
+                    await route.AbortAsync("connectionrefused"); // the server is mid-rollout at the first attempt
+                    return;
+                }
+                await route.ContinueAsync();
+            });
+        });
+        await WaitForActivationsAsync(device, 2);
+        await device.Context.RouteAsync("**/api/player/manifest", async route =>
+        {
+            var headers = route.Request.Headers.Where(h => !h.Key.Equals("if-none-match", StringComparison.OrdinalIgnoreCase)).ToDictionary();
+            var response = await route.FetchAsync(new() { Headers = headers });
+            var manifest = JsonNode.Parse(await response.TextAsync())!.AsObject();
+            manifest["appVersion"] = "999.0.0";
+            await route.FulfillAsync(new() { Status = 200, ContentType = "application/json", Body = manifest.ToJsonString() });
+        });
+
+        for (var i = 0; i < 300 && Volatile.Read(ref refused) < 1; i++)
+        {
+            await Task.Delay(100, TestContext.Current.CancellationToken); // the next poll (15 s here) sees the new version
+        }
+        Assert.Equal(1, refused);
+        var reload = device.WaitForRequestAsync(r => r.IsNavigationRequest && new Uri(r.Url).AbsolutePath == "/screen", new() { Timeout = 30_000 });
+        await device.Clock.FastForwardAsync("01:01"); // a minute later it tries again
+
+        await reload;
+        await device.Context.CloseAsync();
+    }
+
+    private async Task EditHtmlAsync(Guid slideId, string text)
+    {
+        await Page.GotoAsync($"/admin/slides/{slideId}");
+        await Page.GetByLabel("HTML", new() { Exact = true }).FillAsync($"<h1 style='color:#fff'>{text}</h1>");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
+        await Expect(Page.GetByText("Changes saved.")).ToBeVisibleAsync();
     }
 
     [Fact]

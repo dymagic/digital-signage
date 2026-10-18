@@ -140,14 +140,14 @@ answer with `HX-Redirect` to the list and a message.
 ### Player API (`/api/player/*`)
 | Method & path | Auth | Purpose |
 |---|---|---|
-| `GET /screen` | none | Player shell (`wwwroot/screen/index.html`, never cached), stamped with `<meta name="signage-version">` = the app version (R-26) |
+| `GET /screen` | none | Player shell (`wwwroot/screen/index.html`, never cached), stamped with `<meta name="signage-version">` = the player build (`<Version>+<hash of wwwroot/screen>`, R-26, ADR-0010) |
 | `POST /api/player/pairing` | none, rate-limited (10/min/IP) | Start pairing → `{ code ("XXX-XXX"), pairingId, deviceSecret, expiresAt, expiresInSeconds }`. The player times codes with `expiresInSeconds` on its monotonic clock, so a wrong device clock can't break pairing |
 | `GET /api/player/pairing/{id}` | `X-Device-Secret` header, 60/min/IP | `{ status: "pending", expiresAt }`; once claimed, mints the token, sets the cookie and returns `{ status: "paired", screen{name} }` (one-time); afterwards or when expired `410`; wrong secret `404` |
 | `POST /api/player/session` | `token` in body, rate-limited (10/min/IP, configurable) | Exchanges a pre-configured URL token for the cookie (R-41); `204` or `401` |
-| `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion, screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
+| `GET /api/player/manifest` | screen cookie | Full state: `{ appVersion (the player build, as stamped on /screen), screen{id,name}, mode, singleVideoUrl, settings{defaultDuration, showInfoOverlay, timeZone}, observedIp, slides[] }`. `ETag` header (SHA-256 of the body), `Cache-Control: no-cache`, `304` on a matching `If-None-Match` |
 | `GET /api/player/preview/{screenId}/manifest` | admin cookie, Editor | The same manifest for the admin preview. `401` without a session, `403` while the user must change their password, `404` for an unknown screen |
 | `GET /api/player/events` | screen cookie | SSE stream (`retry: 5000`, keep-alive comment every 15 s). Events carry no data: `manifest-changed` means "fetch your manifest"; WP-11 adds `identify` and `identify-all` |
-| `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId, problems[{kind, slideId, reason}] }` every 30 s; `204`. Records LastSeen, observed IP, user agent and version with a bulk update (no version bump, ADR-0004); problems are logged as warnings |
+| `POST /api/player/heartbeat` | screen cookie | `{ playerVersion, currentSlideId, problems[{kind, slideId, reason}] }` every 30 s; `204`; at most 20 problems (`400` otherwise) and 16 KB. Records LastSeen, observed IP, user agent and version with a bulk update (no version bump, ADR-0004); problems are logged as warnings |
 
 Slides in the manifest carry `{ id, type, url?, html?, durationSeconds (resolved), playAudio,
 activeFromUtc?, activeUntilUtc? }`. The player re-checks the schedule client-side so offline playback

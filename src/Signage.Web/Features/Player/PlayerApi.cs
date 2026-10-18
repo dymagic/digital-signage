@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -18,12 +19,16 @@ public static class PlayerApi
     public const string PairingPollLimit = "pairing-poll";
     public const string SessionLimit = "screen-session";
 
+    /// <summary>A heartbeat is a few hundred bytes; 20 problems fit easily.</summary>
+    public const int HeartbeatMaxBytes = 16 * 1024;
+
     public static IServiceCollection AddSignagePlayerApi(this IServiceCollection services)
     {
         services.AddScoped<PairingService>();
         services.AddScoped<ScreenAccessService>();
         services.AddScoped<ManifestService>();
         services.AddScoped<HeartbeatService>();
+        services.AddSingleton<PlayerBuild>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ScreenAuthenticationHandler>(ScreenAuthenticationHandler.SchemeName, null);
         services.AddAuthorizationBuilder().AddPolicy(ScreenPolicy, p => p
             .AddAuthenticationSchemes(ScreenAuthenticationHandler.SchemeName)
@@ -99,12 +104,16 @@ public static class PlayerApi
         api.MapPost("/heartbeat", async (HeartbeatRequest request, HttpContext http, HeartbeatService heartbeats, CancellationToken ct) =>
         {
             NoStore(http);
+            if (request.Problems?.Count > HeartbeatService.MaxProblems)
+            {
+                return Results.BadRequest();
+            }
             await heartbeats.RecordAsync(http.User.ScreenId(), request, http.ObservedIp(),
                 http.Request.Headers.UserAgent.ToString(), ct).ConfigureAwait(false);
             return Results.NoContent();
-        }).RequireAuthorization(ScreenPolicy);
+        }).RequireAuthorization(ScreenPolicy).WithMetadata(new RequestSizeLimitAttribute(HeartbeatMaxBytes));
 
-        // R-13: an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
+        // R-13): an editor or admin previews a screen in their own browser (/screen?preview={id}). Uses the admin cookie;
         // the preview never records anything about a device.
         api.MapGet("/preview/{screenId:guid}/manifest", async (Guid screenId, HttpContext http, ManifestService manifests, CancellationToken ct) =>
         {

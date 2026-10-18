@@ -7,13 +7,15 @@ import { Unauthorized } from './api.js';
  * Fetches `url` now and whenever told to, at least every 60 s, until stopped. Calls onManifest(manifest) for every new
  * version, onUnauthorized() on 401/403 (then stops), onNotFound() on 404 if given (then stops; otherwise 404 counts as
  * an error and is retried), and onOnline(boolean) when reachability changes. With `eventsUrl`, an EventSource on it
- * triggers a fetch on every `manifest-changed` event and on every (re)connect, since events may have been missed.
+ * triggers a fetch on every `manifest-changed` event and on every (re)connect, since events may have been missed;
+ * onEvents('open' | 'closed') reports the stream's state. An event that arrives during a fetch causes another fetch.
  */
-export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNotFound, onOnline }) {
+export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNotFound, onOnline, onEvents }) {
     let etag = null;
     let stopped = false;
     let online = null;
     let wake = null;
+    let again = false; // a fetch was asked for while one was under way: do another right after
     let events = null;
     const setOnline = (value) => {
         if (value !== online) {
@@ -21,7 +23,13 @@ export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNot
             onOnline?.(value);
         }
     };
-    const fetchNow = () => wake?.();
+    const fetchNow = () => {
+        if (wake) {
+            wake();
+        } else {
+            again = true; // the fetch under way may have read the database before this change
+        }
+    };
     const pause = (duration) => new Promise((resolve) => {
         const timer = setTimeout(done, duration);
         function done() {
@@ -43,9 +51,13 @@ export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNot
             return;
         }
         events = new EventSource(eventsUrl);
-        events.addEventListener('open', fetchNow);
+        events.addEventListener('open', () => {
+            onEvents?.('open');
+            fetchNow();
+        });
         events.addEventListener('manifest-changed', fetchNow);
         events.addEventListener('error', () => {
+            onEvents?.('closed');
             // EventSource reconnects by itself after a network error, but gives up after a non-200 answer (a proxy's
             // 502 during a restart, or a 401 that the manifest fetch will notice). Start a new one after a pause.
             if (events?.readyState === EventSource.CLOSED) {
@@ -74,6 +86,10 @@ export function pollManifest(url, { eventsUrl, onManifest, onUnauthorized, onNot
                     throw new Error(`manifest ${response.status}`);
                 }
                 setOnline(true);
+                if (again) {
+                    again = false;
+                    continue;
+                }
                 await pause(ms(config.manifestPollMs));
             } catch (error) {
                 if (error instanceof Unauthorized) {

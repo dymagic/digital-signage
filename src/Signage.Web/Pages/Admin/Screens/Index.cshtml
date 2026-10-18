@@ -21,7 +21,7 @@
 else
 {
     @* R-33: the status refreshes itself every 15 s (htmx re-reads this page and swaps just the list). *@
-    <div id="screen-list" hx-get="@Url.Page("Index")" hx-trigger="every 15s" hx-select="#screen-list" hx-swap="outerHTML">
+    <div id="screen-list" hx-get="@Url.Page("Index")" hx-trigger="every 15s" hx-select="#screen-list" hx-swap="outerHTML" hx-headers='{"X-Background-Refresh": "1"}'>
         <table class="table">
             <thead>
                 <tr>

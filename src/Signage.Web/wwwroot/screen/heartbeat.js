@@ -21,5 +21,6 @@ export function startHeartbeat({ playerVersion, currentSlideId }) {
         }
     };
     beat();
-    setInterval(beat, ms(config.heartbeatMs));
+    const timer = setInterval(beat, ms(config.heartbeatMs));
+    return { stop: () => clearInterval(timer) };
 }

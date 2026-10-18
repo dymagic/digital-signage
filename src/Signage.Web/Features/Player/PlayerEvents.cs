@@ -13,8 +13,11 @@ internal static class PlayerEvents
 {
     public static readonly TimeSpan KeepAliveEvery = TimeSpan.FromSeconds(15);
 
-    public static async Task StreamAsync(HttpContext http, ScreenEventHub hub, TimeProvider time, CancellationToken ct)
+    public static async Task StreamAsync(HttpContext http, ScreenEventHub hub, TimeProvider time, IHostApplicationLifetime lifetime, CancellationToken requestAborted)
     {
+        // Ends when the player goes or the app stops: an open stream must never hold up a shutdown (the player reconnects).
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, lifetime.ApplicationStopping);
+        var ct = linked.Token;
         var response = http.Response;
         response.Headers.ContentType = "text/event-stream";
         response.Headers.CacheControl = "no-store";
@@ -28,10 +31,11 @@ internal static class PlayerEvents
             await response.Body.FlushAsync(ct).ConfigureAwait(false);
 
             Task<bool>? next = null;
+            Task? keepAlive = null;
             while (!ct.IsCancellationRequested)
             {
                 next ??= subscription.Events.WaitToReadAsync(ct).AsTask();
-                var keepAlive = Task.Delay(KeepAliveEvery, time, ct);
+                keepAlive ??= Task.Delay(KeepAliveEvery, time, ct);
                 if (await Task.WhenAny(next, keepAlive).ConfigureAwait(false) == next)
                 {
                     if (!await next.ConfigureAwait(false))
@@ -46,6 +50,7 @@ internal static class PlayerEvents
                 }
                 else
                 {
+                    keepAlive = null;
                     await response.WriteAsync(": keep-alive\n\n", ct).ConfigureAwait(false);
                 }
                 await response.Body.FlushAsync(ct).ConfigureAwait(false);

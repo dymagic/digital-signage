@@ -143,7 +143,8 @@ screen (R-42).
   is not shown any longer for it. Mode changes and overlay toggles apply immediately.
 - If a *fresh* manifest's `appVersion` differs from the version `/screen` was served with (`<meta
   name="signage-version">`): reload at the next transition (at once if the screen doesn't transition), only when
-  `GET /screen` answers 2xx right before. Once per version (`sessionStorage`): if the page still reports the old version
+  `GET /screen` answers 2xx right before (if it doesn't, again at a transition a minute later, until it does). The build
+  is `<Version>+<hash of the player files>`, so any player change counts. Once per build (`sessionStorage`): if the page still reports the old version
   afterwards (a stale cache in between), it doesn't reload in a loop. A cached manifest never triggers this.
 - Daily reload (ADR-0008, confirmed by the product owner on 2026-10-17): a timer checks once a minute. The reload is
   due after 20 h of uptime when the local time (system time zone) is between 02:00 and 05:00, or after 26 h at any

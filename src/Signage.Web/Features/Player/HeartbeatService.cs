@@ -16,7 +16,8 @@ public sealed record PlayerProblem(Guid? SlideId, string? Kind, string? Reason);
 /// </summary>
 public sealed partial class HeartbeatService(SignageDbContext db, TimeProvider time, ILogger<HeartbeatService> logger)
 {
-    private const int MaxProblemsLogged = 20;
+    /// <summary>The player keeps at most this many (problems.js); a heartbeat with more is refused.</summary>
+    public const int MaxProblems = 20;
 
     public async Task RecordAsync(Guid screenId, HeartbeatRequest request, string? ip, string? userAgent, CancellationToken ct)
     {
@@ -33,7 +34,7 @@ public sealed partial class HeartbeatService(SignageDbContext db, TimeProvider t
                 .SetProperty(x => x.PlayerVersion, version), ct)
             .ConfigureAwait(false);
 
-        foreach (var problem in (request.Problems ?? []).Take(MaxProblemsLogged))
+        foreach (var problem in (request.Problems ?? []).Take(MaxProblems))
         {
             LogProblem(logger, screenId, Clip(problem.Kind, Limits.ShortText) ?? "unknown", problem.SlideId, Clip(problem.Reason, Limits.Title) ?? "");
         }

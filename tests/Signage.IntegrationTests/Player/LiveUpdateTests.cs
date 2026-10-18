@@ -3,12 +3,14 @@ using System.Net.Http.Json;
 using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Signage.IntegrationTests.Infrastructure;
 using Signage.Web;
 using Signage.Web.Domain;
 using Signage.Web.Features.Events;
 using Signage.Web.Features.Hosting;
 using Signage.Web.Features.Pairing;
+using Signage.Web.Features.Player;
 
 namespace Signage.IntegrationTests.Player;
 
@@ -91,6 +93,46 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Stopping_the_app_ends_open_event_streams_at_once()
+    {
+        await using var app = await AdminApp.StartAsync(postgres);
+        var (device, _) = await DeviceAsync(app.Factory, "Restarting TV");
+        await using var events = await EventStream.OpenAsync(device);
+
+        app.Factory.Services.GetRequiredService<IHostApplicationLifetime>().StopApplication();
+
+        await events.Closed.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken); // not the 30 s shutdown timeout
+        device.Dispose();
+    }
+
+    [Fact]
+    public async Task After_the_listener_loses_its_connection_players_fetch_and_later_events_still_arrive()
+    {
+        await using var app = await AdminApp.StartAsync(postgres);
+        var (device, screenId) = await DeviceAsync(app.Factory, "Patient TV");
+        await using var events = await EventStream.OpenAsync(device);
+        await ListeningAsync(app.Factory);
+
+        // The database drops the listening session (a failover, a restart, an idle-connection killer).
+        var killed = await app.Factory.WithDbAsync(db => db.Database.SqlQueryRaw<bool>(
+            "SELECT pg_terminate_backend(pid) AS \"Value\" FROM pg_stat_activity WHERE datname = current_database() AND query LIKE 'LISTEN %'").ToListAsync());
+        Assert.Equal([true], killed);
+
+        // The listener waits out its back-off (on the app's clock), reconnects and tells every player to fetch.
+        string? afterReconnect = null;
+        for (var i = 0; i < 100 && afterReconnect is null; i++)
+        {
+            app.Time.Advance(TimeSpan.FromSeconds(1));
+            afterReconnect = await events.NextAsync(TimeSpan.FromMilliseconds(100));
+        }
+        Assert.Equal(ScreenEvent.ManifestChanged, afterReconnect);
+
+        await Notifier(app.Factory).ScreensChangedAsync([screenId], TestContext.Current.CancellationToken);
+        Assert.Equal(ScreenEvent.ManifestChanged, await events.NextAsync(Soon));
+        device.Dispose();
+    }
+
+    [Fact]
     public async Task The_event_stream_and_the_heartbeat_need_a_screen_token()
     {
         await using var app = await AdminApp.StartAsync(postgres);
@@ -144,6 +186,41 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task The_status_refresh_neither_keeps_a_session_alive_nor_hides_a_signed_out_session()
+    {
+        await using var app = await AdminApp.StartAsync(postgres);
+        await app.CreateAdminAsync();
+        using var admin = await app.SignedInAsync(AdminApp.AdminEmail);
+        app.Time.Advance(TimeSpan.FromHours(7)); // past half of the 12 h sliding window: a normal request would renew
+
+        using var refresh = await GetAsync(admin.Http, "/admin/screens", htmx: true, background: true);
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.DoesNotContain(refresh.Headers.TryGetValues("Set-Cookie", out var set) ? set : [], c => c.StartsWith("signage.auth=", StringComparison.Ordinal)); // not extended
+        using var visit = await GetAsync(admin.Http, "/admin/screens", htmx: false, background: false);
+        Assert.Contains(visit.Headers.GetValues("Set-Cookie"), c => c.StartsWith("signage.auth=", StringComparison.Ordinal));
+
+        // Signed out (expired, elsewhere, deactivated): htmx is told to go to the sign-in page instead of swapping it in.
+        using var anonymous = new AdminSession(app.Factory);
+        using var expired = await GetAsync(anonymous.Http, "/admin/screens", htmx: true, background: true);
+        Assert.Equal(HttpStatusCode.Unauthorized, expired.StatusCode);
+        Assert.StartsWith("/admin/login", new Uri(new Uri("http://x"), expired.Headers.GetValues("HX-Redirect").Single()).PathAndQuery, StringComparison.Ordinal);
+    }
+
+    private static async Task<HttpResponseMessage> GetAsync(HttpClient http, string path, bool htmx, bool background)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(path, UriKind.Relative));
+        if (htmx)
+        {
+            request.Headers.Add("HX-Request", "true");
+        }
+        if (background)
+        {
+            request.Headers.Add("X-Background-Refresh", "1");
+        }
+        return await http.SendAsync(request, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task Behind_a_trusted_proxy_the_forwarded_client_ip_is_recorded()
     {
         await using var app = await AdminApp.StartAsync(postgres, new Dictionary<string, string?> { ["Signage:ForwardedHeaders:Enabled"] = "true" });
@@ -182,14 +259,66 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task The_player_page_carries_the_app_version_it_belongs_to()
+    public async Task The_player_page_and_the_manifest_carry_the_same_player_build()
     {
         await using var app = await AdminApp.StartAsync(postgres);
-        using var device = new PlayerClient(app.Factory);
+        var (device, _) = await DeviceAsync(app.Factory, "Versioned TV");
+        var build = app.Factory.Services.GetRequiredService<PlayerBuild>().Id;
 
         var html = await device.Http.GetStringAsync(new Uri("/screen", UriKind.Relative), TestContext.Current.CancellationToken);
+        using var manifest = await device.GetManifestAsync();
+        var json = System.Text.Json.JsonDocument.Parse(await manifest.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
-        Assert.Contains($"<meta name=\"signage-version\" content=\"{AppInfo.Version}\">", html, StringComparison.Ordinal);
+        Assert.StartsWith($"{AppInfo.Version}+", build, StringComparison.Ordinal);
+        Assert.Contains($"<meta name=\"signage-version\" content=\"{build}\">", html, StringComparison.Ordinal);
+        Assert.Equal(build, json.RootElement.GetProperty("appVersion").GetString());
+        device.Dispose();
+    }
+
+    [Fact]
+    public void The_player_build_changes_when_any_player_file_changes()
+    {
+        var root = Directory.CreateTempSubdirectory("signage-build-");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root.FullName, "screen", "slides"));
+            File.WriteAllText(Path.Combine(root.FullName, "screen", "player.js"), "one");
+            File.WriteAllText(Path.Combine(root.FullName, "screen", "slides", "video.js"), "two");
+            var before = new PlayerBuild(new WebRoot(root.FullName)).Id;
+            Assert.Equal(before, new PlayerBuild(new WebRoot(root.FullName)).Id); // stable
+
+            File.WriteAllText(Path.Combine(root.FullName, "screen", "slides", "video.js"), "two, fixed");
+
+            Assert.NotEqual(before, new PlayerBuild(new WebRoot(root.FullName)).Id);
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task A_heartbeat_with_more_problems_than_a_player_keeps_is_refused()
+    {
+        // (Kestrel also caps the body at 16 KB; the in-memory test server doesn't enforce body sizes.)
+        await using var app = await AdminApp.StartAsync(postgres);
+        var (device, _) = await DeviceAsync(app.Factory, "Chatty TV");
+        var problems = Enumerable.Range(0, 21).Select(i => new { kind = "video", slideId = Guid.CreateVersion7(), reason = new string('x', 50) });
+
+        using var response = await device.Http.PostAsJsonAsync(new Uri("/api/player/heartbeat", UriKind.Relative), new { playerVersion = "1", problems }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        device.Dispose();
+    }
+
+    private sealed class WebRoot(string path) : Microsoft.AspNetCore.Hosting.IWebHostEnvironment
+    {
+        public string WebRootPath { get; set; } = path;
+        public Microsoft.Extensions.FileProviders.IFileProvider WebRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(path);
+        public string ApplicationName { get; set; } = "test";
+        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
+        public string ContentRootPath { get; set; } = path;
+        public string EnvironmentName { get; set; } = "Testing";
     }
 
     private static IScreenNotifier Notifier(SignageWebFactory factory) => factory.Services.GetRequiredService<IScreenNotifier>();
@@ -258,6 +387,9 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
             Assert.Equal("text/event-stream", response.Content.Headers.ContentType?.MediaType);
             return new EventStream(response);
         }
+
+        /// <summary>Completes when the server ends the stream.</summary>
+        public Task Closed => _reader;
 
         /// <summary>The next event's name, or null if none arrives in time.</summary>
         public async Task<string?> NextAsync(TimeSpan timeout)

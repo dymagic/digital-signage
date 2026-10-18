@@ -18,6 +18,7 @@ const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duratio
 // The app version this page was served with (/screen stamps it); a manifest from a newer server makes it reload (R-26).
 const loadedVersion = document.querySelector('meta[name="signage-version"]')?.content || null;
 const reloadedForKey = 'signage.reloadedFor';
+let versionReloadStarted = false; // reloadSoon keeps trying by itself
 
 function applyLook() {
     const root = document.documentElement.style;
@@ -110,6 +111,10 @@ function reloadOnNewVersion(serverVersion, carousel) {
     if (reloadedFor === serverVersion) {
         return;
     }
+    if (versionReloadStarted) {
+        return;
+    }
+    versionReloadStarted = true;
     reloadSoon(carousel, () => {
         try {
             sessionStorage.setItem(reloadedForKey, serverVersion);
@@ -138,7 +143,7 @@ async function runScreen() {
 
     // The exchange may retry for a long time (a kiosk boots before its server); the cached slides play meanwhile (R-24).
     await takeTokenFromUrl();
-    let heartbeat = false;
+    let heartbeat = null;
     pollManifest('/api/player/manifest', {
         eventsUrl: '/api/player/events',
         onManifest(fresh) {
@@ -147,13 +152,14 @@ async function runScreen() {
             carousel.setManifest(fresh);
             start();
             if (!heartbeat) {
-                heartbeat = true; // the server knows this device: report in from now on (R-33)
-                startHeartbeat({ playerVersion: loadedVersion ?? fresh.appVersion, currentSlideId: () => carousel.currentSlideId });
+                // The server knows this device: report in from now on (R-33).
+                heartbeat = startHeartbeat({ playerVersion: loadedVersion ?? fresh.appVersion, currentSlideId: () => carousel.currentSlideId });
             }
             reloadOnNewVersion(fresh.appVersion, carousel);
         },
         async onUnauthorized() {
             // Unknown or revoked token (R-42): the server already deleted the cookie.
+            heartbeat?.stop();
             carousel.stop();
             clearManifest();
             await pairDevice(stage);
@@ -161,6 +167,9 @@ async function runScreen() {
         },
         onOnline(online) {
             document.body.dataset.online = String(online);
+        },
+        onEvents(state) {
+            document.body.dataset.events = state; // test hook: the push stream is connected
         },
     });
 }
