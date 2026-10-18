@@ -36,6 +36,9 @@ Add a migration with the local EF tool (`dotnet tool restore` once):
 dotnet ef migrations add <Name> -p src/Signage.Web -o Data/Migrations
 ```
 
+GitHub Actions runs the same three on every push and pull request (`.github/workflows/ci.yml`), and publishes the
+image to `ghcr.io` for each `v*` tag (`image.yml`).
+
 Useful extras:
 
 - `scripts/test-e2e.sh -trait "Category=Player"` runs a part of the browser tests (xUnit v3 runner options).

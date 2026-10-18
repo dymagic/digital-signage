@@ -1,5 +1,7 @@
 # Signage
 
+[![CI](https://github.com/dymagic/digital-signage/actions/workflows/ci.yml/badge.svg)](https://github.com/dymagic/digital-signage/actions/workflows/ci.yml)
+
 A small, self-hostable digital signage system. Screens (TVs with a browser, or a mini-PC or Raspberry Pi in kiosk
 mode) play a carousel of **slides** — images, videos, web pages and HTML — that you manage from one web admin. It runs
 as one container plus PostgreSQL, on a laptop with Docker, a server in the office, or a cloud container service.
@@ -30,8 +32,8 @@ as one container plus PostgreSQL, on a laptop with Docker, a server in the offic
 You need Docker (with Compose v2) and Git.
 
 ```bash
-git clone <this repository> signage
-cd signage
+git clone https://github.com/dymagic/digital-signage.git
+cd digital-signage
 docker compose up -d --build
 ```
 
@@ -150,7 +152,8 @@ Data stays in the PostgreSQL volume.
 - [Azure Container Apps + Azure Database for PostgreSQL](docs/deploy/azure-container-apps.md)
 - [AWS: ECS Fargate (or App Runner) + Amazon RDS for PostgreSQL](docs/deploy/aws.md)
 
-The image is multi-arch (amd64 and arm64). Build and push it yourself with Docker Buildx:
+Prebuilt multi-arch images (amd64 and arm64) are published for each release: `ghcr.io/dymagic/digital-signage:<version>`
+(for example `:0.1.0`, or `:latest`). To build and push your own, use Docker Buildx:
 
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 -t registry.example.com/signage:0.1.0 --push .
@@ -160,6 +163,33 @@ If Docker says multi-platform builds aren't supported, create a builder first: `
 
 The container runs as a non-root user and listens on port 8080. Several replicas can run side by side: they share the
 database, and live updates reach every screen whichever replica it is connected to.
+
+## How this was built
+
+Signage is an experiment in building a complete, production-minded product with AI, and the whole process is in this
+repository on purpose.
+
+- **Claude (chat)** turned a one-page [opening spec](docs/opening-spec.md) into the [project brief](docs/PROJECT_BRIEF.md)
+  (requirements with IDs, glossary, scope, definition of done), the [architecture](docs/ARCHITECTURE.md), the
+  [player spec](docs/PLAYER_SPEC.md), a [backlog](docs/BACKLOG.md) of 14 work packages and the Claude Code setup:
+  [CLAUDE.md](CLAUDE.md), the [skills](.claude/skills/) for the work loop and the review gate, and an independent
+  [principal-reviewer agent](.claude/agents/principal-reviewer.md). See [KICKOFF](docs/KICKOFF.md) for how the
+  session was started.
+- **Claude Code** then built Milestone 1 package by package: branch, implement test-first, self-check, then a review by
+  the separate reviewer agent, which doesn't share the developer's context. A package merged only after an `APPROVE`.
+  Over 30 review rounds the reviewer found real bugs (races, a busy loop, lost events, a shutdown that hung for 30 s),
+  and fixes came with regression tests, many of them checked to fail on the old code before the fix went in.
+- **A person** acted as product owner: answering the questions the developer was told to escalate (such as letting
+  screens reload themselves nightly, [ADR-0008](docs/adr/0008-video-lifecycle.md)) and typing "continue" after usage
+  limits, without writing code.
+
+The trail: [decision records](docs/adr/), [every review](docs/reviews/), the running
+[progress log](docs/PROGRESS.md) and the [acceptance mapping](docs/M1_ACCEPTANCE.md) from each requirement to the
+tests that prove it (about 480 tests, 65 of them in a real browser, plus a 30-minute memory soak). Commits made by
+Claude carry a `Co-Authored-By` trailer.
+
+What isn't proven yet: the [cloud guides](docs/deploy/) haven't been run against real accounts, and a few follow-ups
+are listed at the end of the backlog.
 
 ## Developing
 
