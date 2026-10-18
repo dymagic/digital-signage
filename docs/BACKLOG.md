@@ -135,7 +135,7 @@ else loads → empty state" (`carousel.js` `isStale`); (NIT) make the one-slide 
 `carousel.js` with `!this.stopped` so a stop can't draw over pairing or the preview message; (NIT) mention the
 expired/removed exception in PLAYER_SPEC §2 "Skipping".
 
-### WP-10 Live updates, heartbeat & status — `In review`
+### WP-10 Live updates, heartbeat & status — `Done`
 SSE endpoint, Postgres LISTEN/NOTIFY notifier + listener background service, affected-screen
 calculation in each feature, the 60 s poll fallback, heartbeat endpoint, online/offline status in the admin
 list (htmx refresh), `appVersion` self-reload, forwarded-headers configuration.
@@ -155,6 +155,10 @@ shouldn't cut the 10 s wait before a failed video is retried (`carousel.js` `kee
 Identify one (red border + name, 30 s), identify all, the global info overlay toggle with
 server-observed IP.
 **Accept:** E2E for each, including timer restart and the overlay appearing live. R-30, R-31, R-32.
+*From WP-10 review round 2 (NITs):* a version reload handed to a carousel that stops cycling before its next transition
+(drops to one slide or switches to single video) waits for the daily reload; take it back like the daily reload does
+(`reload.js` `reloadSoon`); a stray `)` in the R-13 comment in `PlayerApi.cs`; signal from the route handler in
+`LiveUpdateTests.A_version_reload_that_could_not_happen_is_tried_again` instead of a `Task.Delay` polling loop.
 
 ### WP-12 Open-source packaging & deployment docs — `Todo`
 README (screenshots taken with Playwright, quick start, configuration table, security/firewall note,
