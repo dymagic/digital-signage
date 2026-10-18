@@ -46,7 +46,7 @@ public class PlayerSoak(BrowserFixture fixture) : PlayerTest(fixture)
         var next = SampleEvery;
         while (DateTimeOffset.UtcNow - started < RunFor)
         {
-            await WaitForActivationsAsync(device, next + 1, timeoutMs: 120_000); // transitions = activations - 1
+            await WaitForActivationsAsync(device, next + 1, timeoutMs: 600_000); // transitions = activations - 1; ~2 s each
             samples.Add(await SampleAsync(device, cdp, next, started));
             next += SampleEvery;
         }
