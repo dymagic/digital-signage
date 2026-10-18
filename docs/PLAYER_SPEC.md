@@ -10,7 +10,8 @@
 - Each slide is an absolutely positioned layer filling the stage. Images and videos use
   `object-fit: cover`, as full-frame content is the norm. A per-slide "fit: contain" is a possible
   later option: do not build it.
-- Layers from bottom to top: slides → info overlay → progress bar → identify overlay.
+- Layers from bottom to top: slides → single video → progress bar → info overlay → identify overlay (the info
+  overlay sits 8 px above the bar, so the two never overlap).
 
 ## 2. Carousel transition (R-20)
 

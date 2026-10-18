@@ -160,7 +160,7 @@ server-observed IP.
 (`reload.js` `reloadSoon`); a stray `)` in the R-13 comment in `PlayerApi.cs`; signal from the route handler in
 `LiveUpdateTests.A_version_reload_that_could_not_happen_is_tried_again` instead of a `Task.Delay` polling loop.
 
-### WP-12 Open-source packaging & deployment docs — `Todo`
+### WP-12 Open-source packaging & deployment docs — `In review`
 README (screenshots taken with Playwright, quick start, configuration table, security/firewall note,
 no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`,
 `docs/deploy/aws.md`, multi-arch build instructions, demo-data instructions, `LICENSE` check.

@@ -122,8 +122,8 @@ test it heavily. It is the heart of the system.
 
 ### Admin (cookie auth, Razor Pages, antiforgery)
 `/admin/...` pages for Slides, Playlists, Screens, Groups, Users, Settings, Pair, Login/Logout,
-Setup (first run), Account (change password). htmx partials for reorder, toggle, identify and
-status refresh. Authorization policies: `RequireAdmin`, `RequireEditor` (Editor ⊂ Admin).
+Setup (first run), Account (change password). htmx partials for reorder, toggle and the
+status refresh; identify and identify all are plain form posts with a confirmation message. Authorization policies: `RequireAdmin`, `RequireEditor` (Editor ⊂ Admin).
 Folder conventions in `AdminUi.cs`: all of `/Admin` needs Editor, `/Admin/Users` and `/Admin/Settings` need
 Admin, and login, setup and forbidden are anonymous. Each request re-validates the cookie against the user row
 (security stamp, active, role). A page filter keeps users who must change their password on that page.
