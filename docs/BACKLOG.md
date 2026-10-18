@@ -151,7 +151,7 @@ failure paths: a failed video next to a slide that can't load, and a failed lone
 (NIT) `VideoTests` single-video recovery: count the failed retries instead of a fixed 5 s wait; (NIT) a new manifest
 shouldn't cut the 10 s wait before a failed video is retried (`carousel.js` `keepCurrentPlaying` uses `idle`).
 
-### WP-11 Identification — `In review`
+### WP-11 Identification — `Done`
 Identify one (red border + name, 30 s), identify all, the global info overlay toggle with
 server-observed IP.
 **Accept:** E2E for each, including timer restart and the overlay appearing live. R-30, R-31, R-32.
@@ -172,6 +172,8 @@ host dev loop and how to change it (`SIGNAGE_DB_PORT`) or remove it.
 kiosk flags there (R-07).
 *From WP-02 (ADR-0004):* the security note recommends HTTPS via a reverse proxy when the network isn't
 trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
+*From WP-11 review round 1 (docs, MINOR):* PLAYER_SPEC §1 places the info overlay below the progress bar but the code (and
+§7) puts it 8 px above: make §1 agree; ARCHITECTURE §4 says identify uses htmx partials, but it is a plain form post.
 
 ### WP-13 Milestone hardening & acceptance — `Todo`
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute
@@ -184,3 +186,9 @@ measurement doesn't take part; the spike had it on, which may have added a littl
 fails if the growth between the end of the first third and the end is more than 2× the spike's rate for the same
 number of transitions (2 × 0.15 MB per transition). Record the numbers in M1_ACCEPTANCE.
 **Accept:** PROJECT_BRIEF §8 is fully satisfied.
+*From WP-11 review round 1:* (MINOR) E2E for taking a version reload back from a carousel that stopped cycling
+(`reload.js` `reloadSoon` watch); (MINOR) E2E for the info overlay's offline dot; (MINOR) identify when `pg_notify` fails:
+say so to the admin instead of a success message (and fix the log text, which promises a catch-up that identify never
+gets); (NIT) run the global-setting-toggling E2E tests in a non-parallel collection; (NIT) assert the 1 Hz pulse and
+500 ms fade; (NIT) `using` instead of the fully qualified `IScreenNotifier` in `Detail.cshtml.cs`; (NIT) take the
+identify default 30 s from `config.js`, and show no empty pill when an identify arrives before any manifest.

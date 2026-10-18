@@ -7,19 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-11 Identification — branch `wp-11-identification` — status In review (round 1 requested)
-- Plan: `ScreenEvent` gains `Seconds`; `IScreenNotifier.IdentifyAsync(screenId)` / `IdentifyAllAsync()` (30 s); SSE
-  writes `data: {"seconds":30}`. Admin: "Identify" on the screen page and "Identify all" on the list (editor+, POST
-  handlers with htmx, a confirmation message). Player: `overlay.js` (info overlay `Name · IP` from the manifest,
-  applied at once, offline dot; identify border + name pill, identify-all name only, 30 s, restart, 500 ms fade), also over
-  single video mode. WP-10 NITs. Tests: integration (events with seconds, authz), E2E (identify, restart, identify all,
-  overlay toggled live, in single video mode).
-- Done: identify events (seconds in the SSE data), admin buttons (editor+), overlay.js (info + identify, over single
-  video), WP-10 NITs; tests: integration 2, E2E IdentifyTests 4; docs.
-- Full E2E showed the calm-retry test is woken by other tests' global setting changes (pushed manifests); its device
-  now blocks the event stream. Self-check green: build 0 warnings, `dotnet test` 473, E2E 61 (8 spike skips), twice.
-- Next step: handle the review round 1 verdict (docs/reviews/WP-11-review-1.md).
-- Last checkpoint: (this commit)
+_(none: next is WP-12 Open-source packaging & deployment docs)_
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -44,6 +32,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-08 — player core: manifest (ETag/304, weak match) + admin preview, ES-module player (carousel with no double dwell, skipping, 3-layer cap, shadow only while animating, progress bar, empty state, offline cache incl. token boot, client schedule re-check, daily reload), demo seed under advisory lock, WP-03/06/07 follow-ups; 3 rounds, 1 MINOR + 3 NIT deferred to WP-09 — 40dff75
 - WP-09 — video slides (fresh element, play after transition, progress follows playback, ended/error/stall/cap, replay and loop when alone, muted fallback for sound) and single video mode (cross-fade, live mode switch, retries, layer tracking); ADR-0009; 2 rounds, 2 MINOR + 2 NIT deferred to WP-10 — 975c459
 - WP-10 — SSE over Postgres LISTEN/NOTIFY (hub, listener with reconnect, ends at shutdown), heartbeat + status list (htmx refresh, session-neutral), player build id + version reload with retry, forwarded headers, configurable exchange limit; ADR-0010; 2 rounds, 3 NIT deferred to WP-11 — 
+- WP-11 — identify one (red pulsing border + name) and all, info overlay (name · observed IP, live, offline dot), over single video; WP-10 NITs; APPROVE round 1 (4 MINOR + 4 NIT deferred to WP-12/WP-13) — 
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
