@@ -160,7 +160,7 @@ server-observed IP.
 (`reload.js` `reloadSoon`); a stray `)` in the R-13 comment in `PlayerApi.cs`; signal from the route handler in
 `LiveUpdateTests.A_version_reload_that_could_not_happen_is_tried_again` instead of a `Task.Delay` polling loop.
 
-### WP-12 Open-source packaging & deployment docs — `In review`
+### WP-12 Open-source packaging & deployment docs — `Done`
 README (screenshots taken with Playwright, quick start, configuration table, security/firewall note,
 no-warranty statement), `CONTRIBUTING.md`, `docs/deploy/azure-container-apps.md`,
 `docs/deploy/aws.md`, multi-arch build instructions, demo-data instructions, `LICENSE` check.
@@ -186,6 +186,9 @@ measurement doesn't take part; the spike had it on, which may have added a littl
 fails if the growth between the end of the first third and the end is more than 2× the spike's rate for the same
 number of transitions (2 × 0.15 MB per transition). Record the numbers in M1_ACCEPTANCE.
 **Accept:** PROJECT_BRIEF §8 is fully satisfied.
+*From WP-12 review round 2 (NIT):* the manual-migration snippet in the README assumes a local `psql`; add a one-line
+`docker run --rm -i postgres:16 psql …` alternative. *For the PO at acceptance:* the Azure and AWS guides haven't been
+run against real accounts (R-62 is documented, not proven in practice).
 *From WP-11 review round 1:* (MINOR) E2E for taking a version reload back from a carousel that stopped cycling
 (`reload.js` `reloadSoon` watch); (MINOR) E2E for the info overlay's offline dot; (MINOR) identify when `pg_notify` fails:
 say so to the admin instead of a success message (and fix the log text, which promises a catch-up that identify never

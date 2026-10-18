@@ -7,16 +7,7 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Package: WP-12 Open-source packaging & deployment docs — branch `wp-12-packaging` — status In review (round 2 requested)
-- Done: README (screenshots from an opt-in Playwright test + `scripts/update-readme-screenshots.sh`, quick start,
-  screen setup, kiosk flags, configuration incl. DB port, security/HTTPS note, updating, multi-arch build, no-warranty),
-  CONTRIBUTING, `docs/deploy/azure-container-apps.md`, `docs/deploy/aws.md`, LICENSE checked, WP-11 doc fixes.
-  Quick start verified from a clean clone (setup page, /screen stamped, pairing code, demo seeded).
-- Round 1: CHANGES_REQUIRED (1 MAJOR: `az acr build` unproven with the BuildKit-only Dockerfile; 2 MINOR; 6 NIT). Fixed
-  in docs: Azure guide builds with buildx + `az acr login`; manual migration steps; both extra screenshots used;
-  wording (address shown once, password min 10, password in two places before first start, buildx builder, dev port).
-- Next step: handle the review round 2 verdict (docs/reviews/WP-12-review-2.md).
-- Last checkpoint: (this commit)
+_(none: next is WP-13 Milestone hardening & acceptance)_
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -42,6 +33,7 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - WP-09 — video slides (fresh element, play after transition, progress follows playback, ended/error/stall/cap, replay and loop when alone, muted fallback for sound) and single video mode (cross-fade, live mode switch, retries, layer tracking); ADR-0009; 2 rounds, 2 MINOR + 2 NIT deferred to WP-10 — 975c459
 - WP-10 — SSE over Postgres LISTEN/NOTIFY (hub, listener with reconnect, ends at shutdown), heartbeat + status list (htmx refresh, session-neutral), player build id + version reload with retry, forwarded headers, configurable exchange limit; ADR-0010; 2 rounds, 3 NIT deferred to WP-11 — 
 - WP-11 — identify one (red pulsing border + name) and all, info overlay (name · observed IP, live, offline dot), over single video; WP-10 NITs; APPROVE round 1 (4 MINOR + 4 NIT deferred to WP-12/WP-13) — 
+- WP-12 — README (Playwright screenshots, quick start verified on a clean clone, kiosk flags, configuration, security, updating, manual migrations), CONTRIBUTING, Azure and AWS guides; 2 rounds, 1 NIT deferred to WP-13 — 
 
 ## Open questions for the product owner
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
