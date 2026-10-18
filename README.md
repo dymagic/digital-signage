@@ -10,8 +10,9 @@ as one container plus PostgreSQL, on a laptop with Docker, a server in the offic
   groups; add slides before or after everything on one screen. The admin shows the exact sequence each screen plays.
 - **A calm player.** The next slide slides in over the current one, a thin bar shows the time left, videos start only
   once they are in view, and nothing alarming ever appears on screen.
-- **Live.** Changes reach the screens within seconds. Screens keep playing from their cache when the network or the
-  server is down, and reload themselves after an update.
+- **Live.** Changes reach the screens within seconds. A running screen keeps playing from its cache when the network
+  or the server goes down, and reloads itself after an update. (A screen switched on while the server is unreachable
+  shows the browser's error page until the server answers: there is no offline start yet.)
 - **Simple setup.** Open `/screen` on a TV, type the code it shows into the admin, done. Or give a kiosk a
   pre-configured screen address.
 - **Know your screens.** Online status, IP address and player version per screen; identify one screen (a red border

@@ -202,3 +202,10 @@ identify default 30 s from `config.js`, and show no empty pill when an identify 
 player grows ~0.22 MB per transition against the spike's 0.15); (NIT) time the soak with a `Stopwatch`, not
 `DateTimeOffset.UtcNow`; (NIT) an integration test for the real `PostgresScreenNotifier` failure path (`IdentifyAsync`
 returns false when the database can't take the notification).
+*From the milestone review (MILESTONE-M1-review-1):* (MINOR) offline cold start: a screen that loads `/screen` while
+the server is unreachable shows the browser's error page; a service worker caching the player shell would let it start
+from its cached manifest; (NIT) document why data-protection keys are stored unencrypted in the database (the start-up
+warning) or protect them; (NIT) the pairing code placeholder `ABC-123` and the spec example `K7P-Q2M` use characters
+outside the pairing alphabet; (NIT) ARCHITECTURE §2 lists a `deploy/` folder that doesn't exist; (NIT) `/screen/index.html`
+is served without the version stamp, so a kiosk opened at that address never self-updates (redirect it to `/screen`);
+(NIT) web-page slides on the app's own origin still get `allow-same-origin` (defence in depth: drop it for same-origin URLs).

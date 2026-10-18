@@ -7,8 +7,8 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-- Milestone review: MILESTONE round 1 requested (all packages Done).
-- Next step: handle the milestone review verdict (docs/reviews/MILESTONE-M1-review-1.md), then stop and report to the PO.
+_(none)_ Milestone 1 is done: every package Done, milestone review APPROVE (MILESTONE-M1-review-1). Stopped and
+reported to the product owner. Follow-ups after M1 are listed at the end of BACKLOG.md; open questions below.
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)
@@ -41,6 +41,11 @@ _(one line per package: WP-xx — outcome — merge commit)_
 - (answered) WP-02 round 4 approved by the product owner on 2026-10-17.
 - (answered) WP-07 daily player reload confirmed by the product owner on 2026-10-17 (ADR-0008).
 - (answered) WP-07: the PO confirmed the daily reload stands with the corrected ~1.3 GB/day worst case and approved review round 4 (2026-10-17).
+- (open, not blocking) M1: the soak measured 0.23 MB per transition (spike: 0.15). With 10 s slides that is about 2 GB a day
+  before the nightly reload, tight on a 2 GB device. Accept, or reload more often by default (config.js)?
+- (open, not blocking) M1: offline cold start (milestone review MINOR 1): add a service worker in a later milestone?
+- (open, before publishing) the git history carries the PO's name and e-mail; `.claude/`, `docs/reviews/`, PROGRESS and
+  KICKOFF are in the repo. Keep them public or not?
 - (open, not blocking) WP-10: screen address exchanges are limited to 10 per client IP and minute (ADR-0007). Many
   kiosks behind one NAT that boot together with `/screen?token=…` (a power cut) then take several minutes to all
   exchange; they play their cached content meanwhile, so nobody sees it, but a first-ever boot would wait. The limit is
