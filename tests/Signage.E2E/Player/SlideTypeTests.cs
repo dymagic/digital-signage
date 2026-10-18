@@ -51,6 +51,9 @@ public class SlideTypeTests(BrowserFixture fixture) : PlayerTest(fixture)
         {
             ctx.Request += (_, r) => { if (r.Url.Contains($"gone-", StringComparison.Ordinal) && r.Url.Contains(tag, StringComparison.Ordinal)) Interlocked.Increment(ref requests); };
             await ctx.Clock.InstallAsync();
+            // Only the timer may bring the retry here: no pushed manifests (other tests change global settings meanwhile, and a
+            // new manifest rightly makes the player try again at once).
+            await ctx.RouteAsync("**/api/player/events", route => route.AbortAsync("connectionrefused"));
         });
 
         await ExpectModeAsync(device, "empty");

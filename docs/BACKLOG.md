@@ -151,7 +151,7 @@ failure paths: a failed video next to a slide that can't load, and a failed lone
 (NIT) `VideoTests` single-video recovery: count the failed retries instead of a fixed 5 s wait; (NIT) a new manifest
 shouldn't cut the 10 s wait before a failed video is retried (`carousel.js` `keepCurrentPlaying` uses `idle`).
 
-### WP-11 Identification — `In progress`
+### WP-11 Identification — `In review`
 Identify one (red border + name, 30 s), identify all, the global info overlay toggle with
 server-observed IP.
 **Accept:** E2E for each, including timer restart and the overlay appearing live. R-30, R-31, R-32.
