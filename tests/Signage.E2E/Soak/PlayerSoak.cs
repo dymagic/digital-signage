@@ -74,7 +74,7 @@ public class PlayerSoak(BrowserFixture fixture) : PlayerTest(fixture)
 
         Assert.True(last.Transitions >= 600, $"too few transitions: {summary}");
         Assert.True(growth <= allowed, $"memory grew faster than allowed: {summary}");
-        Assert.All(samples, s => Assert.InRange(s.Layers, 1, 3));
+        Assert.All(samples.Skip(1), s => Assert.InRange(s.Layers, 1, 3)); // the first sample is taken before any slide shows
         Assert.All(samples, s => Assert.InRange(s.Videos, 0, 2)); // ADR-0008: the playing one and the next one at most
         Assert.InRange(await device.EvaluateAsync<int>("() => window.__maxLayers"), 1, 3);
         await device.Context.CloseAsync();
