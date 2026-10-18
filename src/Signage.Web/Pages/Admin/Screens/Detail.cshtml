@@ -8,6 +8,10 @@
 <div class="page-head">
     <h1>@L["Screens.Screen"]: @screen.Name</h1>
     <div class="button-group">
+        @if (screen.TokenHash is not null)
+        {
+            <form method="post" asp-page-handler="Identify"><button type="submit">@L["Screens.Identify"]</button></form>
+        }
         <a class="button" href="~/screen?preview=@Model.Id" target="_blank" rel="noopener">@L["Screens.Preview"]</a>
         @if (Model.IsAdmin)
         {

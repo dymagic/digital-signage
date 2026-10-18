@@ -426,6 +426,18 @@
   <data name="Screens.Column.Groups" xml:space="preserve">
     <value>Groups</value>
   </data>
+  <data name="Screens.Identify" xml:space="preserve">
+    <value>Identify</value>
+  </data>
+  <data name="Screens.Identifying" xml:space="preserve">
+    <value>The screen now shows a red border and its name for 30 seconds.</value>
+  </data>
+  <data name="Screens.IdentifyAll" xml:space="preserve">
+    <value>Identify all</value>
+  </data>
+  <data name="Screens.IdentifyingAll" xml:space="preserve">
+    <value>Every screen now shows its name for 30 seconds.</value>
+  </data>
   <data name="Screens.Column.Status" xml:space="preserve">
     <value>Status</value>
   </data>

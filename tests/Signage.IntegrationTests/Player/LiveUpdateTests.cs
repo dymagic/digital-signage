@@ -133,6 +133,57 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Identify_reaches_only_that_screen_and_identify_all_reaches_every_screen_with_30_seconds()
+    {
+        await using var app = await AdminApp.StartAsync(postgres);
+        await app.CreateUserAsync(); // editors may identify (PROJECT_BRIEF §3)
+        using var editor = await app.SignedInAsync(AdminApp.EditorEmail);
+        var (device, screenId) = await DeviceAsync(app.Factory, "Identified TV");
+        var (other, _) = await DeviceAsync(app.Factory, "Bystander TV");
+        await using var events = await EventStream.OpenAsync(device);
+        await using var otherEvents = await EventStream.OpenAsync(other);
+        await ListeningAsync(app.Factory);
+
+        using var identify = await editor.PostFormAsync($"/admin/screens/{screenId}", new Dictionary<string, string>(), action: $"/admin/screens/{screenId}?handler=Identify");
+        Assert.Equal(HttpStatusCode.Redirect, identify.StatusCode);
+        Assert.Equal((ScreenEvent.Identify, "{\"seconds\":30}"), await events.NextEventAsync(Soon));
+        Assert.Null(await otherEvents.NextAsync(Quiet));
+
+        using var all = await editor.PostFormAsync("/admin/screens", new Dictionary<string, string>(), action: "/admin/screens?handler=IdentifyAll");
+        Assert.Equal(HttpStatusCode.Redirect, all.StatusCode);
+        Assert.Equal((ScreenEvent.IdentifyAll, "{\"seconds\":30}"), await events.NextEventAsync(Soon));
+        Assert.Equal((ScreenEvent.IdentifyAll, "{\"seconds\":30}"), await otherEvents.NextEventAsync(Soon));
+        Assert.Equal((ScreenEvent.ManifestChanged, "{}"), await NextManifestChangeAsync(app, events, screenId));
+        device.Dispose();
+        other.Dispose();
+    }
+
+    [Fact]
+    public async Task Identifying_needs_a_signed_in_user_and_an_existing_screen()
+    {
+        await using var app = await AdminApp.StartAsync(postgres);
+        await app.CreateAdminAsync();
+        using var admin = await app.SignedInAsync(AdminApp.AdminEmail);
+        var (device, screenId) = await DeviceAsync(app.Factory, "Doomed TV");
+        await app.Factory.WithDbAsync(db => db.Screens.Where(s => s.Id == screenId).ExecuteDeleteAsync());
+
+        using var gone = await admin.PostFormAsync("/admin/screens", new Dictionary<string, string>(), action: $"/admin/screens/{screenId}?handler=Identify");
+        using var anonymous = new AdminSession(app.Factory);
+        using var signedOut = await anonymous.PostWithoutTokenAsync("/admin/screens?handler=IdentifyAll", new Dictionary<string, string>());
+
+        Assert.Equal("/admin/screens", AdminSession.Location(gone));
+        Assert.Equal(HttpStatusCode.Redirect, signedOut.StatusCode);
+        Assert.StartsWith("/admin/login", new Uri(new Uri("http://x"), AdminSession.Location(signedOut)).PathAndQuery, StringComparison.Ordinal);
+        device.Dispose();
+    }
+
+    private static async Task<(string Name, string Data)?> NextManifestChangeAsync(AdminApp app, EventStream events, Guid screenId)
+    {
+        await Notifier(app.Factory).ScreensChangedAsync([screenId], TestContext.Current.CancellationToken);
+        return await events.NextEventAsync(Soon);
+    }
+
+    [Fact]
     public async Task The_event_stream_and_the_heartbeat_need_a_screen_token()
     {
         await using var app = await AdminApp.StartAsync(postgres);
@@ -371,7 +422,7 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
     {
         private readonly HttpResponseMessage _response;
         private readonly CancellationTokenSource _stop = new();
-        private readonly Channel<string> _events = Channel.CreateUnbounded<string>();
+        private readonly Channel<(string Name, string Data)> _events = Channel.CreateUnbounded<(string Name, string Data)>();
         private readonly Task _reader;
 
         private EventStream(HttpResponseMessage response)
@@ -392,7 +443,10 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
         public Task Closed => _reader;
 
         /// <summary>The next event's name, or null if none arrives in time.</summary>
-        public async Task<string?> NextAsync(TimeSpan timeout)
+        public async Task<string?> NextAsync(TimeSpan timeout) => (await NextEventAsync(timeout))?.Name;
+
+        /// <summary>The next event's name and data, or null if none arrives in time.</summary>
+        public async Task<(string Name, string Data)?> NextEventAsync(TimeSpan timeout)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
             cts.CancelAfter(timeout);
@@ -412,11 +466,17 @@ public sealed class LiveUpdateTests(PostgresFixture postgres)
             {
                 await using var stream = await _response.Content.ReadAsStreamAsync(_stop.Token);
                 using var reader = new StreamReader(stream);
+                string? name = null;
                 while (await reader.ReadLineAsync(_stop.Token) is { } line)
                 {
                     if (line.StartsWith("event: ", StringComparison.Ordinal))
                     {
-                        await _events.Writer.WriteAsync(line["event: ".Length..], _stop.Token);
+                        name = line["event: ".Length..];
+                    }
+                    else if (line.StartsWith("data: ", StringComparison.Ordinal) && name is not null)
+                    {
+                        await _events.Writer.WriteAsync((name, line["data: ".Length..]), _stop.Token);
+                        name = null;
                     }
                 }
             }

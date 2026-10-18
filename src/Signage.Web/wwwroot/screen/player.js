@@ -8,6 +8,7 @@ import { pollManifest } from './connection.js';
 import { pairDevice } from './pairing.js';
 import { startDailyReload, reloadSoon } from './reload.js';
 import { startHeartbeat } from './heartbeat.js';
+import { Overlays } from './overlay.js';
 import { loadManifest, saveManifest, clearManifest } from './storage.js';
 import { t } from './strings.js';
 
@@ -26,6 +27,7 @@ function applyLook() {
     root.setProperty('--transition-easing', config.transitionEasing);
     root.setProperty('--transition-shadow', config.transitionShadow);
     root.setProperty('--single-video-fade-ms', `${ms(config.singleVideoFadeMs)}ms`);
+    root.setProperty('--identify-fade-ms', `${ms(config.identifyFadeMs)}ms`);
 }
 
 /** Hides the mouse pointer after a few seconds without movement (PLAYER_SPEC §1). */
@@ -74,10 +76,12 @@ function showMessage(text) {
 function runPreview() {
     document.body.dataset.preview = 'true';
     const carousel = new Carousel(stage);
+    const overlays = new Overlays(stage);
     let started = false;
     pollManifest(`/api/player/preview/${encodeURIComponent(previewId)}/manifest`, {
         onManifest(manifest) {
             carousel.setManifest(manifest);
+            overlays.update(manifest);
             if (!started) {
                 started = true;
                 carousel.run();
@@ -126,6 +130,7 @@ function reloadOnNewVersion(serverVersion, carousel) {
 
 async function runScreen() {
     const carousel = new Carousel(stage);
+    const overlays = new Overlays(stage);
     let manifest = loadManifest();
     let started = false;
     const start = () => {
@@ -138,6 +143,7 @@ async function runScreen() {
 
     if (manifest) {
         carousel.setManifest(manifest); // play the last known sequence straight away, also offline (R-24)
+        overlays.update(manifest);
         start();
     }
 
@@ -150,6 +156,7 @@ async function runScreen() {
             manifest = fresh;
             saveManifest(fresh);
             carousel.setManifest(fresh);
+            overlays.update(fresh);
             start();
             if (!heartbeat) {
                 // The server knows this device: report in from now on (R-33).
@@ -167,9 +174,13 @@ async function runScreen() {
         },
         onOnline(online) {
             document.body.dataset.online = String(online);
+            overlays.setOnline(online);
         },
         onEvents(state) {
             document.body.dataset.events = state; // test hook: the push stream is connected
+        },
+        onIdentify(seconds, withBorder) {
+            overlays.identify(seconds, withBorder);
         },
     });
 }

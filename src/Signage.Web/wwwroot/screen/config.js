@@ -28,6 +28,9 @@ export const config = Object.freeze({
     videoSafetyCapMs: 10 * 60_000, // a video slide never stays longer than this
     singleVideoFadeMs: 300, // cross-fade when single video mode starts, ends or changes its URL (PLAYER_SPEC §6)
 
+    // Overlays (PLAYER_SPEC §7)
+    identifyFadeMs: 500,
+
     // Stage (PLAYER_SPEC §1)
     cursorHideMs: 3000,
 

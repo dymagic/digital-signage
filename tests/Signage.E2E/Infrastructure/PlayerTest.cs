@@ -75,6 +75,9 @@ public abstract class PlayerTest(BrowserFixture fixture) : E2ETest(fixture)
         return device;
     }
 
+    /// <summary>A device for identification tests (time scale 0.2: the 30 s identification lasts 6 s).</summary>
+    public Task<IPage> OpenDeviceForIdentifyAsync(string token) => OpenDeviceAsync(token, timeScale: 0.2);
+
     protected static async Task<string[]> WaitForActivationsAsync(IPage device, int count, int timeoutMs = 60_000)
     {
         await device.WaitForFunctionAsync($"() => window.__activations.length >= {count}", null, new() { Timeout = timeoutMs, PollingInterval = 100 });

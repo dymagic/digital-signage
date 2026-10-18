@@ -21,6 +21,7 @@ public class DetailModel(
     PlaylistService playlists,
     SettingsService settings,
     TimeProvider time,
+    Signage.Web.Features.Events.IScreenNotifier notifier,
     IStringLocalizer<SharedResource> l) : AdminPageModel
 {
     [BindProperty(SupportsGet = true)]
@@ -103,6 +104,19 @@ public class DetailModel(
         }
 
         return await AfterFormPostAsync(await screens.SetGroupsAsync(Id, GroupIds, Version, ct), [], ct);
+    }
+
+    /// <summary>Editor+, R-31: the screen shows a pulsing red border and its name for 30 s.</summary>
+    public async Task<IActionResult> OnPostIdentifyAsync(CancellationToken ct)
+    {
+        if (await screens.GetAsync(Id, ct) is null)
+        {
+            return GoneMeanwhile("/Admin/Screens/Index");
+        }
+
+        await notifier.IdentifyAsync([Id], ct);
+        TempData["Status"] = "Screens.Identifying";
+        return RedirectToPage(new { id = Id });
     }
 
     /// <summary>Admin, R-42: the device stops working at once and returns to the pairing screen.</summary>

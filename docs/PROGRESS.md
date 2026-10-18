@@ -7,7 +7,19 @@
 Milestone 1: in progress (WP-00–WP-07 done). Project docs, skills and the reviewer agent were set up on 2026-10-16.
 
 ## Current package
-_(none: next is WP-11 Identification)_
+- Package: WP-11 Identification — branch `wp-11-identification` — status In review (round 1 requested)
+- Plan: `ScreenEvent` gains `Seconds`; `IScreenNotifier.IdentifyAsync(screenId)` / `IdentifyAllAsync()` (30 s); SSE
+  writes `data: {"seconds":30}`. Admin: "Identify" on the screen page and "Identify all" on the list (editor+, POST
+  handlers with htmx, a confirmation message). Player: `overlay.js` (info overlay `Name · IP` from the manifest,
+  applied at once, offline dot; identify border + name pill, identify-all name only, 30 s, restart, 500 ms fade), also over
+  single video mode. WP-10 NITs. Tests: integration (events with seconds, authz), E2E (identify, restart, identify all,
+  overlay toggled live, in single video mode).
+- Done: identify events (seconds in the SSE data), admin buttons (editor+), overlay.js (info + identify, over single
+  video), WP-10 NITs; tests: integration 2, E2E IdentifyTests 4; docs.
+- Full E2E showed the calm-retry test is woken by other tests' global setting changes (pushed manifests); its device
+  now blocks the event stream. Self-check green: build 0 warnings, `dotnet test` 473, E2E 61 (8 spike skips), twice.
+- Next step: handle the review round 1 verdict (docs/reviews/WP-11-review-1.md).
+- Last checkpoint: (this commit)
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)

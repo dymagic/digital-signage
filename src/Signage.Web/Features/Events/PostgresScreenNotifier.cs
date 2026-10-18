@@ -25,6 +25,19 @@ public sealed partial class PostgresScreenNotifier(NpgsqlDataSource dataSource, 
 
     public Task AllScreensChangedAsync(CancellationToken ct) => SendAsync(ScreenEvent.AllManifestsChanged, ct);
 
+    public async Task IdentifyAsync(IReadOnlyCollection<Guid>? screenIds, CancellationToken ct)
+    {
+        if (screenIds is null)
+        {
+            await SendAsync(new ScreenEvent(ScreenEvent.IdentifyAll, null, ScreenEvent.IdentifySeconds), ct).ConfigureAwait(false);
+            return;
+        }
+        foreach (var chunk in screenIds.Distinct().Chunk(ScreensPerNotification))
+        {
+            await SendAsync(new ScreenEvent(ScreenEvent.Identify, chunk, ScreenEvent.IdentifySeconds), ct).ConfigureAwait(false);
+        }
+    }
+
     public async Task SendAsync(ScreenEvent screenEvent, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(screenEvent);

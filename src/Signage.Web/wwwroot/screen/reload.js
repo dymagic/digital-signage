@@ -43,6 +43,7 @@ async function reloadIfServerAnswers() {
  */
 export function reloadSoon(carousel, beforeReload) {
     let armed = false;
+    let watch = 0;
     const arm = () => {
         if (armed) {
             return;
@@ -50,12 +51,20 @@ export function reloadSoon(carousel, beforeReload) {
         armed = true;
         if (carousel.isCycling) {
             carousel.runBeforeNextTransition(reload);
+            // If the carousel stops cycling before that transition (one slide left, single video), take it back.
+            watch = setInterval(() => {
+                if (armed && !carousel.isCycling) {
+                    carousel.runBeforeNextTransition(null);
+                    reload();
+                }
+            }, config.dailyReload.checkEveryMs);
         } else {
             setTimeout(reload, 0);
         }
     };
     const reload = async () => {
         armed = false;
+        clearInterval(watch);
         if (await serverAnswers()) {
             beforeReload?.();
             location.reload();

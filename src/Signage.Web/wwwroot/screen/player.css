@@ -131,3 +131,63 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none; }
 }
 .pairing .instruction { margin: 0; font-size: 3.2vmin; color: rgba(255, 255, 255, .75); }
 .pairing .server { margin: 0; font-size: 2.6vmin; color: rgba(255, 255, 255, .5); }
+
+/* Info overlay (R-30, PLAYER_SPEC §7): bottom-left, 8 px above the 3 px progress bar, 14 px at 1080p. */
+.info-overlay {
+    position: absolute;
+    left: 1.5vmin;
+    bottom: 11px;
+    z-index: 25;
+    font-size: 1.3vmin;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, 0.55);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    white-space: nowrap;
+}
+.info-overlay.offline::after {
+    content: '';
+    display: inline-block;
+    width: 0.45em;
+    height: 0.45em;
+    margin-left: 0.6em;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    vertical-align: middle;
+}
+
+/* Identification (R-31, R-32): the name on a dark pill; for one screen also a pulsing red inset border (1 Hz). */
+.identify {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    place-items: center;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity var(--identify-fade-ms) ease-out;
+}
+.identify.active { display: grid; }
+.identify.fading { opacity: 0; }
+.identify.with-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 24px #e11d48;
+    animation: identify-pulse 0.5s ease-in-out infinite alternate;
+}
+.identify-name {
+    margin: 0;
+    padding: 0.4em 1em;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 8vmin;
+    font-weight: 700;
+    text-align: center;
+    max-width: 85vw;
+}
+@keyframes identify-pulse {
+    from { opacity: 1; }
+    to { opacity: 0.55; }
+}
