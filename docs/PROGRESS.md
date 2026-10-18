@@ -12,6 +12,8 @@ reported to the product owner. Follow-ups after M1 are listed at the end of BACK
 - Publishing (2026-10-18, PO request): moved `opening-spec.md` to `docs/`, README "How this was built", CI badge and
   clone URL, `SECURITY.md`, CI and image workflows, author rewritten to `dymagic <dymagic@users.noreply.github.com>`,
   tag `v0.1.0`. The PO gave a one-time permission to push to `git@github.com:dymagic/digital-signage.git`.
+- From now on (PO decision, 2026-10-18): `main` on GitHub is protected and changes arrive by pull request. Packages
+  end as a branch handed to the PO (CLAUDE.md "Git", work-package skill step 6); next packages may stack on it.
 
 <!-- While a package is in flight, keep this shape and update it at every checkpoint:
 - Package: WP-xx <title> — branch `wp-xx-…` — status In progress | In review (round n requested)

@@ -1,6 +1,6 @@
 ---
 name: review-gate
-description: Request an independent review of a Signage work package (or the milestone) from the principal-reviewer subagent and handle its verdict. Required before any work package is merged.
+description: Request an independent review of a Signage work package (or the milestone) from the principal-reviewer subagent and handle its verdict. Required before any work package is handed over for a pull request.
 ---
 
 # Review gate
@@ -40,6 +40,6 @@ explaining, it belongs in an ADR, which the reviewer reads.
 
 ## Rules
 - Never edit or delete a reviewer-written file.
-- Never merge without an `APPROVE` file for the current branch head (or an explicit product-owner override
-  recorded in PROGRESS.md).
+- Never hand a branch over for a pull request without an `APPROVE` file for the current branch head (or an
+  explicit product-owner override recorded in PROGRESS.md).
 - If a later commit changes code after the APPROVE, that needs a new round.
