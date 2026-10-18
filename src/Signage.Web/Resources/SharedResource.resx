@@ -432,6 +432,9 @@
   <data name="Screens.Identifying" xml:space="preserve">
     <value>The screen now shows a red border and its name for 30 seconds.</value>
   </data>
+  <data name="Screens.IdentifyFailed" xml:space="preserve">
+    <value>The screens couldn't be told right now. Please try again in a moment.</value>
+  </data>
   <data name="Screens.IdentifyAll" xml:space="preserve">
     <value>Identify all</value>
   </data>

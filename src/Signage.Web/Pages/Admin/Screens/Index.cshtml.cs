@@ -27,8 +27,14 @@ public class IndexModel(ScreenService screens, SettingsService settings, TimePro
     /// <summary>Editor+, R-32: every screen shows its name for 30 s.</summary>
     public async Task<IActionResult> OnPostIdentifyAllAsync(CancellationToken ct)
     {
-        await notifier.IdentifyAsync(null, ct);
-        TempData["Status"] = "Screens.IdentifyingAll";
+        if (await notifier.IdentifyAsync(null, ct))
+        {
+            TempData["Status"] = "Screens.IdentifyingAll";
+        }
+        else
+        {
+            TempData["Error"] = "Screens.IdentifyFailed";
+        }
         return RedirectToPage();
     }
 

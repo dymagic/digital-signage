@@ -437,4 +437,22 @@ public sealed partial class ScreenPagesTests(PostgresFixture postgres) : IAsyncL
 
     [GeneratedRegex("<tr data-slide-id=\"([0-9a-f-]{36})\"")]
     private static partial Regex SequenceRow();
+
+    [Fact]
+    public async Task Identify_says_so_when_the_screens_could_not_be_told()
+    {
+        var id = await CreateScreenAsync("Unreachable TV");
+        _notifier.FailIdentify = true;
+
+        using var one = await _admin.PostFormAsync($"/admin/screens/{id}", new Dictionary<string, string>(), action: $"/admin/screens/{id}?handler=Identify");
+        var afterOne = await _admin.GetHtmlAsync(AdminSession.Location(one)!);
+        using var all = await _admin.PostFormAsync("/admin/screens", new Dictionary<string, string>(), action: "/admin/screens?handler=IdentifyAll");
+        var afterAll = await _admin.GetHtmlAsync(AdminSession.Location(all)!);
+
+        foreach (var html in new[] { afterOne, afterAll })
+        {
+            Assert.Contains("couldn&#x27;t be told right now", html, StringComparison.Ordinal);
+            Assert.DoesNotContain("for 30 seconds", html, StringComparison.Ordinal);
+        }
+    }
 }

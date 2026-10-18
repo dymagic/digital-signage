@@ -30,6 +30,7 @@ export class Overlays {
     update(manifest) {
         this.name = manifest?.screen?.name ?? '';
         this.nameEl.textContent = this.name;
+        this.nameEl.hidden = !this.name; // no empty pill before the first manifest
         const show = Boolean(manifest?.settings?.showInfoOverlay);
         this.info.hidden = !show;
         this.info.textContent = [this.name, manifest?.observedIp].filter(Boolean).join(' · ');
@@ -41,6 +42,7 @@ export class Overlays {
 
     /** Shows the name (and the red border for one screen) for `seconds`, restarting any running identification. */
     identify(seconds, withBorder) {
+        this.nameEl.hidden = !this.name;
         clearTimeout(this.timer);
         clearTimeout(this.fadeTimer);
         this.identifyEl.classList.toggle('with-border', withBorder);

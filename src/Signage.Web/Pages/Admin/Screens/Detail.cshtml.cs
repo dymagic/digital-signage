@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Signage.Web.Domain;
 using Signage.Web.Features;
+using Signage.Web.Features.Events;
 using Signage.Web.Features.Groups;
 using Signage.Web.Features.Playlists;
 using Signage.Web.Features.Screens;
@@ -21,7 +22,7 @@ public class DetailModel(
     PlaylistService playlists,
     SettingsService settings,
     TimeProvider time,
-    Signage.Web.Features.Events.IScreenNotifier notifier,
+    IScreenNotifier notifier,
     IStringLocalizer<SharedResource> l) : AdminPageModel
 {
     [BindProperty(SupportsGet = true)]
@@ -114,8 +115,14 @@ public class DetailModel(
             return GoneMeanwhile("/Admin/Screens/Index");
         }
 
-        await notifier.IdentifyAsync([Id], ct);
-        TempData["Status"] = "Screens.Identifying";
+        if (await notifier.IdentifyAsync([Id], ct))
+        {
+            TempData["Status"] = "Screens.Identifying";
+        }
+        else
+        {
+            TempData["Error"] = "Screens.IdentifyFailed";
+        }
         return RedirectToPage(new { id = Id });
     }
 

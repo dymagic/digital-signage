@@ -175,7 +175,7 @@ trusted. Over plain HTTP the admin cookie can't carry the `Secure` flag.
 *From WP-11 review round 1 (docs, MINOR):* PLAYER_SPEC §1 places the info overlay below the progress bar but the code (and
 §7) puts it 8 px above: make §1 agree; ARCHITECTURE §4 says identify uses htmx partials, but it is a plain form post.
 
-### WP-13 Milestone hardening & acceptance — `Todo`
+### WP-13 Milestone hardening & acceptance — `In progress`
 Write `docs/M1_ACCEPTANCE.md` (every R-ID → proof), close gaps, run the full suite, run a 30-minute
 soak of the player in E2E (memory stable), and request the **milestone-level** review (the reviewer reviews
 the whole repo, not a diff).
