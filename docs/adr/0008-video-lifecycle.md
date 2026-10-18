@@ -46,6 +46,9 @@ memory pressure, shorten `config.dailyReload` in `wwwroot/screen/config.js` (`mi
 soak watches the growth rate.
 
 ## Consequences
+- **WP-13 soak (2026-10-18):** the shipped player measured 0.215–0.230 MB per transition over 30 minutes (two runs, see
+  `docs/M1_ACCEPTANCE.md`), within the 2× guard but above this spike's 0.15. Linearly that is about 2 GB a day at
+  10 s slides; the daily reload still bounds it. Raised with the product owner at milestone acceptance.
 - Covered videos lose their decoded frames immediately. That's fine: they are covered.
 - WP-13's soak runs the shipped player for 30 minutes (roughly 900 transitions; videos play at normal speed)
   as a regression guard: it fails if growth exceeds twice the rate measured here (2 × 0.15 MB per transition). The daily reload, not the soak,

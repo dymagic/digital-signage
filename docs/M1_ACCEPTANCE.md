@@ -95,7 +95,26 @@ Classes are given once per row; several tests in a row belong to the class named
 
 ## Soak (WP-13, ADR-0008)
 
-_Filled in from the run below._
+`tests/Signage.E2E/Soak/PlayerSoak.cs` (opt-in: `SIGNAGE_E2E_SOAK=1 scripts/test-e2e.sh -class "Signage.E2E.Soak.PlayerSoak"`)
+runs the shipped player for 30 minutes over three H.264 clips (3–4 s, real speed) alternating with three PNG images at
+`timeScale=0.05`, in headless Chromium inside the Playwright container (software decoding). It samples the browser's
+PSS from `/proc` every 100 transitions after a forced GC, with tracing off and without the CDP Media domain. It fails if
+growth from the end of the first third to the end exceeds 2 × 0.15 MB per transition.
+
+Passing run (2026-10-18), browser PSS in MB:
+
+| Transitions | 0 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| PSS | 352 | 504 | 590 | 597 | 618 | 660 | 666 | 689 | 726 | 735 |
+
+- 900 transitions in 30.3 minutes. At most **2** slide layers and **1** `<video>` element at every sample.
+- Growth from transition 300 to 900: **138 MB = 0.230 MB per transition**, against 180 MB allowed. **Pass.**
+- An earlier full run (its only failure was the test's own layer check on the baseline sample, fixed since) measured
+  733 MB at 900 transitions and 0.215 MB per transition: the figures repeat.
+- **Note:** this is above the WP-07 spike's 0.15 MB per transition (within the 2× guard). Extrapolated linearly to
+  10 s slides (8,640 transitions a day) it would be about **2 GB a day** rather than 1.3 GB. The daily reload still
+  bounds it, but on a 2 GB device that is tight; `config.dailyReload` can be shortened (ADR-0008). Raised with the
+  product owner below.
 
 ## Verification run
 
@@ -107,3 +126,7 @@ _Filled in at the end of WP-13._
 - **Open question** (not blocking): the screen-address exchange limit (10 per client IP and minute, configurable). See
   `docs/PROGRESS.md`.
 - **Daily reload** (ADR-0008): screens reload themselves once a day at night to bound browser memory, as you confirmed.
+- **Memory rate:** the soak measured 0.23 MB per transition (the spike estimated 0.15). Within the regression guard,
+  but at 10 s slides that extrapolates to about 2 GB a day before the nightly reload: tight for a 2 GB Raspberry Pi
+  playing video all day. Options: accept it (most screens show longer slides), or make the reload more frequent by
+  default (e.g. every 12 h) in `config.js`.
