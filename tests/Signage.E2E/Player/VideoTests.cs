@@ -178,6 +178,58 @@ public class VideoTests(BrowserFixture fixture) : PlayerTest(fixture)
     }
 
     [Fact]
+    public async Task A_video_that_fails_next_to_a_slide_that_cannot_load_is_replaced_after_a_pause()
+    {
+        var tag = Tag();
+        await AdminActions.CreateUrlSlideAsync(Page, "Video", $"Clip {tag}", Media("/media/clip-b-h264.mp4"));
+        await AdminActions.CreateUrlSlideAsync(Page, "Image", $"Gone {tag}", Media($"/media/gone-{tag}.png"), 2);
+        await EmptyScreenAsync($"Failing {tag}", $"Failing {tag}", [$"Clip {tag}", $"Gone {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var requests = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 0.2, ctx => // the retry pause is 2 s at this scale
+        {
+            ctx.Request += (_, r) => { if (r.Url.Contains($"gone-{tag}", StringComparison.Ordinal)) Interlocked.Increment(ref requests); };
+            return Task.CompletedTask;
+        });
+        await WaitForActivationsAsync(device, 1);
+
+        await FailActiveVideoAsync(device);
+
+        await device.WaitForFunctionAsync("() => { const v = document.querySelector('.slide[data-state=active] video'); return v && !v.dataset.failed && v.currentTime > 0.3; }", null, new() { Timeout = 15_000 });
+        Assert.InRange(requests, 1, 4); // the broken image was tried, calmly
+        await Expect(device.Locator(".slides > .slide video")).ToHaveCountAsync(1); // the failed element was released
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
+    public async Task A_lone_video_that_fails_is_replaced_by_a_fresh_one_and_loops_again()
+    {
+        var tag = Tag();
+        await AdminActions.CreateUrlSlideAsync(Page, "Video", $"Only clip {tag}", Media("/media/clip-b-h264.mp4"));
+        await EmptyScreenAsync($"Lone {tag}", $"Lone {tag}", [$"Only clip {tag}"]);
+        var token = await AdminActions.CreateScreenAddressTokenAsync(Page);
+        var device = await OpenDeviceAsync(token, timeScale: 0.2);
+        await WaitForActivationsAsync(device, 1);
+
+        await FailActiveVideoAsync(device);
+
+        await device.WaitForFunctionAsync("() => { const v = document.querySelector('.slide[data-state=active] video'); return v && !v.dataset.failed && v.currentTime > 0.3; }", null, new() { Timeout = 15_000 });
+        Assert.True(await device.Locator(".slide[data-state=active] video").EvaluateAsync<bool>(Wraps), "the fresh video loops");
+        await Expect(device.Locator(".slides > .slide video")).ToHaveCountAsync(1);
+        await device.Context.CloseAsync();
+    }
+
+    /// <summary>Makes the playing video fail as a broken stream would (an error event), and marks the element.</summary>
+    private static async Task FailActiveVideoAsync(Microsoft.Playwright.IPage device) => await device.EvaluateAsync("""
+        async () => {
+            const v = document.querySelector('.slide[data-state=active] video');
+            while (v.currentTime < 0.3) await new Promise((r) => setTimeout(r, 50));
+            v.dataset.failed = 'true';
+            v.src = v.src.replace('clip-b', 'not-there');
+        }
+        """);
+
+    [Fact]
     public async Task A_video_that_stops_making_progress_is_skipped_after_8_seconds()
     {
         var tag = Tag();
@@ -276,6 +328,32 @@ public class VideoTests(BrowserFixture fixture) : PlayerTest(fixture)
     }
 
     [Fact]
+    public async Task A_single_video_url_that_never_answers_counts_as_failed_after_8_seconds()
+    {
+        var (screenId, token, _) = await ScreenWithSlidesAsync(("Before", 200, "#7c2d12"));
+        var hanging = Media($"/media/hanging-{Tag()}.mp4");
+        var asked = 0;
+        var device = await OpenDeviceAsync(token, timeScale: 0.2, ctx => ctx.RouteAsync(hanging.ToString(), _ =>
+        {
+            Interlocked.Increment(ref asked);
+            return Task.CompletedTask; // accepted, never answered
+        }));
+        await WaitForActivationsAsync(device, 1);
+
+        await AdminActions.SetScreenModeAsync(Page, screenId, hanging);
+
+        await ExpectModeAsync(device, "single-video");
+        // After 8 s without data the carousel slide goes (no stale content), and the video is asked for again.
+        await Expect(device.Locator(".slides > .slide")).ToHaveCountAsync(0, new() { Timeout = 20_000 });
+        for (var i = 0; i < 150 && Volatile.Read(ref asked) < 2; i++)
+        {
+            await Task.Delay(100, TestContext.Current.CancellationToken);
+        }
+        Assert.True(asked >= 2, $"asked {asked} time(s)");
+        await device.Context.CloseAsync();
+    }
+
+    [Fact]
     public async Task Single_video_mode_recovers_from_failures_and_leaves_nothing_behind()
     {
         var (screenId, token, _) = await ScreenWithSlidesAsync(("Stale", 200, "#7c2d12"));
@@ -294,9 +372,14 @@ public class VideoTests(BrowserFixture fixture) : PlayerTest(fixture)
         await Expect(visible).ToHaveCountAsync(1, new() { Timeout = 20_000 });
 
         // It fails mid-play and the first retries fail too (the host is down), then the host comes back.
-        await device.Context.RouteAsync(clip.ToString(), route => route.AbortAsync("connectionrefused"));
+        var refused = 0;
+        await device.Context.RouteAsync(clip.ToString(), route => { Interlocked.Increment(ref refused); return route.AbortAsync("connectionrefused"); });
         await visible.EvaluateAsync("v => { v.src = v.src.replace('clip-c', 'not-there'); }");
-        await device.WaitForTimeoutAsync(5000); // two failed retries at this scale
+        for (var i = 0; i < 150 && Volatile.Read(ref refused) < 2; i++)
+        {
+            await Task.Delay(100, TestContext.Current.CancellationToken); // retries every 2 s at this scale
+        }
+        Assert.True(refused >= 2, $"only {refused} retries");
         Assert.InRange(await device.Locator("[data-testid=single-video]").CountAsync(), 1, 2);
         await device.Context.UnrouteAsync(clip.ToString());
         await device.WaitForFunctionAsync("() => [...document.querySelectorAll('[data-testid=single-video].visible video')].some(v => v.src.includes('clip-c') && v.currentTime > 0.2)", null, new() { Timeout = 20_000 });

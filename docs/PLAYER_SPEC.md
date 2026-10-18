@@ -133,13 +133,18 @@ screen (R-42).
 - On boot: if a cached manifest exists in localStorage, start playing it **immediately**, then
   fetch the fresh one. This holds for a pre-configured `/screen?token=…` address too: the cached slides play while the
   token exchange is retried in the background.
-- Keep an `EventSource` to `/api/player/events` (it auto-reconnects). Also poll the manifest every
-  60 s with `If-None-Match`.
+- Keep an `EventSource` to `/api/player/events` (it auto-reconnects). Fetch the manifest on every `manifest-changed`
+  event and every time the stream (re)opens, since events may have been missed. If the stream gives up (a non-200
+  answer such as a proxy's 502 during a restart), open a new one after 5 s. Also poll the manifest every 60 s with
+  `If-None-Match`. The admin preview polls only.
 - On a new manifest: don't interrupt the current slide. The new sequence takes effect at the next
   transition. Continue from the slide after the current one's id if it still exists, otherwise
   start from the beginning. If it changes which slide comes next, that slide is prepared at the transition; the current slide
   is not shown any longer for it. Mode changes and overlay toggles apply immediately.
-- If `appVersion` differs from the loaded player's version: reload the page at the next transition.
+- If a *fresh* manifest's `appVersion` differs from the version `/screen` was served with (`<meta
+  name="signage-version">`): reload at the next transition (at once if the screen doesn't transition), only when
+  `GET /screen` answers 2xx right before. Once per version (`sessionStorage`): if the page still reports the old version
+  afterwards (a stale cache in between), it doesn't reload in a loop. A cached manifest never triggers this.
 - Daily reload (ADR-0008, confirmed by the product owner on 2026-10-17): a timer checks once a minute. The reload is
   due after 20 h of uptime when the local time (system time zone) is between 02:00 and 05:00, or after 26 h at any
   time. A carousel with two or more slides reloads at its next transition, and a screen that doesn't transition (one
@@ -149,7 +154,9 @@ screen (R-42).
   on a browser or proxy error page. The reload starts from the cached manifest.
   It bounds any slow memory growth in long-running browsers. All values live in `config.js`. No daily reload in
   admin preview.
-- Heartbeat every 30 s.
+- Heartbeat every 30 s, once the first manifest has proved the device is paired: player version, the slide on screen,
+  and problems since the last heartbeat (skipped or muted videos, single video failures; at most 20, kept for the next
+  heartbeat if this one fails).
 - While offline: keep cycling, show nothing alarming, and add a tiny dim dot in the info overlay
   only when the overlay is enabled.
 
